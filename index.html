@@ -95,12 +95,9 @@
             "Cadet 1st Class": { sleeve: "scc_cadet_sleeve_1st_class.webp", slide: "scc_cadet_shoulder_1st_class.webp" },
             "Cadet": { sleeve: "scc_cadet_sleeve_cadet.webp", slide: "scc_cadet_shoulder_cadet.webp" },
             "Cadet Sergeant": { sleeve: "rmc_rank_sergeant.webp", slide: "rmc_slide_cadet_sergeant.webp" },
-            "Corporal": { sleeve: "rmc_rank_corporal.webp", slide: "rmc_slide_corporal.webp" },
-            "Lance Corporal": { sleeve: "rmc_rank_lance_corporal.webp", slide: "rmc_slide_lance_corporal.webp" },
+            "Cadet Corporal": { sleeve: "rmc_rank_corporal.webp", slide: "rmc_slide_corporal.webp" },
+            "Cadet Lance Corporal": { sleeve: "rmc_rank_lance_corporal.webp", slide: "rmc_slide_lance_corporal.webp" },
             "Marine Cadet": { sleeve: "rmc_rank_marine_cadet.webp", slide: "rmc_slide_marine_cadet.webp" }, 
-            "Marine": { sleeve: "rmc_rank_marine_cadet.webp", slide: "rmc_slide_marine_cadet.webp" }, 
-            "Marine Recruit": null,
-            "Marine Cadet 1st Class": { sleeve: "rmc_rank_marine_cadet.webp", slide: "rmc_slide_marine_cadet.webp" }, 
             "Recruit": null,
             "New Entry Cadet": null,
             "Leading Junior Cadet": { sleeve: "scc_junior_leading.webp" },
@@ -253,6 +250,7 @@
             Calendar: lucide.icons.Calendar,
             Save: lucide.icons.Save,
             Trash2: lucide.icons.Trash2,
+            RefreshCw: lucide.icons.RefreshCw,
             X: lucide.icons.X,
             AlertCircle: lucide.icons.AlertCircle,
             Anchor: lucide.icons.Anchor,
@@ -609,7 +607,7 @@
         };
 
         const RMC_SYLLABUS = {
-            "Marine Recruit": {
+            "Recruit": {
                 "Recruit Section 1": [
                     { code: "R1-1", title: "Unit Tour, Health and Safety and Who's Who" },
                     { code: "R1-2", title: "Colours Routine and History" },
@@ -762,7 +760,7 @@
                     { code: "L17-1", title: "Introduction to Cadet Voice" }
                 ]
             },
-            "Lance Corporal": {
+            "Cadet Lance Corporal": {
                 "C1: Personal Development": [
                     { code: "C1-1", title: "Sea Cadet Values as a Lifestyle" },
                     { code: "C1-2", title: "Royal Marines Careers and Specialist Qualifications" },
@@ -847,7 +845,7 @@
                     { code: "C15-1", title: "Prioritisation and District Meetings" }
                 ]
             },
-            "Corporal": {
+            "Cadet Corporal": {
                 "S1: Personal Development": [
                     { code: "S1-1", title: "Safeguarding as a Senior Cadet" },
                     { code: "S1-2", title: "Career Planning" },
@@ -961,7 +959,7 @@
         };
 
         const SCC_RANK_ORDER = ["New Entry Cadet", "Cadet", "Cadet 1st Class", "Ordinary Cadet", "Able Cadet", "Leading Cadet", "Petty Officer Cadet"];
-        const RMC_RANK_ORDER = ["Marine Recruit", "Marine Cadet", "Lance Corporal", "Corporal", "Cadet Sergeant"];
+        const RMC_RANK_ORDER = ["Recruit", "Marine Cadet", "Cadet Lance Corporal", "Cadet Corporal", "Cadet Sergeant"];
 
         // --- 3. HELPER FUNCTIONS ---
         const splitCSVLine = (str) => {
@@ -984,6 +982,56 @@
                 .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
                 .replace(/<[^>]+>/g, '')
                 .trim();
+        };
+
+        const RANK_ABBREVIATIONS = {
+            "Petty Officer Cadet": "POC",
+            "Leading Cadet": "LC",
+            "Able Cadet": "AC",
+            "Ordinary Cadet": "OC",
+            "Cadet 1st Class": "Cdt 1st",
+            "Cadet": "Cdt",
+            "New Entry Cadet": "NEC",
+            "Leading Junior Cadet": "LJC",
+            "Able Junior Cadet": "AJC",
+            "Junior Cadet 1st Class": "JCFC",
+            "Junior Cadet": "JC",
+            "Cadet Sergeant": "Cdt Sgt",
+            "Cadet Corporal": "Cdt Cpl",
+            "Cadet Lance Corporal": "Cdt LCpl",
+            "Marine Cadet": "MC",
+            "Recruit": "Rct"
+        };
+
+        const formatCadetNameWithRank = (name, rank) => {
+            // Parse "SURNAME, Firstname" format
+            const parts = name.split(',').map(p => p.trim());
+            if (parts.length !== 2) return name; // Fallback if format unexpected
+            
+            const surname = parts[0].toUpperCase(); // Keep surname in capitals
+            const firstname = parts[1];
+            
+            // Get rank abbreviation
+            const rankAbbrev = RANK_ABBREVIATIONS[rank] || rank;
+            
+            return `${rankAbbrev} ${firstname} ${surname}`;
+        };
+
+        const getPreviousRank = (newRank) => {
+            // Find the new rank in the appropriate rank order array
+            const sccIndex = SCC_RANK_ORDER.indexOf(newRank);
+            if (sccIndex > 0) return SCC_RANK_ORDER[sccIndex - 1];
+            
+            const rmcIndex = RMC_RANK_ORDER.indexOf(newRank);
+            if (rmcIndex > 0) return RMC_RANK_ORDER[rmcIndex - 1];
+            
+            // Junior ranks
+            const JUNIOR_RANK_ORDER = ["Junior Cadet", "Junior Cadet 1st Class", "Able Junior Cadet", "Leading Junior Cadet"];
+            const juniorIndex = JUNIOR_RANK_ORDER.indexOf(newRank);
+            if (juniorIndex > 0) return JUNIOR_RANK_ORDER[juniorIndex - 1];
+            
+            // Fallback
+            return newRank;
         };
 
         const parseDate = (dateStr) => {
@@ -1028,7 +1076,7 @@
             if (r === "jcfc" || r === "jc1" || ((r.includes("junior") || r.includes("jnr") || r.includes("jc")) && (r.includes("1st") || r.includes("first")))) return "Junior Cadet 1st Class";
             if (r === "jc" || r === "junior cadet" || r.includes("junior") || r.includes("jnr")) return "Junior Cadet";
 
-            // Senior Ranks
+            // Senior SCC Ranks
             if (r.includes("new entry") || r === "nec") return "New Entry Cadet";
             if (r === "cdt" || r === "cadet") return "Cadet";
             if (r === "cdt 1st" || r.includes("1st class")) return "Cadet 1st Class";
@@ -1037,20 +1085,22 @@
             if (r === "lc" || r === "leading cadet" || r.includes("leading")) return "Leading Cadet";
             if (r === "poc" || r === "petty officer cadet") return "Petty Officer Cadet";
             
-            // RMC Ranks Normalization
-            if (r === "mc" || r === "marine cadet") return "Marine Cadet"; 
-            if (r === "mc1" || r === "marine cadet 1st class" || r === "marine cadet 1") return "Marine Cadet"; 
-            if (r.includes("recruit")) return "Marine Recruit";
-            if (r === "marine") return "Marine Cadet";
+            // RMC Ranks - Map all variations to correct rank names
+            // Marine Cadet (including old "Marine" and "Marine Cadet 1st Class" references)
+            if (r === "mc" || r === "marine cadet" || r === "marine" || r === "royal marine" || 
+                r === "mc1" || r === "marine cadet 1st class" || r === "marine cadet 1") return "Marine Cadet"; 
             
-            // Explicitly match RMC Cadet Ranks
-            if (r === "cdt sergeant" || r.includes("cadet sergeant")) return "Cadet Sergeant";
-            if (r === "cdt cpl" || r.includes("cadet corporal")) return "Corporal";
-            if (r === "cdt lcpl" || r.includes("cadet lance corporal")) return "Lance Corporal";
+            // Recruit (previously called "Marine Recruit")
+            if (r === "rct" || r === "recruit" || r === "marine recruit" || r.includes("recruit")) return "Recruit";
+            
+            // RMC NCO Ranks
+            if (r === "cdt sgt" || r === "cdt sergeant" || r.includes("cadet sergeant")) return "Cadet Sergeant";
+            if (r === "cdt cpl" || r.includes("cadet corporal")) return "Cadet Corporal";
+            if (r === "cdt lcpl" || r.includes("cadet lance corporal")) return "Cadet Lance Corporal";
 
-            // Fallback checks (to catch variations if not exact match above)
-            if (r.includes("lance")) return "Lance Corporal";
-            if (r.includes("corporal")) return "Corporal"; 
+            // Fallback for variations
+            if (r.includes("lance")) return "Cadet Lance Corporal";
+            if (r.includes("corporal") && !r.includes("lance")) return "Cadet Corporal"; 
             
             return rawRank;
         };
@@ -1146,15 +1196,22 @@
             }
         }
 
-        const FileUploader = ({ onDataLoaded, hasData, clearData }) => {
+        const FileUploader = ({ onDataLoaded, hasData, clearData, wipeAllData }) => {
             const [personnelFile, setPersonnelFile] = useState(null);
             const [qualsFile, setQualsFile] = useState(null);
             const [loading, setLoading] = useState(false);
             const [error, setError] = useState(null);
             const [showVideoModal, setShowVideoModal] = useState(false);
+            
+            // Logo upload states
+            const [unitCrestPreview, setUnitCrestPreview] = useState(localStorage.getItem('unit_crest') || null);
+            const [sccLogoPreview, setSccLogoPreview] = useState(localStorage.getItem('scc_logo') || null);
+            const [rmcLogoPreview, setRmcLogoPreview] = useState(localStorage.getItem('rmc_logo') || null);
 
             const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB limit
             const VALID_MIME_TYPES = ['text/csv', 'application/vnd.ms-excel', 'text/plain'];
+            const MAX_LOGO_SIZE = 500 * 1024; // 500KB for logos
+            const VALID_IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
 
             const handleFile = (file, type) => {
                 if (!file) return;
@@ -1176,105 +1233,168 @@
                 if (error) setError(null); // Clear error on new file selection
             };
 
+            const handleLogoUpload = (file, type) => {
+                if (!file) return;
+                
+                // Validate file size
+                if (file.size > MAX_LOGO_SIZE) {
+                    setError(`Logo file too large. Maximum size is 500KB. Current size: ${(file.size / 1024).toFixed(0)}KB`);
+                    return;
+                }
+                
+                // Validate image type
+                if (!VALID_IMAGE_TYPES.includes(file.type)) {
+                    setError(`Invalid image type. Please upload JPG, PNG, or WebP files only.`);
+                    return;
+                }
+                
+                // Convert to base64 and store
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const base64 = e.target.result;
+                    
+                    // Store in localStorage
+                    if (type === 'crest') {
+                        localStorage.setItem('unit_crest', base64);
+                        setUnitCrestPreview(base64);
+                    } else if (type === 'scc') {
+                        localStorage.setItem('scc_logo', base64);
+                        setSccLogoPreview(base64);
+                    } else if (type === 'rmc') {
+                        localStorage.setItem('rmc_logo', base64);
+                        setRmcLogoPreview(base64);
+                    }
+                };
+                reader.readAsDataURL(file);
+            };
+
+            const removeLogo = (type) => {
+                if (type === 'crest') {
+                    localStorage.removeItem('unit_crest');
+                    setUnitCrestPreview(null);
+                } else if (type === 'scc') {
+                    localStorage.removeItem('scc_logo');
+                    setSccLogoPreview(null);
+                } else if (type === 'rmc') {
+                    localStorage.removeItem('rmc_logo');
+                    setRmcLogoPreview(null);
+                }
+            };
+
+            const readFile = (file) => new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onload = (e) => resolve(e.target.result);
+                reader.readAsText(file);
+            });
+
+            const processPersonnelFile = async (text) => {
+                const personnelData = [];
+                const lines = text.split('\n');
+                
+                // Validate row count (excluding header)
+                const dataRowCount = lines.length - 1;
+                if (dataRowCount > 1000) {
+                    throw new Error(`Personnel file has too many rows (${dataRowCount.toLocaleString()}). Maximum allowed is 1,000 cadets.`);
+                }
+                
+                const headers = splitCSVLine(lines[0].trim());
+                
+                const findCol = (name) => headers.findIndex(h => h.toLowerCase().includes(name.toLowerCase()));
+                
+                const idx = {
+                    pnum: findCol("PNumber") > -1 ? findCol("PNumber") : findCol("PNo"),
+                    rank: findCol("Rank"),
+                    surname: findCol("Surname"),
+                    firstname: findCol("First Name"),
+                    unit: findCol("Unit"),
+                    dob: findCol("DOB"),
+                    tos: findCol("TOS Date"),
+                    rankDate: findCol("Date Current Rank"),
+                    cvqo: findCol("CVQO Reference")
+                };
+
+                const requiredFields = ['pnum', 'rank', 'surname'];
+                const missing = requiredFields.filter(key => idx[key] === -1);
+                if (missing.length > 0) {
+                    throw new Error(`Personnel file missing columns: ${missing.join(', ')}. Check CSV headers.`);
+                }
+
+                for (let i = 1; i < lines.length; i++) {
+                    const row = splitCSVLine(lines[i].trim());
+                    if (row.length < 3) continue;
+                    personnelData.push({
+                        pNumber: sanitizeText(row[idx.pnum] || "").trim(),
+                        rank: normalizeRank(sanitizeText(row[idx.rank] || "Unknown")),
+                        name: `${sanitizeText(row[idx.surname] || "").trim()}, ${sanitizeText(row[idx.firstname] || "").trim()}`,
+                        unit: sanitizeText(row[idx.unit] || "").trim(),
+                        dob: row[idx.dob],
+                        tos: row[idx.tos],
+                        rankDate: row[idx.rankDate],
+                        cvqo: sanitizeText(row[idx.cvqo])
+                    });
+                }
+                
+                return personnelData;
+            };
+
+            const processQualsFile = async (text) => {
+                const qualsData = [];
+                const lines = text.split('\n');
+                
+                // Validate row count (excluding header)
+                const dataRowCount = lines.length - 1;
+                if (dataRowCount > 200000) {
+                    throw new Error(`Qualifications file has too many rows (${dataRowCount.toLocaleString()}). Maximum allowed is 200,000 records.`);
+                }
+                
+                const headers = splitCSVLine(lines[0].trim());
+                
+                const findCol = (name) => headers.findIndex(h => h.toLowerCase().includes(name.toLowerCase()));
+                
+                const idx = {
+                    pnum: findCol("PNumber") > -1 ? findCol("PNumber") : findCol("PNo"),
+                    module: findCol("Module"),
+                    date: findCol("Date Achieved"),
+                    result: findCol("Result"),
+                    syllabus: findCol("Syllabus")
+                };
+
+                const requiredFields = ['pnum', 'module', 'date'];
+                const missing = requiredFields.filter(key => idx[key] === -1);
+                if (missing.length > 0) {
+                    throw new Error(`Qualifications file missing columns: ${missing.join(', ')}. Check CSV headers.`);
+                }
+
+                for (let i = 1; i < lines.length; i++) {
+                    const row = splitCSVLine(lines[i].trim());
+                    if (row.length < 3) continue;
+                    qualsData.push({
+                        pNumber: sanitizeText(row[idx.pnum] || "").trim(),
+                        module: sanitizeText(row[idx.module] || "").trim(),
+                        date: parseDate(row[idx.date]),
+                        result: sanitizeText(row[idx.result]),
+                        syllabus: sanitizeText(row[idx.syllabus])
+                    });
+                }
+                
+                return qualsData;
+            };
+
             const processFiles = async () => {
+                if (!personnelFile || !qualsFile) {
+                    setError("Please select both files.");
+                    return;
+                }
+
                 setLoading(true);
                 setError(null);
-                const personnelData = [];
-                const qualsData = [];
-
-                const readFile = (file) => new Promise((resolve) => {
-                    const reader = new FileReader();
-                    reader.onload = (e) => resolve(e.target.result);
-                    reader.readAsText(file);
-                });
 
                 try {
-                    if (personnelFile) {
-                        const text = await readFile(personnelFile);
-                        const lines = text.split('\n');
-                        
-                        // Validate row count (excluding header)
-                        const dataRowCount = lines.length - 1;
-                        if (dataRowCount > 1000) {
-                            throw new Error(`Personnel file has too many rows (${dataRowCount}). Maximum allowed is 1,000 cadets.`);
-                        }
-                        
-                        const headers = splitCSVLine(lines[0].trim());
-                        
-                        const findCol = (name) => headers.findIndex(h => h.toLowerCase().includes(name.toLowerCase()));
-                        
-                        const idx = {
-                            pnum: findCol("PNumber") > -1 ? findCol("PNumber") : findCol("PNo"),
-                            rank: findCol("Rank"),
-                            surname: findCol("Surname"),
-                            first: findCol("First Name"),
-                            tos: findCol("TOS"),
-                            dob: findCol("DOB"),
-                            rankDate: findCol("Date Current Rank"),
-                            unit: findCol("Unit")
-                        };
-
-                        const requiredFields = ['pnum', 'rank', 'surname', 'first'];
-                        const missing = requiredFields.filter(key => idx[key] === -1);
-                        if (missing.length > 0) {
-                             throw new Error(`Personnel file missing columns: ${missing.join(', ')}`);
-                        }
-
-                        for (let i = 1; i < lines.length; i++) {
-                            const row = splitCSVLine(lines[i].trim());
-                            if (row.length < 3) continue;
-                            personnelData.push({
-                                pNumber: sanitizeText(row[idx.pnum] || "").trim(),
-                                rank: normalizeRank(sanitizeText(row[idx.rank])), 
-                                name: `${sanitizeText(row[idx.surname])}, ${sanitizeText(row[idx.first])}`,
-                                tos: row[idx.tos],
-                                dob: row[idx.dob],
-                                rankDate: row[idx.rankDate],
-                                unit: sanitizeText(row[idx.unit])
-                            });
-                        }
-                    }
-
-                    if (qualsFile) {
-                        const text = await readFile(qualsFile);
-                        const lines = text.split('\n');
-                        
-                        // Validate row count (excluding header)
-                        const dataRowCount = lines.length - 1;
-                        if (dataRowCount > 200000) {
-                            throw new Error(`Qualifications file has too many rows (${dataRowCount.toLocaleString()}). Maximum allowed is 200,000 records.`);
-                        }
-                        
-                        const headers = splitCSVLine(lines[0].trim());
-                        
-                        const findCol = (name) => headers.findIndex(h => h.toLowerCase().includes(name.toLowerCase()));
-                        
-                        const idx = {
-                            pnum: findCol("PNumber") > -1 ? findCol("PNumber") : findCol("PNo"),
-                            module: findCol("Module"),
-                            date: findCol("Date Achieved"),
-                            result: findCol("Result"),
-                            syllabus: findCol("Syllabus")
-                        };
-
-                        const requiredFields = ['pnum', 'module', 'date'];
-                        const missing = requiredFields.filter(key => idx[key] === -1);
-                        if (missing.length > 0) {
-                             throw new Error(`Qualifications file missing columns: ${missing.join(', ')}. Check CSV headers.`);
-                        }
-
-                        for (let i = 1; i < lines.length; i++) {
-                            const row = splitCSVLine(lines[i].trim());
-                            if (row.length < 3) continue;
-                            qualsData.push({
-                                pNumber: sanitizeText(row[idx.pnum] || "").trim(),
-                                module: sanitizeText(row[idx.module] || "").trim(),
-                                date: parseDate(row[idx.date]),
-                                result: sanitizeText(row[idx.result]),
-                                syllabus: sanitizeText(row[idx.syllabus])
-                            });
-                        }
-                    }
+                    const personnelText = await readFile(personnelFile);
+                    const qualsText = await readFile(qualsFile);
+                    
+                    const personnelData = await processPersonnelFile(personnelText);
+                    const qualsData = await processQualsFile(qualsText);
                     
                     onDataLoaded(personnelData, qualsData);
                 } catch (err) {
@@ -1341,17 +1461,146 @@
                             <p className="font-semibold text-slate-600 mb-2">2. Cadet Qualifications Report</p>
                             <input type="file" accept=".csv" onChange={(e) => handleFile(e.target.files[0], 'quals')} className="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"/>
                         </div>
+
+                        {/* Logo Uploads Section */}
+                        <div className="border-t-2 border-slate-200 pt-4 mt-6">
+                            <p className="text-sm font-bold text-slate-700 mb-3">Optional: Upload Logos for Certificates (500x500px recommended)</p>
+                            
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                {/* Unit Crest */}
+                                <div className="border border-slate-200 p-4 rounded-lg">
+                                    <p className="text-xs font-semibold text-slate-600 mb-2">Unit Crest</p>
+                                    {unitCrestPreview ? (
+                                        <div className="relative">
+                                            <img src={unitCrestPreview} alt="Unit Crest" className="w-full h-32 object-contain mb-2 border rounded" />
+                                            <button onClick={() => removeLogo('crest')} className="absolute top-0 right-0 bg-red-500 text-white p-1 rounded-full hover:bg-red-600">
+                                                <Icon name="X" className="w-3 h-3" />
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <div className="border-2 border-dashed border-slate-300 p-4 rounded text-center h-32 flex items-center justify-center">
+                                            <p className="text-xs text-slate-400">Top center</p>
+                                        </div>
+                                    )}
+                                    <input type="file" accept="image/jpeg,image/jpg,image/png,image/webp" onChange={(e) => handleLogoUpload(e.target.files[0], 'crest')} className="block w-full text-xs text-slate-500 file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100 mt-2"/>
+                                </div>
+
+                                {/* SCC Logo */}
+                                <div className="border border-slate-200 p-4 rounded-lg">
+                                    <p className="text-xs font-semibold text-slate-600 mb-2">SCC Logo</p>
+                                    {sccLogoPreview ? (
+                                        <div className="relative">
+                                            <img src={sccLogoPreview} alt="SCC Logo" className="w-full h-32 object-contain mb-2 border rounded" />
+                                            <button onClick={() => removeLogo('scc')} className="absolute top-0 right-0 bg-red-500 text-white p-1 rounded-full hover:bg-red-600">
+                                                <Icon name="X" className="w-3 h-3" />
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <div className="border-2 border-dashed border-slate-300 p-4 rounded text-center h-32 flex items-center justify-center">
+                                            <p className="text-xs text-slate-400">Bottom right</p>
+                                        </div>
+                                    )}
+                                    <input type="file" accept="image/jpeg,image/jpg,image/png,image/webp" onChange={(e) => handleLogoUpload(e.target.files[0], 'scc')} className="block w-full text-xs text-slate-500 file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100 mt-2"/>
+                                </div>
+
+                                {/* RMC Logo */}
+                                <div className="border border-slate-200 p-4 rounded-lg">
+                                    <p className="text-xs font-semibold text-slate-600 mb-2">RMC Logo</p>
+                                    {rmcLogoPreview ? (
+                                        <div className="relative">
+                                            <img src={rmcLogoPreview} alt="RMC Logo" className="w-full h-32 object-contain mb-2 border rounded" />
+                                            <button onClick={() => removeLogo('rmc')} className="absolute top-0 right-0 bg-red-500 text-white p-1 rounded-full hover:bg-red-600">
+                                                <Icon name="X" className="w-3 h-3" />
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <div className="border-2 border-dashed border-slate-300 p-4 rounded text-center h-32 flex items-center justify-center">
+                                            <p className="text-xs text-slate-400">Bottom left</p>
+                                        </div>
+                                    )}
+                                    <input type="file" accept="image/jpeg,image/jpg,image/png,image/webp" onChange={(e) => handleLogoUpload(e.target.files[0], 'rmc')} className="block w-full text-xs text-slate-500 file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100 mt-2"/>
+                                </div>
+                            </div>
+                        </div>
+
                         <button onClick={processFiles} disabled={!personnelFile || !qualsFile || loading} className={`w-full py-3 rounded-lg font-bold text-white transition-all ${(!personnelFile || !qualsFile) ? 'bg-slate-300 cursor-not-allowed' : 'bg-blue-700 hover:bg-blue-800 shadow-lg'}`}>
                             {loading ? "Processing..." : "Load Dashboards"}
                         </button>
                     </div>
 
                     {hasData && (
-                        <div className="mt-8 border-t pt-6 text-center">
-                             <p className="text-sm text-slate-500 mb-3">You have saved data from a previous session.</p>
-                             <button onClick={clearData} className="text-red-600 hover:text-red-800 text-sm font-semibold flex items-center gap-2 justify-center">
-                                 <Icon name="Trash2" className="w-4 h-4" /> Clear Saved Data
-                             </button>
+                        <div className="mt-8 border-t pt-6">
+                             <p className="text-sm font-bold text-slate-700 mb-4 text-center">Update Individual Files</p>
+                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                 <div className="border border-slate-200 p-4 rounded-lg">
+                                     <p className="text-xs font-semibold text-slate-600 mb-2">Update Personnel File Only</p>
+                                     <input type="file" accept=".csv" onChange={(e) => {
+                                         setPersonnelFile(e.target.files[0]);
+                                         setError(null);
+                                     }} className="block w-full text-xs text-slate-500 file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100 mb-2"/>
+                                     <button 
+                                         onClick={async () => {
+                                             if (!personnelFile) return;
+                                             setLoading(true);
+                                             setError(null);
+                                             try {
+                                                 const text = await readFile(personnelFile);
+                                                 const personnelData = await processPersonnelFile(text);
+                                                 onDataLoaded(personnelData, JSON.parse(localStorage.getItem('scc_quals') || '[]'));
+                                                 setPersonnelFile(null);
+                                             } catch (err) {
+                                                 setError(err.message);
+                                             } finally {
+                                                 setLoading(false);
+                                             }
+                                         }}
+                                         disabled={!personnelFile || loading}
+                                         className={`w-full py-2 rounded font-semibold text-xs transition-all ${!personnelFile ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'bg-green-600 text-white hover:bg-green-700'}`}
+                                     >
+                                         {loading ? 'Updating...' : 'Update Personnel'}
+                                     </button>
+                                 </div>
+                                 
+                                 <div className="border border-slate-200 p-4 rounded-lg">
+                                     <p className="text-xs font-semibold text-slate-600 mb-2">Update Qualifications File Only</p>
+                                     <input type="file" accept=".csv" onChange={(e) => {
+                                         setQualsFile(e.target.files[0]);
+                                         setError(null);
+                                     }} className="block w-full text-xs text-slate-500 file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100 mb-2"/>
+                                     <button 
+                                         onClick={async () => {
+                                             if (!qualsFile) return;
+                                             setLoading(true);
+                                             setError(null);
+                                             try {
+                                                 const text = await readFile(qualsFile);
+                                                 const qualsData = await processQualsFile(text);
+                                                 onDataLoaded(JSON.parse(localStorage.getItem('scc_personnel') || '[]'), qualsData);
+                                                 setQualsFile(null);
+                                             } catch (err) {
+                                                 setError(err.message);
+                                             } finally {
+                                                 setLoading(false);
+                                             }
+                                         }}
+                                         disabled={!qualsFile || loading}
+                                         className={`w-full py-2 rounded font-semibold text-xs transition-all ${!qualsFile ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'bg-green-600 text-white hover:bg-green-700'}`}
+                                     >
+                                         {loading ? 'Updating...' : 'Update Qualifications'}
+                                     </button>
+                                 </div>
+                             </div>
+                             
+                             <p className="text-xs text-slate-500 text-center mb-3">Or clear data and start fresh:</p>
+                             <div className="flex gap-4 justify-center">
+                                 <button onClick={clearData} className="text-blue-600 hover:text-blue-800 text-sm font-semibold flex items-center gap-2">
+                                     <Icon name="RefreshCw" className="w-4 h-4" /> Reset Cadet Data
+                                 </button>
+                                 <button onClick={wipeAllData} className="text-red-600 hover:text-red-800 text-sm font-semibold flex items-center gap-2">
+                                     <Icon name="Trash2" className="w-4 h-4" /> Wipe All Data
+                                 </button>
+                             </div>
+                             <p className="text-xs text-slate-400 mt-2 text-center">Reset keeps your logos. Wipe clears everything.</p>
                         </div>
                     )}
 
@@ -1389,8 +1638,8 @@
             if (!info) return null;
 
             return (
-                <div className="fixed inset-0 bg-slate-900 bg-opacity-75 z-[100] flex items-center justify-center p-4">
-                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col">
+                <div className="fixed inset-0 bg-slate-900 bg-opacity-75 z-[100] flex items-center justify-center p-4" onClick={onClose}>
+                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
                         <div className="p-4 border-b flex justify-between items-center bg-blue-50 rounded-t-xl">
                             <h3 className="text-xl font-bold text-blue-800">
                                 Cadets Needing: {info.module.code}
@@ -1415,6 +1664,11 @@
                                     ))}
                                 </ul>
                             )}
+                        </div>
+                        <div className="p-4 border-t border-slate-200 bg-slate-50 flex justify-end rounded-b-xl">
+                            <button onClick={onClose} className="px-6 py-2 bg-blue-700 hover:bg-blue-800 text-white font-bold rounded-lg transition-colors">
+                                Close
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -1690,67 +1944,124 @@
                     return; 
                 }
 
-                const { jsPDF } = window.jspdf;
+                const { jsPDF} = window.jspdf;
                 const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
                 
-                const unitName = personnel.length > 0 ? personnel[0].unit : "Sea Cadets";
+                // Clean unit name - remove anything in parentheses and convert to proper case
+                let unitName = personnel.length > 0 ? personnel[0].unit : "";
+                unitName = unitName.split('(')[0].trim(); // Remove everything after (
+                if (!unitName) unitName = "Unit";
+                // Convert to proper case (e.g., "MARKET HARBOROUGH" -> "Market Harborough")
+                unitName = unitName.toLowerCase().split(' ').map(word => 
+                    word.charAt(0).toUpperCase() + word.slice(1)
+                ).join(' ');
+                
+                // Load logos from localStorage
+                const unitCrest = localStorage.getItem('unit_crest');
+                const sccLogo = localStorage.getItem('scc_logo');
+                const rmcLogo = localStorage.getItem('rmc_logo');
+                
+                // Helper function to add image with preserved aspect ratio
                 const itemsToPrint = pastAwards.filter(a => selectedAwardKeys.has(a.uniqueId));
 
                 itemsToPrint.forEach((item, index) => {
                     if (index > 0) doc.addPage();
 
+                    // Get cadet's rank
+                    const cadet = personnel.find(p => p.pNumber === item.pNumber);
+                    const cadetRank = cadet ? cadet.rank : "Cadet";
+                    
+                    // For promotions, we need the OLD rank (the rank before promotion)
+                    let rankForCertificate = cadetRank;
+                    if (item.type === "Promotion") {
+                        // Extract the new rank from the module text "Promoted to [New Rank]"
+                        const newRank = item.module.replace("Promoted to ", "");
+                        // Get the previous rank in the progression
+                        rankForCertificate = getPreviousRank(newRank);
+                    }
+                    
+                    // Format name with appropriate rank abbreviation
+                    const formattedName = formatCadetNameWithRank(item.cadetName, rankForCertificate);
+                    
+                    // Determine certificate wording based on type
+                    let middleText = "has successfully qualified in";
+                    let awardTitle = item.module;
+                    
+                    if (item.type === "Promotion") {
+                        middleText = "has been promoted to";
+                        awardTitle = awardTitle.replace("Promoted to ", "");
+                    } else if (item.type === "GCB Due" || item.module.includes("Good Conduct Badge")) {
+                        middleText = "has been awarded the";
+                    }
+
                     // --- Certificate Design ---
                     
-                    // Border
-                    doc.setLineWidth(1.5);
-                    doc.setDrawColor(0, 51, 102); // SCC Navy
-                    doc.rect(10, 10, 277, 190);
-                    doc.setLineWidth(0.5);
-                    doc.rect(12, 12, 273, 186);
-
+                    // Add logos if available (maintaining aspect ratios)
+                    // Unit Crest - Center top
+                    if (unitCrest) {
+                        const imgProps = doc.getImageProperties(unitCrest);
+                        const width = 50; // Target width in mm
+                        const height = (imgProps.height * width) / imgProps.width; // Maintain aspect ratio
+                        doc.addImage(unitCrest, 'JPEG', (297 - width) / 2, 10, width, height);
+                    }
+                    
+                    // RMC Logo - Bottom left corner (50% larger = 52.5mm)
+                    if (rmcLogo) {
+                        const imgProps = doc.getImageProperties(rmcLogo);
+                        const width = 52.5; // 35 * 1.5
+                        const height = (imgProps.height * width) / imgProps.width; // Maintain aspect ratio
+                        doc.addImage(rmcLogo, 'JPEG', 10, 210 - height - 10, width, height);
+                    }
+                    
+                    // SCC Logo - Bottom right corner (50% larger = 52.5mm)
+                    if (sccLogo) {
+                        const imgProps = doc.getImageProperties(sccLogo);
+                        const width = 52.5; // 35 * 1.5
+                        const height = (imgProps.height * width) / imgProps.width; // Maintain aspect ratio
+                        doc.addImage(sccLogo, 'JPEG', 297 - width - 10, 210 - height - 10, width, height);
+                    }
+                    
                     // Header
                     doc.setTextColor(0, 51, 102);
-                    doc.setFont("times", "bold");
+                    doc.setFont("helvetica", "bold");
                     doc.setFontSize(32);
-                    doc.text("CERTIFICATE OF ACHIEVEMENT", 148.5, 60, { align: "center" });
+                    doc.text("CERTIFICATE OF ACHIEVEMENT", 148.5, 75, { align: "center" });
 
                     // Subheader
-                    doc.setFont("times", "normal");
+                    doc.setFont("helvetica", "normal");
                     doc.setFontSize(16);
-                    doc.text("This is to certify that", 148.5, 80, { align: "center" });
+                    doc.text("This is to certify that", 148.5, 95, { align: "center" });
 
-                    // Name
-                    doc.setFont("times", "bolditalic");
+                    // Name (with rank for awards, without for promotions)
+                    doc.setFont("helvetica", "bolditalic");
                     doc.setFontSize(28);
-                    doc.text(item.cadetName, 148.5, 95, { align: "center" });
+                    doc.text(formattedName, 148.5, 110, { align: "center" });
 
-                    // Middle text
-                    doc.setFont("times", "normal");
+                    // Middle text (dynamic based on type)
+                    doc.setFont("helvetica", "normal");
                     doc.setFontSize(16);
-                    doc.text("has successfully qualified in", 148.5, 110, { align: "center" });
+                    doc.text(middleText, 148.5, 125, { align: "center" });
 
                     // Award Title
-                    doc.setFont("times", "bold");
+                    doc.setFont("helvetica", "bold");
                     doc.setFontSize(24);
                     // Handle long titles
-                    if (item.module.length > 30) doc.setFontSize(18);
-                    doc.text(item.module, 148.5, 125, { align: "center" });
+                    if (awardTitle.length > 30) doc.setFontSize(18);
+                    doc.text(awardTitle, 148.5, 140, { align: "center" });
 
                     // Date
-                    doc.setFont("times", "normal");
+                    doc.setFont("helvetica", "normal");
                     doc.setFontSize(14);
-                    doc.text(`Awarded on: ${formatDate(item.date)}`, 148.5, 140, { align: "center" });
+                    doc.text(`Awarded on: ${formatDate(item.date)}`, 148.5, 155, { align: "center" });
 
-                    // Footer
+                    // Footer - Signature line centered
                     doc.setFontSize(12);
-                    doc.text(`Unit: ${unitName}`, 20, 180);
-                    doc.text(`Signed: __________________________`, 200, 180);
-                    doc.text(`Commanding Officer`, 200, 186);
+                    doc.text(`Signed: __________________________`, 148.5, 175, { align: "center" });
+                    doc.text(`Commanding Officer`, 148.5, 181, { align: "center" });
                     
-                    // ID
-                    doc.setFontSize(8);
-                    doc.setTextColor(150);
-                    doc.text(`System Generated ID: ${item.uniqueId}`, 20, 195);
+                    // Unit name centered at bottom
+                    doc.setFontSize(11);
+                    doc.text(`${unitName} Sea Cadets`, 148.5, 195, { align: "center" });
                 });
 
                 doc.save(`SCC_Certificates_${monthName}.pdf`);
@@ -3010,13 +3321,14 @@
                         });
                     });
                 });
-                return Array.from(demandMap.values()).sort((a,b) => b.count - a.count).slice(0, 10);
+                return Array.from(demandMap.values()).sort((a,b) => b.count - a.count).slice(0, 12);
             }, [cadetsAtRank, qualsData, selectedRank]);
 
             return (
                 <div className="space-y-6">
                     <div className="bg-purple-50 p-6 rounded-lg border border-purple-100">
                         <h2 className="text-xl font-bold text-purple-900 mb-2">Training Suggestions</h2>
+                        <p className="text-sm text-purple-700 mb-3">Shows the 12 most-needed modules for cadets at the selected rank.</p>
                         <div className="flex items-center gap-4">
                             <label className="text-sm font-semibold text-purple-800">Target Rank:</label>
                             <select value={selectedRank} onChange={(e) => setSelectedRank(e.target.value)} className="p-2 border border-purple-200 rounded shadow-sm text-sm">{ALL_RANKS.map(r => <option key={r} value={r}>{r}</option>)}</select>
@@ -3087,6 +3399,15 @@
             };
 
             const clearData = () => {
+                // Only clear cadet data, preserve logos
+                localStorage.removeItem('scc_personnel');
+                localStorage.removeItem('scc_quals');
+                localStorage.removeItem('scc_version');
+                window.location.reload();
+            };
+
+            const wipeAllData = () => {
+                // Clear everything including logos
                 localStorage.clear();
                 window.location.reload();
             };
@@ -3122,7 +3443,7 @@
                     <div className="min-h-screen flex flex-col items-center pt-5 pb-10">
                         <img src="media/ts_dashboard.webp" alt="TS Dashboard" className="w-[300px] h-auto mb-2 object-contain" />
                         <h1 className="text-4xl font-extrabold text-blue-900 mb-1">Sea Cadet Training Dashboard</h1>
-                        <FileUploader onDataLoaded={handleDataLoaded} hasData={false} clearData={clearData} />
+                        <FileUploader onDataLoaded={handleDataLoaded} hasData={personnelData.length > 0} clearData={clearData} wipeAllData={wipeAllData} />
                         
                         {/* Disclaimer Section when no data loaded */}
                         <div className="mt-8 max-w-2xl text-center text-xs text-slate-400 p-4 border-t border-slate-200">
@@ -3157,16 +3478,29 @@
                                 <NavItem id="awards" icon="Award" label="Awards" />
                                 <NavItem id="suggestions" icon="ChartGantt" label="Training Plan" />
                             </nav>
-                            <div className="p-4 border-t border-blue-800">
-                                <button onClick={clearData} className="flex items-center gap-2 text-xs text-blue-300 hover:text-white w-full">
-                                    <Icon name="Trash2" className="w-4 h-4 flex-shrink-0"/> 
-                                    {!sidebarCollapsed && <span>Reset Data</span>}
-                                </button>
-                                {!sidebarCollapsed && (
-                                    <p className="text-[10px] text-blue-400 mt-2 leading-tight">
-                                        Clear data on shared computers
-                                    </p>
-                                )}
+                            <div className="p-4 border-t border-blue-800 space-y-3">
+                                <div>
+                                    <button onClick={clearData} className="flex items-center gap-2 text-xs text-blue-300 hover:text-white w-full">
+                                        <Icon name="RefreshCw" className="w-4 h-4 flex-shrink-0"/> 
+                                        {!sidebarCollapsed && <span>Reset Cadet Data</span>}
+                                    </button>
+                                    {!sidebarCollapsed && (
+                                        <p className="text-[10px] text-blue-400 mt-1 leading-tight">
+                                            Clears cadet data only (keeps logos)
+                                        </p>
+                                    )}
+                                </div>
+                                <div>
+                                    <button onClick={wipeAllData} className="flex items-center gap-2 text-xs text-red-300 hover:text-red-100 w-full">
+                                        <Icon name="Trash2" className="w-4 h-4 flex-shrink-0"/> 
+                                        {!sidebarCollapsed && <span>Wipe All Data</span>}
+                                    </button>
+                                    {!sidebarCollapsed && (
+                                        <p className="text-[10px] text-red-400 mt-1 leading-tight">
+                                            Clears everything including logos
+                                        </p>
+                                    )}
+                                </div>
                             </div>
                         </aside>
                         <main className={`flex-1 ${sidebarCollapsed ? 'ml-20' : 'ml-80'} p-8 overflow-y-auto transition-all duration-300`}>

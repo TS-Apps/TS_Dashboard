@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sea Cadet Training Dashboard</title>
+    <title>Sea Cadet Training Dashboard - RC2</title>
     
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -81,12 +81,28 @@
     <div id="root"></div>
 
     <script type="text/babel">
+        // ============================================================================
+        // RC2 STAGE 1 - MODULAR STRUCTURE
+        // ============================================================================
+        // This file is organized into clear sections for easy navigation and future extraction
+        // Sections:
+        //   1. CONSTANTS & DATA (lines ~90-960)
+        //   2. HELPER FUNCTIONS (lines ~965-1140)
+        //   3. COMPONENTS (lines ~1150-3350)
+        //   4. MAIN APP (lines ~3350-3520)
+        // ============================================================================
+        
         // Ensure React is available globally
         const { useState, useEffect, useMemo, useCallback, Component } = React;
         
-        // --- 1. GLOBAL CONSTANTS ---
-        const DATA_VERSION = "1.0-RC1"; // Release Candidate 1 
+        // ============================================================================
+        // SECTION 1: CONSTANTS & DATA
+        // ============================================================================
+        
+        // --- 1.1 VERSION ---
+        const DATA_VERSION = "1.0-RC2.7-fixed"; // RC2 Complete + Bulk Upload Template Feature 
 
+        // --- 1.2 BADGE & RANK IMAGE MAPS ---
         const RANK_IMG_MAP = {
             "Petty Officer Cadet": { sleeve: "scc_cadet_sleeve_petty_officer.webp", slide: "scc_cadet_shoulder_petty_officer.webp" },
             "Leading Cadet": { sleeve: "scc_cadet_sleeve_leading_cadet.webp", slide: "scc_cadet_shoulder_leading_cadet.webp" },
@@ -265,7 +281,9 @@
             Home: lucide.icons.Home
         };
 
-        // --- 2. SYLLABUS & CONFIG ---
+        // ============================================================================
+        // --- 1.3 SYLLABUS DATA (SCC CTP & RMC CTS) ---
+        // ============================================================================
 
         const SCC_SYLLABUS = {
             "New Entry Cadet": { 
@@ -958,10 +976,63 @@
             "Awards": [ { code: "Coxswain", title: "Coxswain Award", alts: ["SCC Proficiency"] }, { code: "Master Coxswain", title: "Master Coxswain Award", alts: ["SCC Proficiency"] } ]
         };
 
+
+        // --- 1.4 RANK ORDERS ---
         const SCC_RANK_ORDER = ["New Entry Cadet", "Cadet", "Cadet 1st Class", "Ordinary Cadet", "Able Cadet", "Leading Cadet", "Petty Officer Cadet"];
         const RMC_RANK_ORDER = ["Recruit", "Marine Cadet", "Cadet Lance Corporal", "Cadet Corporal", "Cadet Sergeant"];
 
-        // --- 3. HELPER FUNCTIONS ---
+        // --- 1.5 JUNIOR SEA CADETS DATA (RC2 Stage 2) ---
+        const JUNIOR_RANK_ORDER = ["Junior Cadet", "Junior Cadet 1st Class", "Able Junior Cadet", "Leading Junior Cadet"];
+        
+        // Junior modules database - 312 modules across 5 sections
+        // Red: 61 (11 core), Blue: 54 (3 core + Blue 1 from Westminster), Green: 49, Yellow: 107, STEM: 41
+        const JUNIOR_MODULES = {
+            "metadata": {
+                "version": "1.0",
+                "source": "Official JSC Module List",
+                "totalModules": 312
+            },
+            "sections": {
+                "red": {
+                    "name": "Red - Unit Activities",
+                    "requirement": 15,
+                    "coreCount": 11,
+                    "theme": "The Unit"
+                },
+                "blue": {
+                    "name": "Blue - Waterborne Activities",
+                    "requirement": 15,
+                    "coreCount": 4,
+                    "theme": "Waterborne (Blue 1 from Westminster)"
+                },
+                "green": {
+                    "name": "Green - Outdoor & Recreation",
+                    "requirement": 15,
+                    "coreCount": 0,
+                    "theme": "Outdoor & Recreation"
+                },
+                "yellow": {
+                    "name": "Yellow - Community & Citizenship",
+                    "requirement": 15,
+                    "coreCount": 0,
+                    "theme": "Community & Citizenship"
+                },
+                "stem": {
+                    "name": "STEM Activities",
+                    "requirement": 15,
+                    "coreCount": 0,
+                    "theme": "Science, Technology, Engineering, Maths"
+                }
+            }
+        };
+        
+        console.log("Junior Sea Cadets data loaded - Stage 2 active");
+
+        // ============================================================================
+        // SECTION 2: HELPER FUNCTIONS
+        // ============================================================================
+        
+        // --- 2.1 CSV PARSING ---
         const splitCSVLine = (str) => {
             const arr = [];
             let quote = false;
@@ -1142,7 +1213,62 @@
         };
 
 
-        // --- 4. GENERIC COMPONENTS ---
+        // --- 2.6 JUNIOR SEA CADETS HELPER FUNCTIONS (RC2 Stage 2) ---
+        
+        // Check if cadet is a junior (under 12 years old)
+        const isJunior = (dob) => {
+            const age = calculateAge(dob);
+            return age !== "Unknown" && age < 12;
+        };
+        
+        // Calculate days until 12th birthday
+        const daysTo12thBirthday = (dob) => {
+            if (!dob) return null;
+            const birthDate = parseDate(dob);
+            if (!birthDate) return null;
+            
+            const today = new Date();
+            const twelfthBirthday = new Date(birthDate.getFullYear() + 12, birthDate.getMonth(), birthDate.getDate());
+            
+            if (today >= twelfthBirthday) return 0; // Already 12 or older
+            
+            const diffTime = twelfthBirthday - today;
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            return diffDays;
+        };
+        
+        // Get junior data from localStorage
+        const getJuniorData = () => {
+            try {
+                const data = localStorage.getItem('scc_juniors');
+                return data ? JSON.parse(data) : {
+                    moduleCompletions: [], // {pNumber, section, moduleCode, moduleName, dateCompleted, isCore}
+                    rankHistory: [], // {pNumber, rank, dateAwarded}
+                    sectionBadges: [] // {pNumber, section, dateAwarded, modulesCompleted}
+                };
+            } catch (e) {
+                console.error("Error loading junior data:", e);
+                return { moduleCompletions: [], rankHistory: [], sectionBadges: [] };
+            }
+        };
+        
+        // Save junior data to localStorage
+        const saveJuniorData = (data) => {
+            try {
+                localStorage.setItem('scc_juniors', JSON.stringify(data));
+                return true;
+            } catch (e) {
+                console.error("Error saving junior data:", e);
+                return false;
+            }
+        };
+
+        
+        // ============================================================================
+        // SECTION 3: UI COMPONENTS
+        // ============================================================================
+        
+        // --- 3.1 UTILITY COMPONENTS (Icon, BadgeImage, ErrorBoundary) ---
 
         const Icon = ({ name, className }) => {
             return <i data-lucide={name.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase()} className={className}></i>;
@@ -1196,6 +1322,7 @@
             }
         }
 
+        // --- 3.2 FILE UPLOADER COMPONENT ---
         const FileUploader = ({ onDataLoaded, hasData, clearData, wipeAllData }) => {
             const [personnelFile, setPersonnelFile] = useState(null);
             const [qualsFile, setQualsFile] = useState(null);
@@ -1675,6 +1802,7 @@
             );
         };
 
+        // --- 3.3 HOME VIEW COMPONENT ---
         const HomeView = ({ personnel }) => {
             const unitName = personnel.length > 0 ? (personnel[0].unit || "Your Unit") : "Sea Cadets";
 
@@ -1686,9 +1814,14 @@
                             <div className="p-4 bg-blue-100 rounded-full text-blue-800">
                                 <Icon name="ShipWheel" className="w-8 h-8" />
                             </div>
-                            <h2 className="text-3xl font-extrabold text-blue-900">
-                                Welcome to the {unitName} Training Dashboard!
-                            </h2>
+                            <div>
+                                <h2 className="text-3xl font-extrabold text-blue-900">
+                                    Welcome to the {unitName} Training Dashboard!
+                                </h2>
+                                <p className="text-sm text-blue-600 font-semibold mt-1">
+                                    RC2 Complete - Now with Junior Sea Cadets tracking
+                                </p>
+                            </div>
                         </div>
                         
                         <p className="text-lg text-slate-700 mb-4">
@@ -1721,7 +1854,7 @@
             );
         };
 
-        // --- UPDATED AWARDS VIEW WITH PDF GENERATION ---
+        // --- 3.4 AWARDS VIEW COMPONENT (with PDF generation) ---
         const AwardsView = ({ personnel, quals }) => {
             const [monthOffset, setMonthOffset] = useState(0); 
             // New State for PDF Selection
@@ -2275,6 +2408,7 @@
             );
         };
 
+        // --- 3.5 WATERBORNE VIEW COMPONENT ---
         const WaterborneView = ({ personnel, qualsData }) => {
             const [filterActivity, setFilterActivity] = useState("Swim");
             const activityOptions = ["Swim", "Paddle", "Row", "Sail", "Power", "Windsurf", "Shorebased", "Offshore"];
@@ -2386,6 +2520,7 @@
             );
         };
         
+        // --- 3.6 CADET FOCUS COMPONENT ---
         const CadetFocus = ({ personnel, qualsData }) => {
             const [selectedCadetPNum, setSelectedCadetPNum] = useState(personnel.length > 0 ? personnel[0].pNumber : "");
             
@@ -3172,7 +3307,7 @@
             );
         };
 
-        // --- UPDATED TrainingPlanner with Drill-Down Logic and Empty Cadet Fix ---
+        // --- 3.7 TRAINING PLANNER COMPONENT (SCC CTP / RMC CTS) ---
         const TrainingPlanner = ({ personnel, getCadetProgress, qualsData, title, rankOrder, syllabus, colorTheme = "indigo", iconName, onModuleClick }) => {
             const [selectedRank, setSelectedRank] = useState(rankOrder[0]);
             const cadetsAtRank = useMemo(() => personnel.filter(p => p.rank === selectedRank), [personnel, selectedRank]);
@@ -3291,6 +3426,7 @@
             );
         };
 
+        // --- 3.8 TRAINING SUGGESTIONS COMPONENT ---
         const TrainingSuggestions = ({ personnel, getCadetProgress, qualsData }) => {
             const [selectedRank, setSelectedRank] = useState(SCC_RANK_ORDER[0]);
             const ALL_RANKS = [...SCC_RANK_ORDER, ...RMC_RANK_ORDER];
@@ -3347,6 +3483,631 @@
             );
         };
 
+        // --- JUNIOR PROGRESS VIEW (Grid Chart) ---
+        const JuniorProgressView = ({ personnel }) => {
+            const juniorData = getJuniorData();
+            const juniors = personnel.filter(c => isJunior(c.dob));
+            
+            // Get all unique modules per section from completed data
+            const modulesBySection = {
+                red: new Set(),
+                blue: new Set(),
+                green: new Set(),
+                yellow: new Set(),
+                stem: new Set()
+            };
+            
+            juniorData.moduleCompletions.forEach(comp => {
+                if (modulesBySection[comp.section]) {
+                    modulesBySection[comp.section].add(comp.moduleCode);
+                }
+            });
+            
+            // Convert to sorted arrays
+            const sections = ['red', 'blue', 'green', 'yellow', 'stem'];
+            const sectionData = {};
+            sections.forEach(sec => {
+                sectionData[sec] = Array.from(modulesBySection[sec]).sort((a, b) => {
+                    const aNum = parseFloat(a.replace(/[^\d.]/g, '')) || 0;
+                    const bNum = parseFloat(b.replace(/[^\d.]/g, '')) || 0;
+                    return aNum - bNum;
+                });
+            });
+            
+            const hasModule = (pNumber, section, code) => {
+                return juniorData.moduleCompletions.find(m => 
+                    m.pNumber === pNumber && m.section === section && m.moduleCode === code
+                );
+            };
+            
+            if (juniors.length === 0) {
+                return (
+                    <div className="p-8">
+                        <div className="bg-white rounded-lg shadow p-8 text-center">
+                            <Icon name="Users" className="w-16 h-16 mx-auto text-slate-300 mb-4" />
+                            <h2 className="text-2xl font-bold text-slate-700 mb-2">No Junior Sea Cadets Found</h2>
+                            <p className="text-slate-600">No cadets under 12 years old found in your personnel data.</p>
+                        </div>
+                    </div>
+                );
+            }
+            
+            const sectionColors = {
+                red: { bg: 'bg-red-50', completed: 'bg-red-600 text-white', header: 'bg-red-500 text-white' },
+                blue: { bg: 'bg-blue-50', completed: 'bg-blue-600 text-white', header: 'bg-blue-500 text-white' },
+                green: { bg: 'bg-green-50', completed: 'bg-green-600 text-white', header: 'bg-green-500 text-white' },
+                yellow: { bg: 'bg-yellow-50', completed: 'bg-yellow-600 text-white', header: 'bg-yellow-500 text-white' },
+                stem: { bg: 'bg-purple-50', completed: 'bg-purple-600 text-white', header: 'bg-purple-500 text-white' }
+            };
+            
+            return (
+                <div className="space-y-6">
+                    {/* Header */}
+                    <div className="bg-white rounded-lg shadow-xl p-6 border-l-4 border-purple-500">
+                        <div className="flex items-center gap-4">
+                            <div className="p-3 bg-purple-100 rounded-full">
+                                <Icon name="BarChart3" className="w-8 h-8 text-purple-700" />
+                            </div>
+                            <div>
+                                <h1 className="text-3xl font-extrabold text-slate-900">Junior Progress Chart</h1>
+                                <p className="text-slate-600">{juniors.length} junior{juniors.length !== 1 ? 's' : ''} tracked across all sections</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {/* Progress Tables by Section */}
+                    {sections.map(section => {
+                        const modules = sectionData[section];
+                        if (modules.length === 0) return null;
+                        
+                        const colors = sectionColors[section];
+                        
+                        return (
+                            <div key={section} className="bg-white rounded-lg shadow overflow-hidden">
+                                <div className={`p-4 ${colors.header}`}>
+                                    <h2 className="text-xl font-bold uppercase">{section} Section</h2>
+                                    <p className="text-sm opacity-90">{modules.length} modules tracked</p>
+                                </div>
+                                
+                                <div className="overflow-x-auto">
+                                    <table className="min-w-full">
+                                        <thead className="bg-slate-100">
+                                            <tr>
+                                                <th className="sticky left-0 bg-slate-100 px-4 py-3 text-left text-xs font-bold text-slate-700 uppercase tracking-wider z-10 border-r">
+                                                    Module / Cadet
+                                                </th>
+                                                {juniors.map(junior => (
+                                                    <th key={junior.pNumber} className="px-3 py-3 text-center text-xs font-semibold text-slate-700 border-r last:border-r-0 min-w-[120px]">
+                                                        <div className="font-bold">{junior.name}</div>
+                                                        <div className="text-[10px] font-normal text-slate-500">{junior.rank}</div>
+                                                    </th>
+                                                ))}
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-slate-200">
+                                            {modules.map((modCode, idx) => (
+                                                <tr key={modCode} className={idx % 2 === 0 ? 'bg-white' : colors.bg}>
+                                                    <td className="sticky left-0 bg-inherit px-4 py-3 text-sm font-semibold text-slate-900 border-r z-10">
+                                                        {section.toUpperCase()} {modCode}
+                                                    </td>
+                                                    {juniors.map(junior => {
+                                                        const completion = hasModule(junior.pNumber, section, modCode);
+                                                        return (
+                                                            <td key={junior.pNumber} className={`px-3 py-3 text-center text-xs border-r last:border-r-0 ${completion ? colors.completed : ''}`}>
+                                                                {completion ? (
+                                                                    <div className="font-semibold">
+                                                                        {formatDate(completion.dateCompleted)}
+                                                                    </div>
+                                                                ) : ''}
+                                                            </td>
+                                                        );
+                                                    })}
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+            );
+        };
+
+
+        // --- 3.9 JUNIORS VIEW COMPONENT (RC2 Stage 2) ---
+        const JuniorsView = ({ personnel }) => {
+            const juniorData = getJuniorData();
+            
+            // Filter personnel to only juniors (under 12)
+            const juniors = personnel.filter(cadet => isJunior(cadet.dob));
+            
+            const [selectedJuniorPNum, setSelectedJuniorPNum] = useState(juniors.length > 0 ? juniors[0].pNumber : "");
+            
+            if (juniors.length === 0) {
+                return (
+                    <div className="p-8">
+                        <div className="bg-white rounded-lg shadow p-8 text-center">
+                            <Icon name="Users" className="w-16 h-16 mx-auto text-slate-300 mb-4" />
+                            <h2 className="text-2xl font-bold text-slate-700 mb-2">No Junior Sea Cadets Found</h2>
+                            <p className="text-slate-600">
+                                No cadets under 12 years old found in your personnel data.
+                            </p>
+                            <p className="text-sm text-slate-500 mt-4">
+                                Junior Sea Cadets are cadets aged 9-11 years old. 
+                                Ensure DOB data is present in your Westminster personnel CSV.
+                            </p>
+                        </div>
+                    </div>
+                );
+            }
+            
+            const selectedJunior = juniors.find(j => j.pNumber === selectedJuniorPNum) || juniors[0];
+            
+            return (
+                <div className="space-y-6">
+                    {/* Header */}
+                    <div className="bg-white rounded-lg shadow-xl p-6 border-l-4 border-purple-500">
+                        <div className="flex items-center gap-4">
+                            <div className="p-3 bg-purple-100 rounded-full">
+                                <Icon name="Users" className="w-8 h-8 text-purple-700" />
+                            </div>
+                            <div>
+                                <h1 className="text-3xl font-extrabold text-slate-900">Junior Sea Cadets</h1>
+                                <p className="text-slate-600">{juniors.length} junior{juniors.length !== 1 ? 's' : ''} (ages 9-11)</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {/* Junior Selector */}
+                    <div className="bg-white rounded-lg shadow p-4">
+                        <label className="block text-sm font-semibold text-slate-700 mb-2">Select Junior:</label>
+                        <select 
+                            value={selectedJuniorPNum}
+                            onChange={(e) => setSelectedJuniorPNum(e.target.value)}
+                            className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                        >
+                            {juniors.map(junior => (
+                                <option key={junior.pNumber} value={junior.pNumber}>
+                                    {junior.name} - {junior.rank} (Age: {calculateAge(junior.dob)})
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                    
+                    {/* Junior Detail */}
+                    <JuniorDetail junior={selectedJunior} juniorData={juniorData} personnel={personnel} />
+                </div>
+            );
+        };
+        
+        // --- 3.10 JUNIOR DETAIL COMPONENT ---
+        const JuniorDetail = ({ junior, juniorData, personnel }) => {
+            const [section, setSection] = useState('red');
+            const [moduleCode, setModuleCode] = useState('');
+            const [dateCompleted, setDateCompleted] = useState(new Date().toISOString().split('T')[0]);
+            const [showSuccess, setShowSuccess] = useState(false);
+            
+            const age = calculateAge(junior.dob);
+            const daysTo12 = daysTo12thBirthday(junior.dob);
+            
+            // Get this junior's completed modules
+            const juniorModules = juniorData.moduleCompletions.filter(m => m.pNumber === junior.pNumber);
+            
+            // Get section progress
+            const redModules = juniorModules.filter(m => m.section === 'red').length;
+            const blueModules = juniorModules.filter(m => m.section === 'blue').length;
+            const greenModules = juniorModules.filter(m => m.section === 'green').length;
+            const yellowModules = juniorModules.filter(m => m.section === 'yellow').length;
+            const stemModules = juniorModules.filter(m => m.section === 'stem').length;
+            
+            // Calculate rank
+            let currentRank = "Junior Cadet";
+            const redCores = juniorModules.filter(m => m.section === 'red' && m.isCore).length;
+            const blueCores = juniorModules.filter(m => m.section === 'blue' && m.isCore).length;
+            
+            if (redCores >= 11) currentRank = "Junior Cadet 1st Class";
+            if (blueCores >= 4 && currentRank === "Junior Cadet 1st Class") currentRank = "Able Junior Cadet";
+            if (redModules >= 15 && blueModules >= 15 && greenModules >= 15 && yellowModules >= 15) {
+                currentRank = "Leading Junior Cadet";
+            }
+            
+            const handleModuleSubmit = () => {
+                if (!moduleCode.trim()) {
+                    alert("Please enter a module code");
+                    return;
+                }
+                
+                // Split by commas to allow multiple modules
+                const codes = moduleCode.split(',').map(c => c.trim()).filter(c => c);
+                
+                if (codes.length === 0) {
+                    alert("Please enter at least one module code");
+                    return;
+                }
+                
+                // Create module object for each code
+                const newModules = codes.map(code => ({
+                    pNumber: junior.pNumber,
+                    section: section,
+                    moduleCode: code.toUpperCase(),
+                    moduleName: code,
+                    dateCompleted: dateCompleted,
+                    isCore: false
+                }));
+                
+                const updatedData = {
+                    ...juniorData,
+                    moduleCompletions: [...juniorData.moduleCompletions, ...newModules]
+                };
+                
+                if (saveJuniorData(updatedData)) {
+                    setShowSuccess(true);
+                    setModuleCode('');
+                    setTimeout(() => {
+                        setShowSuccess(false);
+                        window.location.reload(); // Refresh to show new data
+                    }, 1500);
+                } else {
+                    alert("Error saving module completions");
+                }
+            };
+            
+            return (
+                <div className="space-y-6">
+                    {/* Junior Info Card */}
+                    <div className="bg-white rounded-lg shadow p-6">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <p className="text-sm text-slate-600">Name</p>
+                                <p className="font-bold text-lg">{junior.name}</p>
+                            </div>
+                            <div>
+                                <p className="text-sm text-slate-600">Current Rank</p>
+                                <p className="font-bold text-lg text-purple-700">{currentRank}</p>
+                            </div>
+                            <div>
+                                <p className="text-sm text-slate-600">Age / Days to 12th Birthday</p>
+                                <p className="font-bold text-lg">{age} years old / {daysTo12} days</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {/* Section Progress */}
+                    <div className="bg-white rounded-lg shadow p-6">
+                        <h3 className="text-xl font-bold mb-4">Section Progress</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+                            <div className="text-center p-4 bg-red-50 rounded-lg border-2 border-red-200">
+                                <p className="text-sm font-semibold text-red-800">Red - Unit</p>
+                                <p className="text-3xl font-bold text-red-700">{redModules}/15</p>
+                                <div className="w-full bg-red-200 rounded-full h-2 mt-2">
+                                    <div className="bg-red-600 h-2 rounded-full" style={{width: `${Math.min((redModules/15)*100, 100)}%`}}></div>
+                                </div>
+                            </div>
+                            <div className="text-center p-4 bg-blue-50 rounded-lg border-2 border-blue-200">
+                                <p className="text-sm font-semibold text-blue-800">Blue - Waterborne</p>
+                                <p className="text-3xl font-bold text-blue-700">{blueModules}/15</p>
+                                <div className="w-full bg-blue-200 rounded-full h-2 mt-2">
+                                    <div className="bg-blue-600 h-2 rounded-full" style={{width: `${Math.min((blueModules/15)*100, 100)}%`}}></div>
+                                </div>
+                            </div>
+                            <div className="text-center p-4 bg-green-50 rounded-lg border-2 border-green-200">
+                                <p className="text-sm font-semibold text-green-800">Green - Outdoor</p>
+                                <p className="text-3xl font-bold text-green-700">{greenModules}/15</p>
+                                <div className="w-full bg-green-200 rounded-full h-2 mt-2">
+                                    <div className="bg-green-600 h-2 rounded-full" style={{width: `${Math.min((greenModules/15)*100, 100)}%`}}></div>
+                                </div>
+                            </div>
+                            <div className="text-center p-4 bg-yellow-50 rounded-lg border-2 border-yellow-200">
+                                <p className="text-sm font-semibold text-yellow-800">Yellow - Community</p>
+                                <p className="text-3xl font-bold text-yellow-700">{yellowModules}/15</p>
+                                <div className="w-full bg-yellow-200 rounded-full h-2 mt-2">
+                                    <div className="bg-yellow-600 h-2 rounded-full" style={{width: `${Math.min((yellowModules/15)*100, 100)}%`}}></div>
+                                </div>
+                            </div>
+                            <div className="text-center p-4 bg-purple-50 rounded-lg border-2 border-purple-200">
+                                <p className="text-sm font-semibold text-purple-800">STEM</p>
+                                <p className="text-3xl font-bold text-purple-700">{stemModules}/15</p>
+                                <div className="w-full bg-purple-200 rounded-full h-2 mt-2">
+                                    <div className="bg-purple-600 h-2 rounded-full" style={{width: `${Math.min((stemModules/15)*100, 100)}%`}}></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {/* Add Module Completion */}
+                    <div className="bg-white rounded-lg shadow p-6">
+                        <h3 className="text-xl font-bold mb-4">Add Module Completion</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                            <div>
+                                <label className="block text-sm font-semibold text-slate-700 mb-2">Section</label>
+                                <select 
+                                    value={section}
+                                    onChange={(e) => setSection(e.target.value)}
+                                    className="w-full p-2 border border-slate-300 rounded-lg"
+                                >
+                                    <option value="red">Red - Unit</option>
+                                    <option value="blue">Blue - Waterborne</option>
+                                    <option value="green">Green - Outdoor</option>
+                                    <option value="yellow">Yellow - Community</option>
+                                    <option value="stem">STEM</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-semibold text-slate-700 mb-2">Module Code</label>
+                                <input
+                                    type="text"
+                                    value={moduleCode}
+                                    onChange={(e) => setModuleCode(e.target.value)}
+                                    placeholder="e.g. 1.1 or 1,1.1,1.2 for multiple"
+                                    className="w-full p-2 border border-slate-300 rounded-lg"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-semibold text-slate-700 mb-2">Date Completed</label>
+                                <input
+                                    type="date"
+                                    value={dateCompleted}
+                                    onChange={(e) => setDateCompleted(e.target.value)}
+                                    className="w-full p-2 border border-slate-300 rounded-lg"
+                                />
+                            </div>
+                            <div className="flex items-end">
+                                <button
+                                    onClick={handleModuleSubmit}
+                                    className="w-full bg-purple-600 text-white p-2 rounded-lg hover:bg-purple-700 font-semibold"
+                                >
+                                    Add Module
+                                </button>
+                            </div>
+                        </div>
+                        {showSuccess && (
+                            <div className="mt-4 p-3 bg-green-50 border-l-4 border-green-500 text-green-700">
+                                ✓ Module added successfully!
+                            </div>
+                        )}
+                    </div>
+                    
+                    {/* Completed Modules List */}
+                    <div className="bg-white rounded-lg shadow p-6">
+                        <h3 className="text-xl font-bold mb-4">Completed Modules ({juniorModules.length})</h3>
+                        {juniorModules.length === 0 ? (
+                            <p className="text-slate-500 italic">No modules completed yet.</p>
+                        ) : (
+                            <div className="space-y-2 max-h-96 overflow-y-auto">
+                                {juniorModules.map((mod, idx) => (
+                                    <div key={idx} className="flex justify-between items-center p-3 bg-slate-50 rounded-lg">
+                                        <div>
+                                            <span className={`inline-block px-2 py-1 rounded text-xs font-semibold mr-2 ${
+                                                mod.section === 'red' ? 'bg-red-100 text-red-800' :
+                                                mod.section === 'blue' ? 'bg-blue-100 text-blue-800' :
+                                                mod.section === 'green' ? 'bg-green-100 text-green-800' :
+                                                mod.section === 'yellow' ? 'bg-yellow-100 text-yellow-800' :
+                                                'bg-purple-100 text-purple-800'
+                                            }`}>
+                                                {mod.section.toUpperCase()} {mod.moduleCode}
+                                            </span>
+                                            <span className="text-slate-700">{mod.moduleName}</span>
+                                        </div>
+                                        <span className="text-sm text-slate-500">{formatDate(mod.dateCompleted)}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                    
+                    {/* Bulk Upload Template for Legacy Data */}
+                    <div className="bg-amber-50 rounded-lg shadow p-6 border-l-4 border-amber-500">
+                        <h3 className="text-lg font-bold mb-3 text-amber-900">Bulk Upload Legacy Modules</h3>
+                        <p className="text-sm text-amber-800 mb-4">
+                            Import existing paper-based module records. Download template, fill in completed modules, then upload.
+                        </p>
+                        
+                        <div className="bg-white rounded p-4 mb-4 text-sm">
+                            <p className="font-semibold text-slate-700 mb-2">How it works:</p>
+                            <ol className="list-decimal ml-5 space-y-1 text-slate-600">
+                                <li>Click "Download Template" - gets CSV with all your juniors</li>
+                                <li>Open in Excel/Google Sheets</li>
+                                <li>Add rows for each completed module (one row per module)</li>
+                                <li>Save as CSV</li>
+                                <li>Click "Upload Template" to import all completions</li>
+                            </ol>
+                        </div>
+                        
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => {
+                                    // Generate CSV template
+                                    const juniors = personnel.filter(c => isJunior(c.dob));
+                                    
+                                    let csv = "PNumber,Name,Rank,Age,Section,ModuleCode,DateCompleted\n";
+                                    
+                                    // Add example rows
+                                    csv += "# Example rows (delete these and add your completions):\n";
+                                    if (juniors.length > 0) {
+                                        const exampleJunior = juniors[0];
+                                        csv += `${exampleJunior.pNumber},${exampleJunior.name},${exampleJunior.rank},${calculateAge(exampleJunior.dob)},red,1.1,2025-01-15\n`;
+                                        csv += `${exampleJunior.pNumber},${exampleJunior.name},${exampleJunior.rank},${calculateAge(exampleJunior.dob)},blue,2,2025-01-20\n`;
+                                        csv += "\n# Your juniors (copy these rows and add module codes):\n";
+                                    }
+                                    
+                                    // Add all juniors as template rows
+                                    juniors.forEach(junior => {
+                                        csv += `${junior.pNumber},${junior.name},${junior.rank},${calculateAge(junior.dob)},,,\n`;
+                                    });
+                                    
+                                    const blob = new Blob([csv], {type: 'text/csv'});
+                                    const url = URL.createObjectURL(blob);
+                                    const a = document.createElement('a');
+                                    a.href = url;
+                                    a.download = `juniors_template_${new Date().toISOString().split('T')[0]}.csv`;
+                                    a.click();
+                                }}
+                                className="bg-amber-600 text-white px-4 py-2 rounded-lg hover:bg-amber-700 font-semibold"
+                            >
+                                📥 Download Template
+                            </button>
+                            
+                            <label className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 font-semibold cursor-pointer">
+                                📤 Upload Template
+                                <input
+                                    type="file"
+                                    accept=".csv"
+                                    className="hidden"
+                                    onChange={(e) => {
+                                        const file = e.target.files[0];
+                                        if (!file) return;
+                                        
+                                        const reader = new FileReader();
+                                        reader.onload = (event) => {
+                                            try {
+                                                const text = event.target.result;
+                                                const lines = text.split('\n').filter(line => 
+                                                    line.trim() && !line.startsWith('#')
+                                                );
+                                                
+                                                if (lines.length < 2) {
+                                                    alert('Template appears empty. Add module completions and try again.');
+                                                    return;
+                                                }
+                                                
+                                                const headers = splitCSVLine(lines[0].trim().toLowerCase());
+                                                const pnumIdx = headers.indexOf('pnumber');
+                                                const sectionIdx = headers.indexOf('section');
+                                                const moduleIdx = headers.indexOf('modulecode');
+                                                const dateIdx = headers.indexOf('datecompleted');
+                                                
+                                                if (pnumIdx === -1 || sectionIdx === -1 || moduleIdx === -1 || dateIdx === -1) {
+                                                    alert('Invalid template format. Use downloaded template.');
+                                                    return;
+                                                }
+                                                
+                                                const newCompletions = [];
+                                                let imported = 0;
+                                                
+                                                for (let i = 1; i < lines.length; i++) {
+                                                    const row = splitCSVLine(lines[i].trim());
+                                                    if (row.length < 4) continue;
+                                                    
+                                                    const pnum = sanitizeText(row[pnumIdx] || "").trim();
+                                                    const section = sanitizeText(row[sectionIdx] || "").trim().toLowerCase();
+                                                    const moduleCode = sanitizeText(row[moduleIdx] || "").trim();
+                                                    const dateComp = row[dateIdx] ? row[dateIdx].trim() : '';
+                                                    
+                                                    // Skip if essential fields missing
+                                                    if (!pnum || !section || !moduleCode) continue;
+                                                    
+                                                    // Validate section
+                                                    if (!['red', 'blue', 'green', 'yellow', 'stem'].includes(section)) {
+                                                        console.warn(`Invalid section "${section}" for ${pnum}, skipping`);
+                                                        continue;
+                                                    }
+                                                    
+                                                    newCompletions.push({
+                                                        pNumber: pnum,
+                                                        section: section,
+                                                        moduleCode: moduleCode.toUpperCase(),
+                                                        moduleName: moduleCode, // Could lookup from JUNIOR_MODULES in future
+                                                        dateCompleted: dateComp || new Date().toISOString().split('T')[0],
+                                                        isCore: false // Could lookup from JUNIOR_MODULES in future
+                                                    });
+                                                    
+                                                    imported++;
+                                                }
+                                                
+                                                if (imported === 0) {
+                                                    alert('No valid completions found in template. Check format and try again.');
+                                                    return;
+                                                }
+                                                
+                                                if (confirm(`Import ${imported} module completions? This will ADD to existing junior data.`)) {
+                                                    const currentData = getJuniorData();
+                                                    const updatedData = {
+                                                        ...currentData,
+                                                        moduleCompletions: [...currentData.moduleCompletions, ...newCompletions]
+                                                    };
+                                                    
+                                                    if (saveJuniorData(updatedData)) {
+                                                        alert(`✓ Successfully imported ${imported} module completions!`);
+                                                        window.location.reload();
+                                                    } else {
+                                                        alert('Error saving imported data.');
+                                                    }
+                                                }
+                                                
+                                            } catch (err) {
+                                                console.error('Upload error:', err);
+                                                alert('Error processing template: ' + err.message);
+                                            }
+                                        };
+                                        reader.readAsText(file);
+                                    }}
+                                />
+                            </label>
+                        </div>
+                        
+                        <div className="mt-3 text-xs text-amber-700">
+                            <p><strong>CSV Format:</strong> PNumber, Name, Rank, Age, Section (red/blue/green/yellow/stem), ModuleCode, DateCompleted</p>
+                            <p><strong>Sections:</strong> red (Unit), blue (Waterborne), green (Outdoor), yellow (Community), stem (STEM)</p>
+                        </div>
+                    </div>
+                    
+                    {/* Import/Export */}
+                    <div className="bg-blue-50 rounded-lg shadow p-6 border-l-4 border-blue-500">
+                        <h3 className="text-lg font-bold mb-3 text-blue-900">Import / Export Junior Data</h3>
+                        <p className="text-sm text-blue-800 mb-4">
+                            Export junior data to share with other JTOs or backup. Import to load shared data.
+                        </p>
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => {
+                                    const dataStr = JSON.stringify(juniorData, null, 2);
+                                    const blob = new Blob([dataStr], {type: 'application/json'});
+                                    const url = URL.createObjectURL(blob);
+                                    const a = document.createElement('a');
+                                    a.href = url;
+                                    a.download = `juniors_backup_${new Date().toISOString().split('T')[0]}.json`;
+                                    a.click();
+                                }}
+                                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 font-semibold"
+                            >
+                                Export Data
+                            </button>
+                            <label className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 font-semibold cursor-pointer">
+                                Import Data
+                                <input
+                                    type="file"
+                                    accept=".json"
+                                    className="hidden"
+                                    onChange={(e) => {
+                                        const file = e.target.files[0];
+                                        if (!file) return;
+                                        const reader = new FileReader();
+                                        reader.onload = (event) => {
+                                            try {
+                                                const imported = JSON.parse(event.target.result);
+                                                if (confirm('Import this data? This will replace all local junior data.')) {
+                                                    saveJuniorData(imported);
+                                                    window.location.reload();
+                                                }
+                                            } catch (e) {
+                                                alert('Error parsing JSON file: ' + e.message);
+                                            }
+                                        };
+                                        reader.readAsText(file);
+                                    }}
+                                />
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // ============================================================================
+        // SECTION 4: MAIN APP COMPONENT
+        // ============================================================================
+        
         const App = () => {
             const [view, setView] = useState('upload'); 
             const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -3471,8 +4232,10 @@
                                 </button>
                             </div>
                             <nav className="flex-1 p-4 space-y-2 overflow-hidden">
-                                <NavItem id="home" icon="Home" label="Home" /> {/* UPDATED ICON: Command -> Home */}
+                                <NavItem id="home" icon="Home" label="Home" />
                                 <NavItem id="cadet_focus" icon="User" label="Cadet Focus" />
+                                <NavItem id="juniors" icon="Users" label="Juniors" />
+                                <NavItem id="junior_progress" icon="BarChart3" label="Junior Progress" />
                                 <NavItem id="planner" icon="ShipWheel" label="SCC CTP Progress" />
                                 <NavItem id="rmc_planner" icon="Target" label="RMC CTS Progress" />
                                 <NavItem id="waterborne" icon="Anchor" label="Waterborne" />
@@ -3512,6 +4275,8 @@
                         <main className={`flex-1 ${sidebarCollapsed ? 'ml-20' : 'ml-80'} p-8 overflow-y-auto transition-all duration-300`}>
                             {view === 'home' && <HomeView personnel={personnelData} />} 
                             {view === 'cadet_focus' && <CadetFocus personnel={personnelData} qualsData={qualsData} />}
+                            {view === 'juniors' && <JuniorsView personnel={personnelData} />}
+                            {view === 'junior_progress' && <JuniorProgressView personnel={personnelData} />}
                             {view === 'awards' && <AwardsView personnel={personnelData} quals={qualsData} />}
                             {(view === 'waterborne') && <WaterborneView personnel={personnelData} qualsData={qualsData} />}
                             {(view === 'planner') && <TrainingPlanner personnel={personnelData} getCadetProgress={getCadetProgress} qualsData={qualsData} title="SCC CTP Progress" rankOrder={SCC_RANK_ORDER} syllabus={SCC_SYLLABUS} iconName="ShipWheel" onModuleClick={handleModuleDrillDown} />}
@@ -3527,6 +4292,9 @@
 
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<App />);
+        
+        console.log(`RC2.7 loaded successfully! Version: ${DATA_VERSION}`);
+        console.log("RC2.7: Home → Cadet Focus → Juniors → Junior Progress (GRID) → CTP → CTS → Waterborne → Awards → Training Plan");
     </script>
 </body>
 </html>

@@ -100,7 +100,7 @@
         // ============================================================================
         
         // --- 1.1 VERSION ---
-        const DATA_VERSION = "1.0-RC2.16"; // RC2 Complete + Bulk Upload Template Feature 
+        const DATA_VERSION = "1.0-RC2.18"; // RC2 Complete + Bulk Upload Template Feature 
 
         // --- 1.2 BADGE & RANK IMAGE MAPS ---
         const RANK_IMG_MAP = {
@@ -2267,8 +2267,125 @@
                 doc.save(`SCC_Upcoming_Report_${monthName}.pdf`);
             };
 
+            // Calculate Junior Awards Due
+            const juniorsWithAwardsDue = useMemo(() => {
+                const juniors = personnel.filter(c => {
+                    if (!c.dob) return false;
+                    const age = calculateAge(c.dob);
+                    return age >= 9 && age <= 11;
+                });
+                
+                const dueAwards = [];
+                
+                juniors.forEach(junior => {
+                    // Get module completions for this junior
+                    const juniorData = getJuniorData();
+                    const juniorModules = juniorData.moduleCompletions.filter(m => m.pNumber === junior.pNumber);
+                    
+                    const redCount = juniorModules.filter(m => m.section === 'red').length;
+                    const blueCount = juniorModules.filter(m => m.section === 'blue').length;
+                    const greenCount = juniorModules.filter(m => m.section === 'green').length;
+                    const yellowCount = juniorModules.filter(m => m.section === 'yellow').length;
+                    const stemCount = juniorModules.filter(m => m.section === 'stem').length;
+                    
+                    // Check RED Badge (15 modules)
+                    if (redCount >= 15 && !quals?.some(q => q.pNumber === junior.pNumber && q.module.includes("JSC Red Unit Activities Badge"))) {
+                        dueAwards.push({ 
+                            cadet: junior.name, 
+                            pNumber: junior.pNumber,
+                            award: "JSC Red Unit Activities Badge",
+                            color: "red"
+                        });
+                    }
+                    
+                    // Check BLUE Badge (15 modules)
+                    if (blueCount >= 15 && !quals?.some(q => q.pNumber === junior.pNumber && q.module.includes("JSC Blue Waterborne Activities Badge"))) {
+                        dueAwards.push({ 
+                            cadet: junior.name, 
+                            pNumber: junior.pNumber,
+                            award: "JSC Blue Waterborne Activities Badge",
+                            color: "blue"
+                        });
+                    }
+                    
+                    // Check GREEN Badge (15 modules)
+                    if (greenCount >= 15 && !quals?.some(q => q.pNumber === junior.pNumber && q.module.includes("JSC Green Outdoor & Recreation Activities Badge"))) {
+                        dueAwards.push({ 
+                            cadet: junior.name, 
+                            pNumber: junior.pNumber,
+                            award: "JSC Green Outdoor & Recreation Activities Badge",
+                            color: "green"
+                        });
+                    }
+                    
+                    // Check YELLOW Badge (15 modules)
+                    if (yellowCount >= 15 && !quals?.some(q => q.pNumber === junior.pNumber && q.module.includes("JSC Yellow Community & Citizenship Activities Badge"))) {
+                        dueAwards.push({ 
+                            cadet: junior.name, 
+                            pNumber: junior.pNumber,
+                            award: "JSC Yellow Community & Citizenship Activities Badge",
+                            color: "yellow"
+                        });
+                    }
+                    
+                    // Check CREST Award (8+ modules)
+                    if (stemCount >= 8 && !quals?.some(q => q.pNumber === junior.pNumber && q.module.includes("JSC Crest Award"))) {
+                        dueAwards.push({ 
+                            cadet: junior.name, 
+                            pNumber: junior.pNumber,
+                            award: "JSC Crest Award",
+                            color: "purple"
+                        });
+                    }
+                    
+                    // Check STEM Badge (15 modules)
+                    if (stemCount >= 15 && !quals?.some(q => q.pNumber === junior.pNumber && q.module.includes("JSC STEM Unit Activities Badge"))) {
+                        dueAwards.push({ 
+                            cadet: junior.name, 
+                            pNumber: junior.pNumber,
+                            award: "JSC STEM Unit Activities Badge",
+                            color: "purple"
+                        });
+                    }
+                    
+                    // Check Commodore's Broad Pennant (all 4 core sections 15+)
+                    if (redCount >= 15 && blueCount >= 15 && greenCount >= 15 && yellowCount >= 15 && 
+                        !quals?.some(q => q.pNumber === junior.pNumber && q.module.includes("JSC Commodores Broad Pennant"))) {
+                        dueAwards.push({ 
+                            cadet: junior.name, 
+                            pNumber: junior.pNumber,
+                            award: "JSC Commodores Broad Pennant",
+                            color: "amber"
+                        });
+                    }
+                });
+                
+                return dueAwards;
+            }, [personnel, quals]);
+
             return (
                 <div className="space-y-6">
+                    {/* Junior Awards Due Section */}
+                    {juniorsWithAwardsDue.length > 0 && (
+                        <div className="bg-gradient-to-r from-amber-50 to-orange-50 p-4 rounded-lg shadow border-2 border-amber-300">
+                            <div className="flex items-center gap-3 mb-4">
+                                <Icon name="AlertCircle" className="w-6 h-6 text-amber-600" />
+                                <div>
+                                    <h2 className="text-lg font-bold text-amber-900">Junior Awards Due/Upcoming</h2>
+                                    <p className="text-sm text-amber-700">These cadets have earned awards but they're not yet on Westminster</p>
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                                {juniorsWithAwardsDue.map((item, idx) => (
+                                    <div key={idx} className={`bg-white p-3 rounded shadow-sm border-l-4 border-${item.color}-500`}>
+                                        <p className="font-bold text-sm text-slate-800">{item.cadet}</p>
+                                        <p className="text-xs text-slate-600 mt-1">{item.award}</p>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                    
                     <div className="bg-white p-4 rounded-lg shadow border border-slate-200">
                              <div className="flex justify-between items-center mb-6">
                                  <h2 className="text-lg font-bold text-slate-800">Awards & Recognition</h2>
@@ -3954,7 +4071,7 @@
 
 
         // --- 3.9 JUNIORS VIEW COMPONENT (RC2 Stage 2) ---
-        const JuniorsView = ({ personnel }) => {
+        const JuniorsView = ({ personnel, qualifications }) => {
             const juniorData = getJuniorData();
             
             // Filter personnel to only juniors (under 12)
@@ -4014,13 +4131,13 @@
                     </div>
                     
                     {/* Junior Detail */}
-                    <JuniorDetail junior={selectedJunior} juniorData={juniorData} personnel={personnel} />
+                    <JuniorDetail junior={selectedJunior} juniorData={juniorData} personnel={personnel} qualifications={qualifications} />
                 </div>
             );
         };
         
         // --- 3.10 JUNIOR DETAIL COMPONENT ---
-        const JuniorDetail = ({ junior, juniorData, personnel }) => {
+        const JuniorDetail = ({ junior, juniorData, personnel, qualifications }) => {
             const [section, setSection] = useState('red');
             const [moduleCode, setModuleCode] = useState('');
             const [dateCompleted, setDateCompleted] = useState(new Date().toISOString().split('T')[0]);
@@ -4042,31 +4159,150 @@
             // Use rank from Westminster CSV (not calculated from modules)
             const currentRank = junior.rank || "Junior Cadet";
             
-            // Calculate next rank and requirements
+            // Helper: Calculate time served from TOS Date
+            const calculateTimeServed = (tosDate) => {
+                if (!tosDate) return { months: 0, days: 0, text: "TOS Date not available" };
+                try {
+                    const tos = new Date(tosDate);
+                    const now = new Date();
+                    const diffMs = now - tos;
+                    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+                    const months = Math.floor(diffDays / 30);
+                    const days = diffDays % 30;
+                    return { months, days, totalDays: diffDays, text: `${months} months, ${days} days` };
+                } catch {
+                    return { months: 0, days: 0, text: "Invalid TOS Date" };
+                }
+            };
+            
+            // Helper: Count proficiencies
+            const countProficiencies = (pNumber) => {
+                if (!qualifications || qualifications.length === 0) return 0;
+                const juniorQuals = qualifications.filter(q => q.pNumber === pNumber);
+                const proficiencyNames = [
+                    "BC Paddle Discover Award",
+                    "RYA YSS Stage 2",
+                    "Sail - RYA YSS Stage 2",
+                    "SCC Row 2",
+                    "BR Explore Rowing - Go Row 2 (Fixed)",
+                    "Rowing - BR Explore Rowing - Go Row 2 (Fixed)"
+                ];
+                return juniorQuals.filter(q => 
+                    proficiencyNames.some(name => q.module.includes(name))
+                ).length;
+            };
+            
+            // Helper: Count RED core modules (specific list from syllabus)
+            const redCoreModules = ["1", "1.1", "1.2", "1.3", "1.4", "1.5", "5", "6", "15", "16", "17"];
+            const redCoresCompleted = juniorModules.filter(m => 
+                m.section === 'red' && redCoreModules.includes(m.moduleCode)
+            ).length;
+            
+            // Helper: Count BLUE core modules
+            const blueCoreModules = ["1", "9", "15", "21"];
+            const blueCoresCompleted = juniorModules.filter(m => 
+                m.section === 'blue' && blueCoreModules.includes(m.moduleCode)
+            ).length;
+            
+            // Get time served and proficiencies
+            const timeServed = calculateTimeServed(junior.tos);
+            const proficiencies = countProficiencies(junior.pNumber);
+            
+            // Calculate next rank and requirements (DYNAMIC)
             let nextRank = "";
             let requirements = [];
             
-            // Normalize rank name for comparison (handle variations like "JC", "Junior Cadet", etc)
+            // Normalize rank name for comparison
             const rankLower = currentRank.toLowerCase();
             
             if (rankLower.includes("junior cadet 1st class") || rankLower.includes("jcfc")) {
                 nextRank = "Able Junior Cadet";
-                requirements.push("Complete BLUE Section Core modules");
-                requirements.push("12 months service with Sea Cadets");
-                requirements.push("Complete at least one proficiency");
+                
+                // BLUE Core modules
+                const blueNeed = 4 - blueCoresCompleted;
+                if (blueCoresCompleted >= 4) {
+                    requirements.push("✓ BLUE Section Core modules (4/4 completed)");
+                } else {
+                    requirements.push(`Complete BLUE Section Core modules (${blueCoresCompleted}/4 - need ${blueNeed} more)`);
+                }
+                
+                // 12 months service
+                if (timeServed.months >= 12) {
+                    requirements.push(`✓ 12 months service (${timeServed.text})`);
+                } else {
+                    const daysNeeded = (12 * 30) - timeServed.totalDays;
+                    requirements.push(`12 months service (${timeServed.text} - need ${daysNeeded} more days)`);
+                }
+                
+                // One proficiency
+                if (proficiencies >= 1) {
+                    requirements.push(`✓ At least one proficiency (${proficiencies} completed)`);
+                } else {
+                    requirements.push("Complete at least one proficiency (0 completed)");
+                }
+                
             } else if (rankLower.includes("able junior") || rankLower.includes("ajc")) {
                 nextRank = "Leading Junior Cadet";
-                requirements.push("Complete all four Sections (Red, Blue, Yellow, Green)");
-                requirements.push("Complete one additional proficiency");
-                requirements.push("At least 11 years old");
+                
+                // All 4 sections
+                const sectionsComplete = [
+                    { name: "RED", count: redModules, need: 15 },
+                    { name: "BLUE", count: blueModules, need: 15 },
+                    { name: "GREEN", count: greenModules, need: 15 },
+                    { name: "YELLOW", count: yellowModules, need: 15 }
+                ];
+                const allSectionsComplete = sectionsComplete.every(s => s.count >= s.need);
+                
+                if (allSectionsComplete) {
+                    requirements.push("✓ All four Sections completed (RED, BLUE, GREEN, YELLOW)");
+                } else {
+                    const progress = sectionsComplete.map(s => {
+                        const status = s.count >= s.need ? "✓" : "✗";
+                        return `${status} ${s.name}: ${s.count}/15`;
+                    }).join(", ");
+                    requirements.push(`Complete all four Sections: ${progress}`);
+                }
+                
+                // One additional proficiency (total 2)
+                if (proficiencies >= 2) {
+                    requirements.push(`✓ One additional proficiency (${proficiencies} total)`);
+                } else {
+                    const need = 2 - proficiencies;
+                    requirements.push(`Complete one additional proficiency (${proficiencies}/2 - need ${need} more)`);
+                }
+                
+                // Age 11
+                if (age >= 11) {
+                    requirements.push(`✓ At least 11 years old (currently ${age})`);
+                } else {
+                    requirements.push(`At least 11 years old (currently ${age} - ${11 - age} year${11 - age > 1 ? 's' : ''} remaining)`);
+                }
+                
                 requirements.push("Be recommended by Juniors Training Officer");
+                
             } else if (rankLower.includes("leading junior") || rankLower.includes("ljc")) {
                 nextRank = "Top Rank (promote to Sea Cadet at 12)";
-                requirements.push("Continue activities until 12th birthday");
+                requirements.push(`Continue activities until 12th birthday (${daysTo12} days remaining)`);
+                
             } else {
                 // Default: Junior Cadet
                 nextRank = "Junior Cadet 1st Class";
-                requirements.push("Complete RED Section Core modules");
+                
+                // RED Core modules
+                const redNeed = 11 - redCoresCompleted;
+                if (redCoresCompleted >= 11) {
+                    requirements.push("✓ RED Section Core modules (11/11 completed)");
+                } else {
+                    requirements.push(`Complete RED Section Core modules (${redCoresCompleted}/11 - need ${redNeed} more)`);
+                }
+                
+                // 6 months service
+                if (timeServed.months >= 6) {
+                    requirements.push(`✓ 6 months service (${timeServed.text})`);
+                } else {
+                    const daysNeeded = (6 * 30) - timeServed.totalDays;
+                    requirements.push(`6 months service (${timeServed.text} - need ${daysNeeded} more days)`);
+                }
             }
             
             const handleModuleSubmit = () => {
@@ -4149,6 +4385,9 @@
                                 <div className="w-full bg-red-200 rounded-full h-2 mt-2">
                                     <div className="bg-red-600 h-2 rounded-full" style={{width: `${Math.min((redModules/15)*100, 100)}%`}}></div>
                                 </div>
+                                {redModules >= 15 && !qualifications?.some(q => q.pNumber === junior.pNumber && q.module.includes("JSC Red Unit Activities Badge")) && (
+                                    <p className="text-xs font-bold text-red-900 mt-2 bg-red-100 py-1 px-2 rounded">AWARD DUE</p>
+                                )}
                             </div>
                             <div className="text-center p-4 bg-blue-50 rounded-lg border-2 border-blue-200">
                                 <p className="text-sm font-semibold text-blue-800">Blue - Waterborne</p>
@@ -4156,6 +4395,9 @@
                                 <div className="w-full bg-blue-200 rounded-full h-2 mt-2">
                                     <div className="bg-blue-600 h-2 rounded-full" style={{width: `${Math.min((blueModules/15)*100, 100)}%`}}></div>
                                 </div>
+                                {blueModules >= 15 && !qualifications?.some(q => q.pNumber === junior.pNumber && q.module.includes("JSC Blue Waterborne Activities Badge")) && (
+                                    <p className="text-xs font-bold text-blue-900 mt-2 bg-blue-100 py-1 px-2 rounded">AWARD DUE</p>
+                                )}
                             </div>
                             <div className="text-center p-4 bg-green-50 rounded-lg border-2 border-green-200">
                                 <p className="text-sm font-semibold text-green-800">Green - Outdoor</p>
@@ -4163,6 +4405,9 @@
                                 <div className="w-full bg-green-200 rounded-full h-2 mt-2">
                                     <div className="bg-green-600 h-2 rounded-full" style={{width: `${Math.min((greenModules/15)*100, 100)}%`}}></div>
                                 </div>
+                                {greenModules >= 15 && !qualifications?.some(q => q.pNumber === junior.pNumber && q.module.includes("JSC Green Outdoor & Recreation Activities Badge")) && (
+                                    <p className="text-xs font-bold text-green-900 mt-2 bg-green-100 py-1 px-2 rounded">AWARD DUE</p>
+                                )}
                             </div>
                             <div className="text-center p-4 bg-yellow-50 rounded-lg border-2 border-yellow-200">
                                 <p className="text-sm font-semibold text-yellow-800">Yellow - Community</p>
@@ -4170,6 +4415,9 @@
                                 <div className="w-full bg-yellow-200 rounded-full h-2 mt-2">
                                     <div className="bg-yellow-600 h-2 rounded-full" style={{width: `${Math.min((yellowModules/15)*100, 100)}%`}}></div>
                                 </div>
+                                {yellowModules >= 15 && !qualifications?.some(q => q.pNumber === junior.pNumber && q.module.includes("JSC Yellow Community & Citizenship Activities Badge")) && (
+                                    <p className="text-xs font-bold text-yellow-900 mt-2 bg-yellow-100 py-1 px-2 rounded">AWARD DUE</p>
+                                )}
                             </div>
                             <div className="text-center p-4 bg-purple-50 rounded-lg border-2 border-purple-200">
                                 <p className="text-sm font-semibold text-purple-800">STEM</p>
@@ -4177,8 +4425,31 @@
                                 <div className="w-full bg-purple-200 rounded-full h-2 mt-2">
                                     <div className="bg-purple-600 h-2 rounded-full" style={{width: `${Math.min((stemModules/15)*100, 100)}%`}}></div>
                                 </div>
+                                {stemModules >= 15 && !qualifications?.some(q => q.pNumber === junior.pNumber && q.module.includes("JSC STEM Unit Activities Badge")) && (
+                                    <p className="text-xs font-bold text-purple-900 mt-2 bg-purple-100 py-1 px-2 rounded">STEM AWARD DUE</p>
+                                )}
+                                {stemModules >= 8 && stemModules < 15 && !qualifications?.some(q => q.pNumber === junior.pNumber && q.module.includes("JSC Crest Award")) && (
+                                    <p className="text-xs font-bold text-purple-900 mt-2 bg-purple-100 py-1 px-2 rounded">CREST AWARD DUE</p>
+                                )}
+                                {stemModules >= 15 && !qualifications?.some(q => q.pNumber === junior.pNumber && q.module.includes("JSC Crest Award")) && (
+                                    <p className="text-xs font-bold text-purple-900 mt-2 bg-purple-100 py-1 px-2 rounded">CREST AWARD DUE</p>
+                                )}
                             </div>
                         </div>
+                        
+                        {/* Commodore's Broad Pennant Alert */}
+                        {redModules >= 15 && blueModules >= 15 && greenModules >= 15 && yellowModules >= 15 && 
+                         !qualifications?.some(q => q.pNumber === junior.pNumber && q.module.includes("JSC Commodores Broad Pennant")) && (
+                            <div className="mt-4 p-4 bg-gradient-to-r from-amber-50 to-yellow-50 border-2 border-amber-300 rounded-lg">
+                                <div className="flex items-center gap-3">
+                                    <Icon name="Award" className="w-8 h-8 text-amber-600" />
+                                    <div>
+                                        <p className="font-bold text-amber-900 text-lg">🎖️ COMMODORE'S BROAD PENNANT DUE!</p>
+                                        <p className="text-sm text-amber-800">All four core sections completed (RED, BLUE, GREEN, YELLOW)</p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
                     </div>
                     
                     {/* Add Module Completion */}
@@ -4643,7 +4914,7 @@
                         <main className={`flex-1 ${sidebarCollapsed ? 'ml-20' : 'ml-80'} p-8 overflow-y-auto transition-all duration-300`}>
                             {view === 'home' && <HomeView personnel={personnelData} />} 
                             {view === 'cadet_focus' && <CadetFocus personnel={personnelData} qualsData={qualsData} />}
-                            {view === 'juniors' && <JuniorsView personnel={personnelData} />}
+                            {view === 'juniors' && <JuniorsView personnel={personnelData} qualifications={qualsData} />}
                             {view === 'junior_progress' && <JuniorProgressView personnel={personnelData} />}
                             {view === 'awards' && <AwardsView personnel={personnelData} quals={qualsData} />}
                             {(view === 'waterborne') && <WaterborneView personnel={personnelData} qualsData={qualsData} />}

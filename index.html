@@ -100,7 +100,7 @@
         // ============================================================================
         
         // --- 1.1 VERSION ---
-        const DATA_VERSION = "1.0-RC2.20"; // RC2 Complete + Bulk Upload Template Feature 
+        const DATA_VERSION = "1.0-RC2.21.1"; // RC2.21.1: Bugfix - moved CADET_FOCUS_WATERBORNE_HIERARCHY to global scope 
 
         // --- 1.2 BADGE & RANK IMAGE MAPS ---
         const RANK_IMG_MAP = {
@@ -985,6 +985,18 @@
         // --- 1.4 RANK ORDERS ---
         const SCC_RANK_ORDER = ["New Entry Cadet", "Cadet", "Cadet 1st Class", "Ordinary Cadet", "Able Cadet", "Leading Cadet", "Petty Officer Cadet"];
         const RMC_RANK_ORDER = ["Recruit", "Marine Cadet", "Cadet Lance Corporal", "Cadet Corporal", "Cadet Sergeant"];
+
+        // --- 1.4.1 WATERBORNE PROFICIENCY HIERARCHY ---
+        const CADET_FOCUS_WATERBORNE_HIERARCHY = {
+            "General": ["Master Coxswain Award", "Coxswain Award"],
+            "Rowing": ["SCC Rowing Instructor", "Rowing Instructor", "Rowing Coxswswain", "Rowing Supervised Coxswain", "Rowing Competent Crew", "SCC Row Coxswain Module"], 
+            "Paddlesport": ["BC Paddlesport Instructor", "BC Paddle Discipline Specific", "BC Paddle Safety & Rescue Course (PSRC)", "BC Paddle Explore Award", "BC Paddle Discover Award"],
+            "Sailing": ["Dinghy Instructor", "RYA Dinghy Instructor", "Dinghy - RYA Instructor", "Sail - RYA Sailing with Spinnakers", "Sail - RYA Seamanship Skills", "Sail - RYA Start Racing", "Sail - RYA Performance Sailing", "Sail - RYA Day Sailing", "Sailing Stage 4", "Sailing Stage 3", "Sailing Stage 2", "Sail - RYA YSS Stage 4", "Sail - RYA YSS Stage 3", "Sail - RYA YSS Stage 2"],
+            "Windsurfing": ["RYA Start Windsurfing Instructor", "Windsurfing - RYA Start Windsurfing Instructor", "Wind - RYA YouthWS - Stage 4", "Wind - RYA YouthWS - Stage 3", "Wind - RYA YouthWS - Stage 2", "Wind - RYA YouthWS - Stage 1"],
+            "Powerboat": ["RYA Powerboat Instructor", "Powerboat - RYA Powerboat Instructor", "Powerboat - RYA Powerboat Intermediate", "RYA Powerboat Level 2", "RYA Powerboat Level 1"],
+            "Offshore Power": ["Offshore - Power Watch Leader", "Offshore - Power Seaman", "Offshore - Power Grade 2", "Offshore - Power Grade 1"],
+            "Offshore Sail": ["Offshore - Sail Watch Leader", "Offshore - Sail Seaman", "Offshore - Sail Grade 2", "Offshore - Sail Grade 1"]
+        };
 
         // --- 1.5 JUNIOR SEA CADETS DATA (RC2 Stage 2) ---
         const JUNIOR_RANK_ORDER = ["Junior Cadet", "Junior Cadet 1st Class", "Able Junior Cadet", "Leading Junior Cadet"];
@@ -2920,17 +2932,6 @@
                 return awardedProfs;
             }, [qualsData, selectedCadetPNum]);
 
-            const CADET_FOCUS_WATERBORNE_HIERARCHY = {
-                "General": ["Master Coxswain Award", "Coxswain Award"],
-                "Rowing": ["SCC Rowing Instructor", "Rowing Instructor", "Rowing Coxswswain", "Rowing Supervised Coxswain", "Rowing Competent Crew", "SCC Row Coxswain Module"], 
-                "Paddlesport": ["BC Paddlesport Instructor", "BC Paddle Discipline Specific", "BC Paddle Safety & Rescue Course (PSRC)", "BC Paddle Explore Award", "BC Paddle Discover Award"],
-                "Sailing": ["Dinghy Instructor", "RYA Dinghy Instructor", "Dinghy - RYA Instructor", "Sail - RYA Sailing with Spinnakers", "Sail - RYA Seamanship Skills", "Sail - RYA Start Racing", "Sail - RYA Performance Sailing", "Sail - RYA Day Sailing", "Sailing Stage 4", "Sailing Stage 3", "Sailing Stage 2", "Sail - RYA YSS Stage 4", "Sail - RYA YSS Stage 3", "Sail - RYA YSS Stage 2"],
-                "Windsurfing": ["RYA Start Windsurfing Instructor", "Windsurfing - RYA Start Windsurfing Instructor", "Wind - RYA YouthWS - Stage 4", "Wind - RYA YouthWS - Stage 3", "Wind - RYA YouthWS - Stage 2", "Wind - RYA YouthWS - Stage 1"],
-                "Powerboat": ["RYA Powerboat Instructor", "Powerboat - RYA Powerboat Instructor", "Powerboat - RYA Powerboat Intermediate", "RYA Powerboat Level 2", "RYA Powerboat Level 1"],
-                "Offshore Power": ["Offshore - Power Watch Leader", "Offshore - Power Seaman", "Offshore - Power Grade 2", "Offshore - Power Grade 1"],
-                "Offshore Sail": ["Offshore - Sail Watch Leader", "Offshore - Sail Seaman", "Offshore - Sail Grade 2", "Offshore - Sail Grade 1"]
-            };
-
             const cadetWaterborne = useMemo(() => {
                 if (!selectedCadet) return [];
                 
@@ -4498,33 +4499,33 @@
             
             return (
                 <div className="space-y-6">
-                    {/* Header */}
+                    {/* Header with dropdown */}
                     <div className="bg-white rounded-lg shadow-xl p-6 border-l-4 border-purple-500">
-                        <div className="flex items-center gap-4">
-                            <div className="p-3 bg-purple-100 rounded-full">
-                                <Icon name="Users" className="w-8 h-8 text-purple-700" />
+                        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                            <div className="flex items-center gap-4">
+                                <div className="p-3 bg-purple-100 rounded-full">
+                                    <Icon name="Users" className="w-8 h-8 text-purple-700" />
+                                </div>
+                                <div>
+                                    <h1 className="text-3xl font-extrabold text-slate-900">Junior Focus</h1>
+                                    <p className="text-slate-600">{juniors.length} junior{juniors.length !== 1 ? 's' : ''} (ages 9-11)</p>
+                                </div>
                             </div>
-                            <div>
-                                <h1 className="text-3xl font-extrabold text-slate-900">Junior Focus</h1>
-                                <p className="text-slate-600">{juniors.length} junior{juniors.length !== 1 ? 's' : ''} (ages 9-11)</p>
+                            <div className="w-full md:w-64">
+                                <label className="block text-xs font-semibold text-slate-500 uppercase mb-1">Select Junior</label>
+                                <select 
+                                    value={selectedJuniorPNum}
+                                    onChange={(e) => setSelectedJuniorPNum(e.target.value)}
+                                    className="w-full p-2 border border-slate-300 rounded-md text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                                >
+                                    {juniors.map(junior => (
+                                        <option key={junior.pNumber} value={junior.pNumber}>
+                                            {junior.name}
+                                        </option>
+                                    ))}
+                                </select>
                             </div>
                         </div>
-                    </div>
-                    
-                    {/* Junior Selector */}
-                    <div className="bg-white rounded-lg shadow p-4">
-                        <label className="block text-sm font-semibold text-slate-700 mb-2">Select Junior:</label>
-                        <select 
-                            value={selectedJuniorPNum}
-                            onChange={(e) => setSelectedJuniorPNum(e.target.value)}
-                            className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                        >
-                            {juniors.map(junior => (
-                                <option key={junior.pNumber} value={junior.pNumber}>
-                                    {junior.name} - {junior.rank} (Age: {calculateAge(junior.dob)})
-                                </option>
-                            ))}
-                        </select>
                     </div>
                     
                     {/* Junior Detail */}
@@ -4702,6 +4703,93 @@
                 }
             }
             
+            // Get rank images (same logic as Cadet Focus)
+            const rankImages = useMemo(() => {
+                if(!junior) return null;
+                return RANK_IMG_MAP[junior.rank] || null;
+            }, [junior]);
+
+            // Get waterborne proficiencies (same logic as Cadet Focus)
+            const juniorWaterborne = useMemo(() => {
+                if (!junior) return [];
+                
+                const cadetQuals = qualifications.filter(q => q.pNumber === junior.pNumber && q.module);
+                const awardedWaterborne = [];
+                const safetyBoatHeld = cadetQuals.some(q => q.module.includes("Safety Boat"));
+
+                const swimQual = cadetQuals.find(q => {
+                    const m = q.module.toLowerCase();
+                    return m.includes("swim test") || m.includes("swimming test") || m.includes("water safety");
+                });
+
+                if (swimQual) {
+                    awardedWaterborne.push({ name: "Swim Test / Water Safety", key: "Swim Test", date: swimQual.date });
+                } else {
+                    awardedWaterborne.push({ name: "Swim Test Required", key: "No Swim Test", date: null });
+                }
+
+                Object.entries(CADET_FOCUS_WATERBORNE_HIERARCHY).forEach(([category, levels]) => {
+                    const highestAward = levels.find(specName => {
+                        if (specName.includes("Powerboat Instructor")) {
+                            return cadetQuals.some(q => q.module.includes("Powerboat Instructor") && !q.module.includes("Pre-Entry"));
+                        }
+                        return cadetQuals.some(q => q.module.includes(specName)); 
+                    });
+
+                    if (highestAward) {
+                         let key = highestAward;
+                         // Map to Badge Keys
+                         if (highestAward.includes("Rowing Coxswain")) key = "Rowing Coxswain";
+                         else if (highestAward.includes("Rowing Supervised Coxswain")) key = "Rowing Supervised Coxswain";
+                         else if (highestAward.includes("Rowing Competent Crew")) key = "Rowing Competent Crew";
+                         else if (highestAward.includes("Rowing Instructor")) key = "Rowing Instructor";
+                         else if (highestAward.includes("Explore Award")) key = "Paddle Explore Award";
+                         else if (highestAward.includes("Discover Award")) key = "Paddle Discover Award";
+                         else if (highestAward.includes("Paddlesport Instructor")) key = "Paddlesport Instructor";
+                         else if (highestAward.includes("Dinghy Instructor")) key = "Dinghy Instructor";
+                         else if (highestAward.includes("Stage 4") && category === "Sailing") key = "Sailing Stage 4 / Level 3";
+                         else if (highestAward.includes("Stage 3") && category === "Sailing") key = "Sailing Stage 3 / Level 2";
+                         else if (highestAward.includes("Stage 2") && category === "Sailing") key = "Sailing Stage 2 / Level 1";
+                         else if (highestAward.includes("Spinnakers")) key = "Sailing with Spinnakers";
+                         else if (highestAward.includes("Seamanship Skills")) key = "Seamanship Skills";
+                         else if (highestAward.includes("Start Racing")) key = "Start Racing";
+                         else if (highestAward.includes("Performance Sailing")) key = "Performance Sailing";
+                         else if (highestAward.includes("Day Sailing")) key = "Day Sailing";
+                         else if (highestAward.includes("Start Windsurfing Instructor")) key = "Windsurfing Instructor";
+                         else if (highestAward.includes("Stage 4") && category === "Windsurfing") key = "Windsurfing Stage 4";
+                         else if (highestAward.includes("Stage 3") && category === "Windsurfing") key = "Windsurfing Stage 3";
+                         else if (highestAward.includes("Stage 2") && category === "Windsurfing") key = "Windsurfing Stage 2";
+                         else if (highestAward.includes("Stage 1") && category === "Windsurfing") key = "Windsurfing Stage 1";
+                         else if (highestAward.includes("Powerboat Instructor")) key = "Powerboat Instructor";
+                         else if (highestAward.includes("Powerboat Level 2")) key = "RYA Powerboat Level 2";
+                         else if (highestAward.includes("Powerboat Level 1")) key = "RYA Powerboat Level 1";
+                         else if (highestAward.includes("Power Watch Leader")) key = "Offshore Power Watch Leader";
+                         else if (highestAward.includes("Power Seaman")) key = "Offshore Power Seaman";
+                         else if (highestAward.includes("Power Grade 2")) key = "Offshore Power Grade 2";
+                         else if (highestAward.includes("Power Grade 1")) key = "Offshore Power Grade 1";
+                         else if (highestAward.includes("Sail Watch Leader")) key = "Offshore Sailing Watch Leader";
+                         else if (highestAward.includes("Sail Seaman")) key = "Offshore Sailing Seaman";
+                         else if (highestAward.includes("Sail Grade 2")) key = "Offshore Sailing Grade 2";
+                         else if (highestAward.includes("Sail Grade 1")) key = "Offshore Sailing Grade 1";
+                         else if (highestAward.includes("Master Coxswain")) key = "Master Coxswain";
+                         else if (highestAward === "Coxswain Award" || highestAward === "SCC Row Coxswain Module") key = "Cadet Coxswain";
+
+                        const qualRecord = cadetQuals.find(q => q.module.includes(highestAward));
+
+                        awardedWaterborne.push({ name: highestAward, key: key, date: qualRecord ? qualRecord.date : null });
+                    }
+                    
+                    if (category === "Powerboat" && safetyBoatHeld) {
+                         if (!awardedWaterborne.some(wb => wb.name.includes("Safety Boat"))) {
+                             const sbQual = cadetQuals.find(q => q.module.includes("Safety Boat"));
+                             awardedWaterborne.push({ name: "RYA Safety Boat", key: "RYA Safety Boat", date: sbQual ? sbQual.date : null });
+                         }
+                    }
+                });
+
+                return awardedWaterborne;
+            }, [qualifications, junior?.pNumber]);
+
             const handleModuleSubmit = () => {
                 if (!moduleCode.trim()) {
                     alert("Please enter a module code");
@@ -4749,16 +4837,41 @@
                     <div className="bg-white rounded-lg shadow p-6">
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div>
-                                <p className="text-sm text-slate-600">Name</p>
-                                <p className="font-bold text-lg">{junior.name}</p>
+                                <p className="text-sm text-slate-600 mb-2">Name</p>
+                                <p className="font-bold text-lg mb-3">{junior.name}</p>
+                                
+                                {/* Rank Badge Display */}
+                                <div className="mt-2 pt-2 border-t border-slate-200">
+                                    <p className="text-xs text-slate-500 font-semibold mb-2">Current Rank</p>
+                                    <div className="flex items-center gap-3">
+                                        {rankImages || currentRank === "Able Junior Cadet" ? (
+                                            <>
+                                                {currentRank === "Able Junior Cadet" || rankImages?.count === 2 ? (
+                                                    <div className="flex gap-1">
+                                                        <img src="media/scc_junior_star.webp" className="h-10 w-auto object-contain shadow-sm" alt="Rank Star 1" onError={(e) => e.target.style.display = 'none'} />
+                                                        <img src="media/scc_junior_star.webp" className="h-10 w-auto object-contain shadow-sm" alt="Rank Star 2" onError={(e) => e.target.style.display = 'none'} />
+                                                    </div>
+                                                ) : (
+                                                    <>
+                                                        {rankImages?.sleeve && <img src={`media/${rankImages.sleeve}`} className="h-10 w-auto object-contain shadow-sm" alt="Sleeve Rank" title="Sleeve Badge" onError={(e) => e.target.style.display = 'none'} />}
+                                                    </>
+                                                )}
+                                            </>
+                                        ) : (
+                                            <div className="h-10 w-10 bg-slate-200 rounded-full flex items-center justify-center text-slate-400">
+                                                <Icon name="Shield" className="w-5 h-5"/>
+                                            </div>
+                                        )}
+                                        <p className="font-bold text-purple-700 leading-tight">{currentRank}</p>
+                                    </div>
+                                </div>
                             </div>
                             <div>
-                                <p className="text-sm text-slate-600">Current Rank</p>
-                                <p className="font-bold text-lg text-purple-700">{currentRank}</p>
-                                <div className="mt-2 pt-2 border-t border-slate-200">
-                                    <p className="text-xs text-slate-500 font-semibold">Next Rank</p>
-                                    <p className="text-sm font-bold text-blue-600">{nextRank}</p>
-                                    <ul className="mt-1 text-xs text-slate-600 space-y-0.5">
+                                <p className="text-sm text-slate-600 mb-2">Next Rank</p>
+                                <p className="text-lg font-bold text-blue-600 mb-2">{nextRank}</p>
+                                <div className="bg-slate-50 p-3 rounded border border-slate-200">
+                                    <p className="text-xs text-slate-500 font-semibold mb-2">Requirements:</p>
+                                    <ul className="text-xs text-slate-600 space-y-1">
                                         {requirements.map((req, idx) => (
                                             <li key={idx}>• {req}</li>
                                         ))}
@@ -4847,6 +4960,24 @@
                                 </div>
                             </div>
                         )}
+                    </div>
+                    
+                    {/* Waterborne Proficiencies */}
+                    <div className="bg-white rounded-lg shadow p-6">
+                        <h3 className="text-xl font-bold mb-4 flex items-center gap-2"><Icon name="Anchor" className="w-5 h-5 text-blue-600"/> Waterborne Proficiencies</h3>
+                        
+                        <div className="flex gap-4 overflow-x-auto pb-4">
+                            {juniorWaterborne.map((wb, idx) => (
+                                <div key={idx} className="flex-shrink-0 flex flex-col items-center justify-center bg-slate-50 border border-slate-200 rounded-lg p-3 min-w-[120px] text-center">
+                                    <div className="h-24 flex items-center justify-center mb-2">
+                                        <BadgeImage name={wb.key} className="h-24 w-auto object-contain" fallbackIcon="Award"/>
+                                    </div>
+                                    <p className="text-xs font-bold text-slate-700 leading-tight">{wb.name}</p>
+                                    <p className="text-[10px] text-slate-500 mt-1">{formatDate(wb.date)}</p>
+                                </div>
+                            ))}
+                            {juniorWaterborne.length === 0 && <div className="w-full text-center py-4 text-slate-400 italic bg-slate-50 rounded border border-dashed">No waterborne proficiencies found for this junior.</div>}
+                        </div>
                     </div>
                     
                     {/* Add Module Completion */}
@@ -5103,8 +5234,8 @@
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<App />);
         
-        console.log(`RC2.7 loaded successfully! Version: ${DATA_VERSION}`);
-        console.log("RC2.7: Home → Cadet Focus → Juniors → Junior Progress (GRID) → CTP → CTS → Waterborne → Awards → Training Plan");
+        console.log(`RC2.21.1 loaded successfully! Version: ${DATA_VERSION}`);
+        console.log("RC2.21.1: Bugfix - CADET_FOCUS_WATERBORNE_HIERARCHY now in global scope");
     </script>
 </body>
 </html>

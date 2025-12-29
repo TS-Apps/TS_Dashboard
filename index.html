@@ -100,7 +100,7 @@
         // ============================================================================
         
         // --- 1.1 VERSION ---
-        const DATA_VERSION = "1.0-RC2.25"; // RC2.25: Merged junior awards into main Due/Upcoming section 
+        const DATA_VERSION = "1.0-RC2.26"; // RC2.26: Added bulk module award feature to Junior Focus page 
 
         // --- 1.2 BADGE & RANK IMAGE MAPS ---
         const RANK_IMG_MAP = {
@@ -4090,6 +4090,449 @@
             const [uploadStatus, setUploadStatus] = useState('');
             const juniorData = getJuniorData();
             
+            // Filter juniors for bulk award
+            const juniors = personnel.filter(cadet => isJunior(cadet.dob));
+            
+            // Bulk Award State
+            const [selectedCadets, setSelectedCadets] = useState(new Set());
+            const [selectedModules, setSelectedModules] = useState(new Set());
+            const [activeSection, setActiveSection] = useState('red');
+            const [bulkAwardDate, setBulkAwardDate] = useState(new Date().toISOString().split('T')[0]);
+            const [showBulkSuccess, setShowBulkSuccess] = useState(false);
+            
+            // All 336 modules for bulk award
+            const allModules = [
+                {s:'red',c:'1',n:'Unit Induction: Tour of Unit'},
+                {s:'red',c:'1.1',n:'Unit Induction: Unit Fire Drill'},
+                {s:'red',c:'1.2',n:'Unit Induction: Map Out Your Unit'},
+                {s:'red',c:'1.3',n:'Unit Induction: What\'s Important?'},
+                {s:'red',c:'1.4',n:'Unit Induction: Uniformed Art'},
+                {s:'red',c:'1.5',n:'Unit Induction: Badges & Ranks'},
+                {s:'red',c:'2',n:'Two Questions & A Funny'},
+                {s:'red',c:'2.1',n:'Paper Planes'},
+                {s:'red',c:'2.2',n:'Names and Beanbags'},
+                {s:'red',c:'2.3',n:'Mini Me'},
+                {s:'red',c:'3',n:'Unit Who\'s Who: Say Cheese'},
+                {s:'red',c:'4',n:'Basic Drill'},
+                {s:'red',c:'4.1',n:'Unit Calls (Piping)'},
+                {s:'red',c:'4.2',n:'Colours & Naval Customs'},
+                {s:'red',c:'4.3',n:'Treat Yourself'},
+                {s:'red',c:'5',n:'Junior Sea Cadet Uniform'},
+                {s:'red',c:'6',n:'Safeguarding: SHOUT'},
+                {s:'red',c:'7',n:'Organising Unit Activities'},
+                {s:'red',c:'7.1',n:'Unit Activities'},
+                {s:'red',c:'7.2',n:'Ready Aye Ready'},
+                {s:'red',c:'7.3',n:'Unit Elevator Pitch'},
+                {s:'red',c:'7.4',n:'Unit Advert'},
+                {s:'red',c:'7.5',n:'Theme Tune'},
+                {s:'red',c:'8',n:'How\'s Your Aim?'},
+                {s:'red',c:'9',n:'Royal Marines Cadet Guest'},
+                {s:'red',c:'9.1',n:'Royal Marines Cadets'},
+                {s:'red',c:'9.2',n:'Royal Marines Activities'},
+                {s:'red',c:'10',n:'Scrap Book Memories'},
+                {s:'red',c:'11',n:'Passing Messages: Flags'},
+                {s:'red',c:'11.1',n:'Lord Nelson\'s Message'},
+                {s:'red',c:'11.2',n:'Codebreaker: Morse'},
+                {s:'red',c:'11.3',n:'What\'s Your Position?'},
+                {s:'red',c:'11.4',n:'Turn Up The Radios'},
+                {s:'red',c:'11.5',n:'Phonetic Alphabet'},
+                {s:'red',c:'12',n:'Chocolate Crispies'},
+                {s:'red',c:'12.1',n:'Apple & Ginger'},
+                {s:'red',c:'12.2',n:'Chefs\' Sweet Tooth'},
+                {s:'red',c:'12.3',n:'Chefs Savoury Tooth'},
+                {s:'red',c:'12.4',n:'Chefs Cuppa'},
+                {s:'red',c:'13',n:'Who Can Help Me?'},
+                {s:'red',c:'13.1',n:'Emergency Visits'},
+                {s:'red',c:'14',n:'How International Are We?'},
+                {s:'red',c:'15',n:'First Aid Basics'},
+                {s:'red',c:'15.1',n:'First Aid Relay'},
+                {s:'red',c:'15.2',n:'Units Safety Poster'},
+                {s:'red',c:'16',n:'Naval Heraldry'},
+                {s:'red',c:'17',n:'Throw Yourself a Knot'},
+                {s:'red',c:'17.1',n:'Tasty Knots'},
+                {s:'red',c:'17.2',n:'Rope and Spoons'},
+                {s:'red',c:'17.3',n:'Knot Board'},
+                {s:'red',c:'17.4',n:'Paracord Keyrings'},
+                {s:'red',c:'17.5',n:'Parts of a Ship'},
+                {s:'red',c:'17.6',n:'Ship Ahoy!'},
+                {s:'red',c:'18',n:'Planning & Preparation'},
+                {s:'red',c:'18.1',n:'Food Storage'},
+                {s:'red',c:'18.2',n:'Keeping Germs at Bay'},
+                {s:'red',c:'18.3',n:'Missed a Spot!'},
+                {s:'red',c:'18.4',n:'Building Bacteria'},
+                {s:'red',c:'18.5',n:'Fuzzy Bread'},
+                {s:'red',c:'18.6',n:'Clean Hands?'},
+                {s:'red',c:'19',n:'Earthshot Challenge'},
+                {s:'red',c:'20',n:'Suggestion Box'},
+                {s:'red',c:'21',n:'Kindness and Wellbeing'},
+                {s:'red',c:'21.1',n:'Kindness and Wellbeing'},
+                {s:'red',c:'22',n:'Teamwork Skills'},
+                {s:'blue',c:'T1',n:'Dinghy Sailing Taster'},
+                {s:'blue',c:'T2',n:'Paddlesport Taster'},
+                {s:'blue',c:'T3',n:'Windsurfing Taster'},
+                {s:'blue',c:'T4',n:'Rowing Taster'},
+                {s:'blue',c:'1',n:'Safety by the Water'},
+                {s:'blue',c:'1.1',n:'Rescue Line'},
+                {s:'blue',c:'1.2',n:'Help I Need Help!'},
+                {s:'blue',c:'2',n:'Cardinal Marks'},
+                {s:'blue',c:'2.1',n:'Danger Zones'},
+                {s:'blue',c:'3',n:'Royal & Merchant Navy'},
+                {s:'blue',c:'4',n:'Going on a Mission'},
+                {s:'blue',c:'5',n:'Maritime Museum'},
+                {s:'blue',c:'6',n:'Battleships'},
+                {s:'blue',c:'7',n:'Remember The Facts'},
+                {s:'blue',c:'7.1',n:'Famous Figures'},
+                {s:'blue',c:'7.2',n:'Picasso\'s Nelson'},
+                {s:'blue',c:'8',n:'Boat Construction'},
+                {s:'blue',c:'8.1',n:'Build Boat'},
+                {s:'blue',c:'8.2',n:'Model Raft'},
+                {s:'blue',c:'8.3',n:'Water Raft'},
+                {s:'blue',c:'9',n:'Wise Near Water'},
+                {s:'blue',c:'9.1',n:'What Flag Am I?'},
+                {s:'blue',c:'10',n:'Lifeguards'},
+                {s:'blue',c:'11',n:'Keep Swimming'},
+                {s:'blue',c:'12',n:'Swimathon'},
+                {s:'blue',c:'13',n:'Marco Polo'},
+                {s:'blue',c:'13.1',n:'Synchronised Swim'},
+                {s:'blue',c:'13.2',n:'Water Polo'},
+                {s:'blue',c:'14',n:'Swimming Gala'},
+                {s:'blue',c:'15',n:'Signposts at Sea'},
+                {s:'blue',c:'15.1',n:'Edible Signposts'},
+                {s:'blue',c:'15.2',n:'Ropes on Biscuits'},
+                {s:'blue',c:'16',n:'Saving Sam'},
+                {s:'blue',c:'16.1',n:'Don\'t Fall Out!'},
+                {s:'blue',c:'17',n:'Go Rowing!'},
+                {s:'blue',c:'17.1',n:'Learn Rowing!'},
+                {s:'blue',c:'18',n:'Go Sailing!'},
+                {s:'blue',c:'18.1',n:'Learn Sailing!'},
+                {s:'blue',c:'19',n:'Go Paddling!'},
+                {s:'blue',c:'19.1',n:'Learn Paddlesport!'},
+                {s:'blue',c:'19.2',n:'Voyage of Discovery'},
+                {s:'blue',c:'20',n:'Learn Windsurfing!'},
+                {s:'blue',c:'20.1',n:'Go Windsurfing!'},
+                {s:'blue',c:'21',n:'Good Look Out'},
+                {s:'blue',c:'21.1',n:'Hazards'},
+                {s:'blue',c:'21.2',n:'Buoyancy'},
+                {s:'blue',c:'21.3',n:'Safe Speeds'},
+                {s:'blue',c:'22',n:'Navigation'},
+                {s:'blue',c:'23',n:'Crossing The Line'},
+                {s:'blue',c:'23.1',n:'Nautical Terms'},
+                {s:'blue',c:'23.2',n:'Sea Shanties'},
+                {s:'blue',c:'23.3',n:'Hornpipe Dance'},
+                {s:'blue',c:'24',n:'Boat Types'},
+                {s:'blue',c:'24.1',n:'RS ZEST Single'},
+                {s:'blue',c:'24.2',n:'RS QUEST Crewed'},
+                {s:'blue',c:'25',n:'Cold Water Shock'},
+                {s:'blue',c:'26',n:'Towpath I Spy'},
+                {s:'blue',c:'27',n:'Flag Etiquette'},
+                {s:'blue',c:'28',n:'Green and Clean'},
+                {s:'blue',c:'29',n:'Big Clean Up'},
+                {s:'blue',c:'29.2',n:'Plastic Eating Machine'},
+                {s:'green',c:'1',n:'50 Things'},
+                {s:'green',c:'2',n:'Mapping It Out'},
+                {s:'green',c:'2.1',n:'Around the Globe'},
+                {s:'green',c:'3',n:'Grid References'},
+                {s:'green',c:'4',n:'Weather'},
+                {s:'green',c:'4.1',n:'Make it Rain!'},
+                {s:'green',c:'5',n:'Captain\'s Coming'},
+                {s:'green',c:'5.1',n:'Home Made Compass'},
+                {s:'green',c:'6',n:'Photography'},
+                {s:'green',c:'7',n:'Pacing It Out'},
+                {s:'green',c:'7.1',n:'Micro Journey'},
+                {s:'green',c:'7.2',n:'Unique Monopoly'},
+                {s:'green',c:'7.3',n:'Navigate Further'},
+                {s:'green',c:'8',n:'Basic Outdoors'},
+                {s:'green',c:'8.1',n:'Zero Trace'},
+                {s:'green',c:'8.2',n:'What to Wear'},
+                {s:'green',c:'8.3',n:'Keeping Tidy'},
+                {s:'green',c:'9',n:'Stoves'},
+                {s:'green',c:'9.1',n:'Open Fires 101'},
+                {s:'green',c:'9.2',n:'Fire Recipes'},
+                {s:'green',c:'9.3',n:'Junior Survivor'},
+                {s:'green',c:'9.4',n:'Master Chef Outdoors'},
+                {s:'green',c:'10',n:'Practice'},
+                {s:'green',c:'10.1',n:'Amazing Race Junior'},
+                {s:'green',c:'11',n:'Country Code'},
+                {s:'green',c:'11.1',n:'Country Code Guide'},
+                {s:'green',c:'11.2',n:'Environment'},
+                {s:'green',c:'12',n:'Tenting Around'},
+                {s:'green',c:'12.1',n:'Pitching Tent'},
+                {s:'green',c:'13',n:'Safe Outdoors'},
+                {s:'green',c:'13.1',n:'Stranger Danger'},
+                {s:'green',c:'14',n:'Meteorology'},
+                {s:'green',c:'14.1',n:'Weather on Water'},
+                {s:'green',c:'14.2',n:'Storm Surge'},
+                {s:'green',c:'14.3',n:'Low Visibility'},
+                {s:'green',c:'14.4',n:'Celestial Navigation'},
+                {s:'green',c:'15',n:'Wind Blowing'},
+                {s:'green',c:'16',n:'Warming Up'},
+                {s:'green',c:'16.1',n:'Warm Up Guide'},
+                {s:'green',c:'17',n:'Keep Fit'},
+                {s:'green',c:'17.1',n:'Training Games'},
+                {s:'green',c:'17.2',n:'Competitive'},
+                {s:'green',c:'17.3',n:'Happy Healthy'},
+                {s:'green',c:'17.4',n:'Eating Healthy'},
+                {s:'green',c:'17.5',n:'Games to Start'},
+                {s:'green',c:'18',n:'Bird Feeder'},
+                {s:'green',c:'18.1',n:'Bee Bombs'},
+                {s:'green',c:'18.2',n:'Seed Paper'},
+                {s:'green',c:'18.3',n:'Carbon Footprint'},
+                {s:'yellow',c:'1',n:'Local Heroes'},
+                {s:'yellow',c:'1.1',n:'Thank You Cards'},
+                {s:'yellow',c:'1.2',n:'Hero Portraits'},
+                {s:'yellow',c:'2',n:'D-Day'},
+                {s:'yellow',c:'2.1',n:'D-Day Art'},
+                {s:'yellow',c:'2.2',n:'D-Day Stories'},
+                {s:'yellow',c:'2.3',n:'D-Day Memory'},
+                {s:'yellow',c:'3',n:'Remembrance'},
+                {s:'yellow',c:'3.1',n:'Poppy Art'},
+                {s:'yellow',c:'3.2',n:'War Stories'},
+                {s:'yellow',c:'4',n:'Charities'},
+                {s:'yellow',c:'4.1',n:'Charity Event'},
+                {s:'yellow',c:'4.2',n:'Fundraising'},
+                {s:'yellow',c:'4.3',n:'Charity Visit'},
+                {s:'yellow',c:'5',n:'Litter Pick'},
+                {s:'yellow',c:'5.1',n:'Beach Clean'},
+                {s:'yellow',c:'5.2',n:'Recycle'},
+                {s:'yellow',c:'5.3',n:'Upcycle'},
+                {s:'yellow',c:'5.4',n:'Reduce Plastic'},
+                {s:'yellow',c:'5.5',n:'Compost'},
+                {s:'yellow',c:'5.6',n:'Energy Saving'},
+                {s:'yellow',c:'6',n:'Community Project'},
+                {s:'yellow',c:'6.1',n:'Helping Neighbours'},
+                {s:'yellow',c:'6.2',n:'Community Survey'},
+                {s:'yellow',c:'6.3',n:'Community Event'},
+                {s:'yellow',c:'7',n:'Democracy'},
+                {s:'yellow',c:'7.1',n:'Mock Election'},
+                {s:'yellow',c:'7.2',n:'Parliament'},
+                {s:'yellow',c:'7.3',n:'Local Council'},
+                {s:'yellow',c:'7.4',n:'Student Voice'},
+                {s:'yellow',c:'7.5',n:'Debate'},
+                {s:'yellow',c:'7.6',n:'Rights'},
+                {s:'yellow',c:'7.7',n:'Laws'},
+                {s:'yellow',c:'7.8',n:'Voting'},
+                {s:'yellow',c:'8',n:'British Values'},
+                {s:'yellow',c:'8.1',n:'Rule of Law'},
+                {s:'yellow',c:'8.2',n:'Democracy Value'},
+                {s:'yellow',c:'8.3',n:'Liberty'},
+                {s:'yellow',c:'8.4',n:'Respect'},
+                {s:'yellow',c:'8.5',n:'Tolerance'},
+                {s:'yellow',c:'8.6',n:'Values Project'},
+                {s:'yellow',c:'8.7',n:'Values Quiz'},
+                {s:'yellow',c:'8.8',n:'Values Discussion'},
+                {s:'yellow',c:'9',n:'Diversity'},
+                {s:'yellow',c:'9.1',n:'Different Cultures'},
+                {s:'yellow',c:'9.2',n:'World Religions'},
+                {s:'yellow',c:'9.3',n:'Celebrations'},
+                {s:'yellow',c:'10',n:'Armed Forces Day'},
+                {s:'yellow',c:'10.1',n:'Parade'},
+                {s:'yellow',c:'10.2',n:'Display'},
+                {s:'yellow',c:'11',n:'Sea Sunday'},
+                {s:'yellow',c:'11.1',n:'Church Service'},
+                {s:'yellow',c:'11.2',n:'Seafarers'},
+                {s:'yellow',c:'12',n:'Royal Events'},
+                {s:'yellow',c:'12.1',n:'Royal History'},
+                {s:'yellow',c:'12.2',n:'Royal Visit'},
+                {s:'yellow',c:'12.3',n:'Royal Celebration'},
+                {s:'yellow',c:'13',n:'Trafalgar Day'},
+                {s:'yellow',c:'13.1',n:'Nelson'},
+                {s:'yellow',c:'13.2',n:'Battle Facts'},
+                {s:'yellow',c:'13.3',n:'HMS Victory'},
+                {s:'yellow',c:'13.4',n:'Trafalgar Square'},
+                {s:'yellow',c:'13.5',n:'Naval History'},
+                {s:'yellow',c:'15',n:'Veterans'},
+                {s:'yellow',c:'15.1',n:'Meet Veteran'},
+                {s:'yellow',c:'16',n:'Cadets Worldwide'},
+                {s:'yellow',c:'17',n:'Sea Cadets History'},
+                {s:'yellow',c:'17.1',n:'Unit History'},
+                {s:'yellow',c:'17.2',n:'Old Photos'},
+                {s:'yellow',c:'18',n:'Famous Ships'},
+                {s:'yellow',c:'19',n:'Navy Careers'},
+                {s:'yellow',c:'19.1',n:'Navy Jobs'},
+                {s:'yellow',c:'19.2',n:'Navy Training'},
+                {s:'yellow',c:'19.3',n:'Navy Life'},
+                {s:'yellow',c:'19.4',n:'Navy Visit'},
+                {s:'yellow',c:'19.5',n:'Navy Talk'},
+                {s:'yellow',c:'20',n:'Future Goals'},
+                {s:'yellow',c:'20.1',n:'Career Ideas'},
+                {s:'yellow',c:'20.2',n:'Skills'},
+                {s:'yellow',c:'20.3',n:'Achievements'},
+                {s:'yellow',c:'20.4',n:'Action Plan'},
+                {s:'yellow',c:'21',n:'Online Safety'},
+                {s:'yellow',c:'22',n:'Mental Health'},
+                {s:'yellow',c:'22.1',n:'Wellbeing'},
+                {s:'yellow',c:'22.2',n:'Stress'},
+                {s:'yellow',c:'22.3',n:'Emotions'},
+                {s:'yellow',c:'22.4',n:'Support'},
+                {s:'yellow',c:'22.5',n:'Mindfulness'},
+                {s:'yellow',c:'22.6',n:'Exercise'},
+                {s:'yellow',c:'22.7',n:'Sleep'},
+                {s:'yellow',c:'22.8',n:'Nutrition'},
+                {s:'yellow',c:'22.9',n:'Friends'},
+                {s:'yellow',c:'23',n:'Personal Safety'},
+                {s:'yellow',c:'23.1',n:'Road Safety'},
+                {s:'yellow',c:'23.2',n:'Water Safety'},
+                {s:'yellow',c:'24',n:'Bullying'},
+                {s:'yellow',c:'24.1',n:'Anti-Bullying'},
+                {s:'yellow',c:'24.2',n:'Being Kind'},
+                {s:'yellow',c:'25',n:'Healthy Eating'},
+                {s:'yellow',c:'26',n:'First Aid'},
+                {s:'yellow',c:'27',n:'Music'},
+                {s:'yellow',c:'27.1',n:'Sea Songs'},
+                {s:'yellow',c:'27.2',n:'Instruments'},
+                {s:'yellow',c:'27.3',n:'Performance'},
+                {s:'yellow',c:'28',n:'Art'},
+                {s:'yellow',c:'28.1',n:'Maritime Art'},
+                {s:'yellow',c:'28.2',n:'Sculpture'},
+                {s:'yellow',c:'28.3',n:'Crafts'},
+                {s:'yellow',c:'28.4',n:'Exhibition'},
+                {s:'yellow',c:'29',n:'Drama'},
+                {s:'yellow',c:'30',n:'Dance'},
+                {s:'yellow',c:'70',n:'Platinum Jubilee'},
+                {s:'yellow',c:'70.1',n:'Jubilee Party'},
+                {s:'yellow',c:'70.2',n:'Jubilee Project'},
+                {s:'yellow',c:'71',n:'Commonwealth Games'},
+                {s:'yellow',c:'72',n:'Coronation'},
+                {s:'yellow',c:'72.1',n:'Coronation Event'},
+                {s:'yellow',c:'73',n:'Special Event'},
+                {s:'stem',c:'1',n:'Coding Basics'},
+                {s:'stem',c:'2',n:'Scratch'},
+                {s:'stem',c:'3',n:'Python'},
+                {s:'stem',c:'4',n:'Robotics'},
+                {s:'stem',c:'5',n:'Electronics'},
+                {s:'stem',c:'6',n:'Circuits'},
+                {s:'stem',c:'7',n:'LED Projects'},
+                {s:'stem',c:'8',n:'Raspberry Pi'},
+                {s:'stem',c:'9',n:'Arduino'},
+                {s:'stem',c:'10',n:'3D Printing'},
+                {s:'stem',c:'11',n:'CAD Design'},
+                {s:'stem',c:'12',n:'Engineering'},
+                {s:'stem',c:'13',n:'Bridges'},
+                {s:'stem',c:'14',n:'Structures'},
+                {s:'stem',c:'15',n:'Forces'},
+                {s:'stem',c:'16',n:'Energy'},
+                {s:'stem',c:'17',n:'Renewable Energy'},
+                {s:'stem',c:'18',n:'Solar Power'},
+                {s:'stem',c:'19',n:'Wind Power'},
+                {s:'stem',c:'20',n:'Water Power'},
+                {s:'stem',c:'21',n:'Chemistry'},
+                {s:'stem',c:'22',n:'Reactions'},
+                {s:'stem',c:'23',n:'Materials'},
+                {s:'stem',c:'24',n:'Biology'},
+                {s:'stem',c:'25',n:'Marine Life'},
+                {s:'stem',c:'26',n:'Ecosystems'},
+                {s:'stem',c:'27',n:'Physics'},
+                {s:'stem',c:'28',n:'Light'},
+                {s:'stem',c:'29',n:'Sound'},
+                {s:'stem',c:'30',n:'Space'},
+                {s:'stem',c:'31',n:'Astronomy'},
+                {s:'stem',c:'32',n:'Planets'},
+                {s:'stem',c:'33',n:'Rockets'},
+                {s:'stem',c:'34',n:'Satellites'},
+                {s:'stem',c:'35',n:'Navigation Tech'},
+                {s:'stem',c:'36',n:'GPS'},
+                {s:'stem',c:'37',n:'Radar'},
+                {s:'stem',c:'38',n:'Sonar'},
+                {s:'stem',c:'39',n:'Maths Games'},
+                {s:'stem',c:'40',n:'Data Science'},
+                {s:'stem',c:'41',n:'Statistics'},
+                {s:'stem',c:'42',n:'Problem Solving'}
+            ];
+            
+            // Bulk Award Handlers
+            const toggleCadetSelection = (pNumber) => {
+                const newSet = new Set(selectedCadets);
+                if (newSet.has(pNumber)) {
+                    newSet.delete(pNumber);
+                } else {
+                    newSet.add(pNumber);
+                }
+                setSelectedCadets(newSet);
+            };
+            
+            const toggleAllCadets = () => {
+                if (selectedCadets.size === juniors.length) {
+                    setSelectedCadets(new Set());
+                } else {
+                    setSelectedCadets(new Set(juniors.map(j => j.pNumber)));
+                }
+            };
+            
+            const toggleModuleSelection = (moduleId) => {
+                const newSet = new Set(selectedModules);
+                if (newSet.has(moduleId)) {
+                    newSet.delete(moduleId);
+                } else {
+                    newSet.add(moduleId);
+                }
+                setSelectedModules(newSet);
+            };
+            
+            const toggleAllModules = () => {
+                const sectionModules = allModules.filter(m => m.s === activeSection);
+                const sectionIds = sectionModules.map(m => `${m.s}-${m.c}`);
+                const allSelected = sectionIds.every(id => selectedModules.has(id));
+                
+                const newSet = new Set(selectedModules);
+                if (allSelected) {
+                    sectionIds.forEach(id => newSet.delete(id));
+                } else {
+                    sectionIds.forEach(id => newSet.add(id));
+                }
+                setSelectedModules(newSet);
+            };
+            
+            const handleBulkAward = () => {
+                if (selectedCadets.size === 0) {
+                    alert("Please select at least one cadet");
+                    return;
+                }
+                if (selectedModules.size === 0) {
+                    alert("Please select at least one module");
+                    return;
+                }
+                
+                const newCompletions = [];
+                selectedCadets.forEach(pNumber => {
+                    selectedModules.forEach(moduleId => {
+                        const [section, code] = moduleId.split('-');
+                        const module = allModules.find(m => m.s === section && m.c === code);
+                        if (module) {
+                            newCompletions.push({
+                                pNumber: pNumber,
+                                section: section,
+                                moduleCode: code,
+                                moduleName: module.n,
+                                dateCompleted: bulkAwardDate,
+                                isCore: false
+                            });
+                        }
+                    });
+                });
+                
+                const currentData = getJuniorData();
+                const updatedData = {
+                    ...currentData,
+                    moduleCompletions: [...currentData.moduleCompletions, ...newCompletions]
+                };
+                
+                if (saveJuniorData(updatedData)) {
+                    setShowBulkSuccess(true);
+                    setSelectedCadets(new Set());
+                    setSelectedModules(new Set());
+                    setUploadStatus(`Successfully awarded ${newCompletions.length} modules!`);
+                    setTimeout(() => {
+                        setShowBulkSuccess(false);
+                        window.location.reload();
+                    }, 1500);
+                } else {
+                    alert("Error saving bulk awards");
+                }
+            };
+            
+            const filteredModules = allModules.filter(m => m.s === activeSection);
+            
+            
             const exportJuniorData = () => {
                 const dataStr = JSON.stringify(juniorData, null, 2);
                 const blob = new Blob([dataStr], {type: 'application/json'});
@@ -4162,6 +4605,154 @@
                             Reload Dashboard
                         </button>
                     </div>
+                    
+                    {/* Bulk Module Award Section */}
+                    {juniors.length > 0 && (
+                        <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg shadow-xl p-6 border-2 border-purple-200">
+                            <div className="flex items-center gap-3 mb-4">
+                                <Icon name="Award" className="w-6 h-6 text-purple-700" />
+                                <h2 className="text-2xl font-bold text-purple-900">Bulk Module Award</h2>
+                            </div>
+                            <p className="text-slate-700 mb-6">
+                                Award multiple modules to multiple juniors at once. Quick entry for parade nights.
+                            </p>
+                            
+                            {showBulkSuccess && (
+                                <div className="mb-4 p-3 bg-green-50 border-l-4 border-green-500 text-green-700 rounded">
+                                    ✓ {selectedCadets.size} cadet(s) × {selectedModules.size} module(s) = {selectedCadets.size * selectedModules.size} awards saved successfully!
+                                </div>
+                            )}
+                            
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                {/* Left: Cadet Selection */}
+                                <div>
+                                    <div className="flex justify-between items-center mb-2">
+                                        <label className="text-sm font-bold text-slate-700">Select Cadets</label>
+                                        <button
+                                            onClick={toggleAllCadets}
+                                            className="text-xs text-purple-600 hover:text-purple-800 font-semibold"
+                                        >
+                                            {selectedCadets.size === juniors.length ? 'Deselect All' : `Select All (${juniors.length})`}
+                                        </button>
+                                    </div>
+                                    <div className="bg-white rounded-lg border border-purple-200 p-3 max-h-64 overflow-y-auto">
+                                        {juniors.map(junior => (
+                                            <label key={junior.pNumber} className="flex items-center gap-2 p-2 hover:bg-purple-50 rounded cursor-pointer">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={selectedCadets.has(junior.pNumber)}
+                                                    onChange={() => toggleCadetSelection(junior.pNumber)}
+                                                    className="w-4 h-4 text-purple-600 rounded"
+                                                />
+                                                <span className="text-sm flex-1">{junior.name}</span>
+                                                <span className="text-xs text-slate-500">({calculateAge(junior.dob)}) {junior.rank}</span>
+                                            </label>
+                                        ))}
+                                    </div>
+                                </div>
+                                
+                                {/* Right: Module Selection */}
+                                <div>
+                                    <label className="block text-sm font-bold text-slate-700 mb-2">Select Modules</label>
+                                    
+                                    {/* Section Tabs */}
+                                    <div className="flex gap-1 mb-3">
+                                        {[
+                                            {id: 'red', label: 'RED', bg: 'bg-red-100', active: 'bg-red-600', text: 'text-red-800'},
+                                            {id: 'blue', label: 'BLUE', bg: 'bg-blue-100', active: 'bg-blue-600', text: 'text-blue-800'},
+                                            {id: 'green', label: 'GREEN', bg: 'bg-green-100', active: 'bg-green-600', text: 'text-green-800'},
+                                            {id: 'yellow', label: 'YELLOW', bg: 'bg-yellow-100', active: 'bg-yellow-600', text: 'text-yellow-800'},
+                                            {id: 'stem', label: 'STEM', bg: 'bg-purple-100', active: 'bg-purple-600', text: 'text-purple-800'}
+                                        ].map(section => (
+                                            <button
+                                                key={section.id}
+                                                onClick={() => setActiveSection(section.id)}
+                                                className={`flex-1 py-2 px-3 rounded text-xs font-bold transition-all ${
+                                                    activeSection === section.id 
+                                                        ? `${section.active} text-white shadow-md` 
+                                                        : `${section.bg} ${section.text} hover:shadow`
+                                                }`}
+                                            >
+                                                {section.label}
+                                            </button>
+                                        ))}
+                                    </div>
+                                    
+                                    <div className="flex justify-between items-center mb-2">
+                                        <span className="text-xs text-slate-600">{filteredModules.length} modules in {activeSection.toUpperCase()} section</span>
+                                        <button
+                                            onClick={toggleAllModules}
+                                            className="text-xs text-purple-600 hover:text-purple-800 font-semibold"
+                                        >
+                                            {filteredModules.every(m => selectedModules.has(`${m.s}-${m.c}`)) ? 'Deselect All' : 'Select All'}
+                                        </button>
+                                    </div>
+                                    
+                                    <div className="bg-white rounded-lg border border-purple-200 p-3 max-h-48 overflow-y-auto">
+                                        {filteredModules.map(mod => {
+                                            const moduleId = `${mod.s}-${mod.c}`;
+                                            return (
+                                                <label key={moduleId} className="flex items-start gap-2 p-2 hover:bg-purple-50 rounded cursor-pointer">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={selectedModules.has(moduleId)}
+                                                        onChange={() => toggleModuleSelection(moduleId)}
+                                                        className="w-4 h-4 text-purple-600 rounded mt-0.5"
+                                                    />
+                                                    <span className="text-xs flex-1">
+                                                        <span className="font-bold text-purple-700">{mod.s.toUpperCase()} {mod.c}:</span> {mod.n}
+                                                    </span>
+                                                </label>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            {/* Bottom: Date and Award Button */}
+                            <div className="mt-6 flex flex-col md:flex-row gap-4 items-end">
+                                <div className="flex-1">
+                                    <label className="block text-sm font-bold text-slate-700 mb-2">Date Completed</label>
+                                    <input
+                                        type="date"
+                                        value={bulkAwardDate}
+                                        onChange={(e) => setBulkAwardDate(e.target.value)}
+                                        className="w-full p-2 border border-slate-300 rounded-lg"
+                                    />
+                                </div>
+                                <div className="flex-1 text-center">
+                                    <p className="text-sm text-slate-600 mb-2">
+                                        <span className="font-bold text-purple-700">{selectedCadets.size}</span> cadet(s) × 
+                                        <span className="font-bold text-purple-700"> {selectedModules.size}</span> module(s) = 
+                                        <span className="font-bold text-lg text-purple-900"> {selectedCadets.size * selectedModules.size}</span> awards
+                                    </p>
+                                </div>
+                                <div className="flex gap-2">
+                                    <button
+                                        onClick={() => {
+                                            setSelectedCadets(new Set());
+                                            setSelectedModules(new Set());
+                                        }}
+                                        className="px-4 py-2 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 font-semibold"
+                                    >
+                                        Clear Selections
+                                    </button>
+                                    <button
+                                        onClick={handleBulkAward}
+                                        disabled={selectedCadets.size === 0 || selectedModules.size === 0}
+                                        className={`px-6 py-2 rounded-lg font-bold flex items-center gap-2 ${
+                                            selectedCadets.size > 0 && selectedModules.size > 0
+                                                ? 'bg-purple-600 text-white hover:bg-purple-700 shadow-lg'
+                                                : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                                        }`}
+                                    >
+                                        <Icon name="Award" className="w-4 h-4" />
+                                        Award Modules →
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                     
                     {/* Junior Data Management */}
                     <div className="bg-blue-50 rounded-lg shadow p-6 border-l-4 border-blue-500">
@@ -5629,7 +6220,7 @@
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<App />);
         
-        console.log(`RC2.25 loaded successfully! Version: ${DATA_VERSION}`);
+        console.log(`RC2.26 loaded successfully! Version: ${DATA_VERSION}`);
         console.log("RC2.25: Junior awards now integrated into main Due/Upcoming section");
     </script>
 </body>

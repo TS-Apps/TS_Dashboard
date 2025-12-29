@@ -100,7 +100,7 @@
         // ============================================================================
         
         // --- 1.1 VERSION ---
-        const DATA_VERSION = "1.0-RC2.12"; // RC2 Complete + Bulk Upload Template Feature 
+        const DATA_VERSION = "1.0-RC2.16"; // RC2 Complete + Bulk Upload Template Feature 
 
         // --- 1.2 BADGE & RANK IMAGE MAPS ---
         const RANK_IMG_MAP = {
@@ -3904,7 +3904,7 @@
                             <table className="min-w-full text-xs border-collapse">
                                 <thead className="bg-slate-100">
                                     <tr>
-                                        <th className="sticky left-0 bg-slate-100 px-2 py-2 text-left font-bold text-slate-700 uppercase z-10 border-r text-xs whitespace-nowrap">
+                                        <th className="sticky left-0 bg-slate-100 px-2 py-2 text-left font-bold text-slate-700 uppercase z-10 border-r text-xs" style={{maxWidth: '200px', width: '200px'}}>
                                             Module / Cadet
                                         </th>
                                         {juniors.map(junior => (
@@ -3929,8 +3929,10 @@
                                 <tbody>
                                     {allModules.map((mod, idx) => (
                                         <tr key={`${mod.s}-${mod.c}`} className={getSectionBg(mod.s)}>
-                                            <td className={`sticky left-0 px-2 py-1 font-semibold border-r border-b z-10 text-xs whitespace-nowrap ${getSectionModuleBg(mod.s)}`}>
-                                                <span className="font-bold">{mod.s.toUpperCase()} {mod.c}:</span> {mod.n}
+                                            <td className={`sticky left-0 px-2 py-1 font-semibold border-r border-b z-10 text-xs ${getSectionModuleBg(mod.s)}`} style={{maxWidth: '200px', width: '200px'}}>
+                                                <div className="overflow-hidden text-ellipsis whitespace-nowrap" title={`${mod.s.toUpperCase()} ${mod.c}: ${mod.n}`}>
+                                                    <span className="font-bold">{mod.s.toUpperCase()} {mod.c}:</span> {mod.n}
+                                                </div>
                                             </td>
                                             {juniors.map(junior => {
                                                 const completion = hasModule(junior.pNumber, mod.s, mod.c);
@@ -4037,15 +4039,34 @@
             const yellowModules = juniorModules.filter(m => m.section === 'yellow').length;
             const stemModules = juniorModules.filter(m => m.section === 'stem').length;
             
-            // Calculate rank
-            let currentRank = "Junior Cadet";
-            const redCores = juniorModules.filter(m => m.section === 'red' && m.isCore).length;
-            const blueCores = juniorModules.filter(m => m.section === 'blue' && m.isCore).length;
+            // Use rank from Westminster CSV (not calculated from modules)
+            const currentRank = junior.rank || "Junior Cadet";
             
-            if (redCores >= 11) currentRank = "Junior Cadet 1st Class";
-            if (blueCores >= 4 && currentRank === "Junior Cadet 1st Class") currentRank = "Able Junior Cadet";
-            if (redModules >= 15 && blueModules >= 15 && greenModules >= 15 && yellowModules >= 15) {
-                currentRank = "Leading Junior Cadet";
+            // Calculate next rank and requirements
+            let nextRank = "";
+            let requirements = [];
+            
+            // Normalize rank name for comparison (handle variations like "JC", "Junior Cadet", etc)
+            const rankLower = currentRank.toLowerCase();
+            
+            if (rankLower.includes("junior cadet 1st class") || rankLower.includes("jcfc")) {
+                nextRank = "Able Junior Cadet";
+                requirements.push("Complete BLUE Section Core modules");
+                requirements.push("12 months service with Sea Cadets");
+                requirements.push("Complete at least one proficiency");
+            } else if (rankLower.includes("able junior") || rankLower.includes("ajc")) {
+                nextRank = "Leading Junior Cadet";
+                requirements.push("Complete all four Sections (Red, Blue, Yellow, Green)");
+                requirements.push("Complete one additional proficiency");
+                requirements.push("At least 11 years old");
+                requirements.push("Be recommended by Juniors Training Officer");
+            } else if (rankLower.includes("leading junior") || rankLower.includes("ljc")) {
+                nextRank = "Top Rank (promote to Sea Cadet at 12)";
+                requirements.push("Continue activities until 12th birthday");
+            } else {
+                // Default: Junior Cadet
+                nextRank = "Junior Cadet 1st Class";
+                requirements.push("Complete RED Section Core modules");
             }
             
             const handleModuleSubmit = () => {
@@ -4101,6 +4122,15 @@
                             <div>
                                 <p className="text-sm text-slate-600">Current Rank</p>
                                 <p className="font-bold text-lg text-purple-700">{currentRank}</p>
+                                <div className="mt-2 pt-2 border-t border-slate-200">
+                                    <p className="text-xs text-slate-500 font-semibold">Next Rank</p>
+                                    <p className="text-sm font-bold text-blue-600">{nextRank}</p>
+                                    <ul className="mt-1 text-xs text-slate-600 space-y-0.5">
+                                        {requirements.map((req, idx) => (
+                                            <li key={idx}>• {req}</li>
+                                        ))}
+                                    </ul>
+                                </div>
                             </div>
                             <div>
                                 <p className="text-sm text-slate-600">Age / Days to 12th Birthday</p>

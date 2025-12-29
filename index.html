@@ -100,7 +100,7 @@
         // ============================================================================
         
         // --- 1.1 VERSION ---
-        const DATA_VERSION = "1.0-RC2.21.1"; // RC2.21.1: Bugfix - moved CADET_FOCUS_WATERBORNE_HIERARCHY to global scope 
+        const DATA_VERSION = "1.0-RC2.22"; // RC2.22: Removed juniors from Cadet Focus (seniors only) 
 
         // --- 1.2 BADGE & RANK IMAGE MAPS ---
         const RANK_IMG_MAP = {
@@ -2667,17 +2667,23 @@
         
         // --- 3.6 CADET FOCUS COMPONENT ---
         const CadetFocus = ({ personnel, qualsData }) => {
-            const [selectedCadetPNum, setSelectedCadetPNum] = useState(personnel.length > 0 ? personnel[0].pNumber : "");
+            // Filter out juniors (under 12) - they have their own Junior Focus page
+            const seniorCadets = useMemo(() => 
+                personnel.filter(cadet => !isJunior(cadet.dob)), 
+                [personnel]
+            );
+            
+            const [selectedCadetPNum, setSelectedCadetPNum] = useState(seniorCadets.length > 0 ? seniorCadets[0].pNumber : "");
             
             // Force reset if selected cadet is not in list (e.g. new file load)
             useEffect(() => {
-                if (personnel.length > 0 && (!selectedCadetPNum || !personnel.find(p => p.pNumber === selectedCadetPNum))) {
-                    setSelectedCadetPNum(personnel[0].pNumber);
+                if (seniorCadets.length > 0 && (!selectedCadetPNum || !seniorCadets.find(p => p.pNumber === selectedCadetPNum))) {
+                    setSelectedCadetPNum(seniorCadets[0].pNumber);
                 }
-            }, [personnel, selectedCadetPNum]);
+            }, [seniorCadets, selectedCadetPNum]);
             
-            const sortedPersonnel = useMemo(() => [...personnel].sort((a, b) => a.name.localeCompare(b.name)), [personnel]);
-            const selectedCadet = useMemo(() => personnel.find(p => p.pNumber === selectedCadetPNum), [personnel, selectedCadetPNum]);
+            const sortedPersonnel = useMemo(() => [...seniorCadets].sort((a, b) => a.name.localeCompare(b.name)), [seniorCadets]);
+            const selectedCadet = useMemo(() => seniorCadets.find(p => p.pNumber === selectedCadetPNum), [seniorCadets, selectedCadetPNum]);
             
             const cadetAge = useMemo(() => selectedCadet?.dob ? calculateAge(selectedCadet.dob) : "Unknown", [selectedCadet]);
             const cadetAgeClass = useMemo(() => selectedCadet?.dob ? getCadetAgeColor(selectedCadet.dob) : "", [selectedCadet]);
@@ -3215,6 +3221,19 @@
             }, [qualsData, selectedCadetPNum, selectedCadet]);
 
 
+            if (seniorCadets.length === 0) {
+                return (
+                    <div className="p-8 text-center">
+                        <div className="bg-white rounded-lg shadow p-8">
+                            <Icon name="Users" className="w-16 h-16 mx-auto text-slate-300 mb-4" />
+                            <h2 className="text-2xl font-bold text-slate-700 mb-2">No Senior Cadets Found</h2>
+                            <p className="text-slate-600">All cadets in your data are under 12 years old (juniors).</p>
+                            <p className="text-sm text-slate-500 mt-4">Use the Junior Focus page to view junior cadets.</p>
+                        </div>
+                    </div>
+                );
+            }
+
             if (!selectedCadet) return <div className="p-8 text-center text-slate-500">Please load data and select a cadet.</div>;
 
             return (
@@ -3243,19 +3262,10 @@
                             <div className="bg-slate-50 p-4 rounded border">
                                 <p className="text-xs text-slate-400 font-bold mb-2">Rank</p>
                                 <div className="flex items-center gap-3">
-                                    {rankImages || selectedCadet.rank === "Able Junior Cadet" ? (
+                                    {rankImages ? (
                                         <>
-                                            {selectedCadet.rank === "Able Junior Cadet" || rankImages?.count === 2 ? (
-                                                <div className="flex gap-1">
-                                                    <img src="media/scc_junior_star.webp" className="h-12 w-auto object-contain shadow-sm" alt="Rank Star 1" onError={(e) => e.target.style.display = 'none'} />
-                                                    <img src="media/scc_junior_star.webp" className="h-12 w-auto object-contain shadow-sm" alt="Rank Star 2" onError={(e) => e.target.style.display = 'none'} />
-                                                </div>
-                                            ) : (
-                                                <>
-                                                    {rankImages?.sleeve && <img src={`media/${rankImages.sleeve}`} className="h-12 w-auto object-contain shadow-sm" alt="Sleeve Rank" title="Sleeve Badge" onError={(e) => e.target.style.display = 'none'} />}
-                                                    {rankImages?.slide && <img src={`media/${rankImages.slide}`} className="h-12 w-auto object-contain shadow-sm" alt="Shoulder Slide" title="Shoulder Slide" onError={(e) => e.target.style.display = 'none'} />}
-                                                </>
-                                            )}
+                                            {rankImages?.sleeve && <img src={`media/${rankImages.sleeve}`} className="h-12 w-auto object-contain shadow-sm" alt="Sleeve Rank" title="Sleeve Badge" onError={(e) => e.target.style.display = 'none'} />}
+                                            {rankImages?.slide && <img src={`media/${rankImages.slide}`} className="h-12 w-auto object-contain shadow-sm" alt="Shoulder Slide" title="Shoulder Slide" onError={(e) => e.target.style.display = 'none'} />}
                                         </>
                                     ) : (
                                         <div className="h-12 w-12 bg-slate-200 rounded-full flex items-center justify-center text-slate-400">
@@ -5234,8 +5244,8 @@
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<App />);
         
-        console.log(`RC2.21.1 loaded successfully! Version: ${DATA_VERSION}`);
-        console.log("RC2.21.1: Bugfix - CADET_FOCUS_WATERBORNE_HIERARCHY now in global scope");
+        console.log(`RC2.22 loaded successfully! Version: ${DATA_VERSION}`);
+        console.log("RC2.22: Cadet Focus now shows only senior cadets (12+). Juniors moved to Junior Focus page.");
     </script>
 </body>
 </html>

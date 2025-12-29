@@ -100,7 +100,7 @@
         // ============================================================================
         
         // --- 1.1 VERSION ---
-        const DATA_VERSION = "1.0-RC2.7-fixed"; // RC2 Complete + Bulk Upload Template Feature 
+        const DATA_VERSION = "1.0-RC2.12"; // RC2 Complete + Bulk Upload Template Feature 
 
         // --- 1.2 BADGE & RANK IMAGE MAPS ---
         const RANK_IMG_MAP = {
@@ -3488,38 +3488,6 @@
             const juniorData = getJuniorData();
             const juniors = personnel.filter(c => isJunior(c.dob));
             
-            // Get all unique modules per section from completed data
-            const modulesBySection = {
-                red: new Set(),
-                blue: new Set(),
-                green: new Set(),
-                yellow: new Set(),
-                stem: new Set()
-            };
-            
-            juniorData.moduleCompletions.forEach(comp => {
-                if (modulesBySection[comp.section]) {
-                    modulesBySection[comp.section].add(comp.moduleCode);
-                }
-            });
-            
-            // Convert to sorted arrays
-            const sections = ['red', 'blue', 'green', 'yellow', 'stem'];
-            const sectionData = {};
-            sections.forEach(sec => {
-                sectionData[sec] = Array.from(modulesBySection[sec]).sort((a, b) => {
-                    const aNum = parseFloat(a.replace(/[^\d.]/g, '')) || 0;
-                    const bNum = parseFloat(b.replace(/[^\d.]/g, '')) || 0;
-                    return aNum - bNum;
-                });
-            });
-            
-            const hasModule = (pNumber, section, code) => {
-                return juniorData.moduleCompletions.find(m => 
-                    m.pNumber === pNumber && m.section === section && m.moduleCode === code
-                );
-            };
-            
             if (juniors.length === 0) {
                 return (
                     <div className="p-8">
@@ -3532,84 +3500,452 @@
                 );
             }
             
-            const sectionColors = {
-                red: { bg: 'bg-red-50', completed: 'bg-red-600 text-white', header: 'bg-red-500 text-white' },
-                blue: { bg: 'bg-blue-50', completed: 'bg-blue-600 text-white', header: 'bg-blue-500 text-white' },
-                green: { bg: 'bg-green-50', completed: 'bg-green-600 text-white', header: 'bg-green-500 text-white' },
-                yellow: { bg: 'bg-yellow-50', completed: 'bg-yellow-600 text-white', header: 'bg-yellow-500 text-white' },
-                stem: { bg: 'bg-purple-50', completed: 'bg-purple-600 text-white', header: 'bg-purple-500 text-white' }
+            // ALL 333 official modules with names
+            const allModules = [
+                // RED Section
+                {s:'red',c:'1',n:'Unit Induction: Tour of Unit'},
+                {s:'red',c:'1.1',n:'Unit Induction: Unit Fire Drill'},
+                {s:'red',c:'1.2',n:'Unit Induction: Map Out Your Unit'},
+                {s:'red',c:'1.3',n:'Unit Induction: What\'s Important?'},
+                {s:'red',c:'1.4',n:'Unit Induction: Uniformed Art'},
+                {s:'red',c:'1.5',n:'Unit Induction: Badges & Ranks'},
+                {s:'red',c:'2',n:'Two Questions & A Funny'},
+                {s:'red',c:'2.1',n:'Paper Planes'},
+                {s:'red',c:'2.2',n:'Names and Beanbags'},
+                {s:'red',c:'2.3',n:'Mini Me'},
+                {s:'red',c:'3',n:'Unit Who\'s Who: Say Cheese'},
+                {s:'red',c:'4',n:'Basic Drill'},
+                {s:'red',c:'4.1',n:'Unit Calls (Piping)'},
+                {s:'red',c:'4.2',n:'Colours & Naval Customs'},
+                {s:'red',c:'4.3',n:'Treat Yourself'},
+                {s:'red',c:'5',n:'Junior Sea Cadet Uniform'},
+                {s:'red',c:'6',n:'Safeguarding: SHOUT'},
+                {s:'red',c:'7',n:'Organising Unit Activities'},
+                {s:'red',c:'7.1',n:'Unit Activities'},
+                {s:'red',c:'7.2',n:'Ready Aye Ready'},
+                {s:'red',c:'7.3',n:'Unit Elevator Pitch'},
+                {s:'red',c:'7.4',n:'Unit Advert'},
+                {s:'red',c:'7.5',n:'Theme Tune'},
+                {s:'red',c:'8',n:'How\'s Your Aim?'},
+                {s:'red',c:'9',n:'Royal Marines Cadet Guest'},
+                {s:'red',c:'9.1',n:'Royal Marines Cadets'},
+                {s:'red',c:'9.2',n:'Royal Marines Activities'},
+                {s:'red',c:'10',n:'Scrap Book Memories'},
+                {s:'red',c:'11',n:'Passing Messages: Flags'},
+                {s:'red',c:'11.1',n:'Lord Nelson\'s Message'},
+                {s:'red',c:'11.2',n:'Codebreaker: Morse'},
+                {s:'red',c:'11.3',n:'What\'s Your Position?'},
+                {s:'red',c:'11.4',n:'Turn Up The Radios'},
+                {s:'red',c:'11.5',n:'Phonetic Alphabet'},
+                {s:'red',c:'12',n:'Chocolate Crispies'},
+                {s:'red',c:'12.1',n:'Apple & Ginger'},
+                {s:'red',c:'12.2',n:'Chefs\' Sweet Tooth'},
+                {s:'red',c:'12.3',n:'Chefs Savoury Tooth'},
+                {s:'red',c:'12.4',n:'Chefs Cuppa'},
+                {s:'red',c:'13',n:'Who Can Help Me?'},
+                {s:'red',c:'13.1',n:'Emergency Visits'},
+                {s:'red',c:'14',n:'How International Are We?'},
+                {s:'red',c:'15',n:'First Aid Basics'},
+                {s:'red',c:'15.1',n:'First Aid Relay'},
+                {s:'red',c:'15.2',n:'Units Safety Poster'},
+                {s:'red',c:'16',n:'Naval Heraldry'},
+                {s:'red',c:'17',n:'Throw Yourself a Knot'},
+                {s:'red',c:'17.1',n:'Tasty Knots'},
+                {s:'red',c:'17.2',n:'Rope and Spoons'},
+                {s:'red',c:'17.3',n:'Knot Board'},
+                {s:'red',c:'17.4',n:'Paracord Keyrings'},
+                {s:'red',c:'17.5',n:'Parts of a Ship'},
+                {s:'red',c:'17.6',n:'Ship Ahoy!'},
+                {s:'red',c:'18',n:'Planning & Preparation'},
+                {s:'red',c:'18.1',n:'Food Storage'},
+                {s:'red',c:'18.2',n:'Keeping Germs at Bay'},
+                {s:'red',c:'18.3',n:'Missed a Spot!'},
+                {s:'red',c:'18.4',n:'Building Bacteria'},
+                {s:'red',c:'18.5',n:'Fuzzy Bread'},
+                {s:'red',c:'18.6',n:'Clean Hands?'},
+                {s:'red',c:'19',n:'Earthshot Challenge'},
+                {s:'red',c:'20',n:'Suggestion Box'},
+                {s:'red',c:'21',n:'Kindness and Wellbeing'},
+                {s:'red',c:'21.1',n:'Kindness and Wellbeing'},
+                {s:'red',c:'22',n:'Teamwork Skills'},
+                
+                // BLUE Section
+                {s:'blue',c:'T1',n:'Dinghy Sailing Taster'},
+                {s:'blue',c:'T2',n:'Paddlesport Taster'},
+                {s:'blue',c:'T3',n:'Windsurfing Taster'},
+                {s:'blue',c:'T4',n:'Rowing Taster'},
+                {s:'blue',c:'1',n:'Safety by the Water'},
+                {s:'blue',c:'1.1',n:'Rescue Line'},
+                {s:'blue',c:'1.2',n:'Help, I Need Help!'},
+                {s:'blue',c:'2',n:'Cardinal Marks'},
+                {s:'blue',c:'2.1',n:'Danger Zones'},
+                {s:'blue',c:'3',n:'Royal & Merchant Navy'},
+                {s:'blue',c:'4',n:'Going on a Mission'},
+                {s:'blue',c:'5',n:'Maritime Museum'},
+                {s:'blue',c:'6',n:'Battleships'},
+                {s:'blue',c:'7',n:'Remember The Facts'},
+                {s:'blue',c:'7.1',n:'Famous Figures'},
+                {s:'blue',c:'7.2',n:'Picasso\'s Nelson'},
+                {s:'blue',c:'8',n:'Boat Construction'},
+                {s:'blue',c:'8.1',n:'Build Boat'},
+                {s:'blue',c:'8.2',n:'Model Raft'},
+                {s:'blue',c:'8.3',n:'Water Raft'},
+                {s:'blue',c:'9',n:'Wise Near Water'},
+                {s:'blue',c:'9.1',n:'What Flag Am I?'},
+                {s:'blue',c:'10',n:'Lifeguards'},
+                {s:'blue',c:'11',n:'Keep Swimming'},
+                {s:'blue',c:'12',n:'Swimathon'},
+                {s:'blue',c:'13',n:'Marco Polo'},
+                {s:'blue',c:'13.1',n:'Synchronised Swim'},
+                {s:'blue',c:'13.2',n:'Water Polo'},
+                {s:'blue',c:'14',n:'Swimming Gala'},
+                {s:'blue',c:'15',n:'Signposts at Sea'},
+                {s:'blue',c:'15.1',n:'Edible Signposts'},
+                {s:'blue',c:'15.2',n:'Ropes on Biscuits'},
+                {s:'blue',c:'16',n:'Saving Sam'},
+                {s:'blue',c:'16.1',n:'Don\'t Fall Out!'},
+                {s:'blue',c:'17',n:'Go Rowing!'},
+                {s:'blue',c:'17.1',n:'Learn Rowing!'},
+                {s:'blue',c:'18',n:'Go Sailing!'},
+                {s:'blue',c:'18.1',n:'Learn Sailing!'},
+                {s:'blue',c:'19',n:'Go Paddling!'},
+                {s:'blue',c:'19.1',n:'Learn Paddlesport!'},
+                {s:'blue',c:'19.2',n:'Voyage of Discovery'},
+                {s:'blue',c:'20',n:'Learn Windsurfing!'},
+                {s:'blue',c:'20.1',n:'Go Windsurfing!'},
+                {s:'blue',c:'21',n:'Good Look Out'},
+                {s:'blue',c:'21.1',n:'Hazards'},
+                {s:'blue',c:'21.2',n:'Buoyancy'},
+                {s:'blue',c:'21.3',n:'Safe Speeds'},
+                {s:'blue',c:'22',n:'Navigation'},
+                {s:'blue',c:'23',n:'Crossing The Line'},
+                {s:'blue',c:'23.1',n:'Nautical Terms'},
+                {s:'blue',c:'23.2',n:'Sea Shanties'},
+                {s:'blue',c:'23.3',n:'Hornpipe Dance'},
+                {s:'blue',c:'24',n:'Boat Types'},
+                {s:'blue',c:'24.1',n:'RS ZEST Single'},
+                {s:'blue',c:'24.2',n:'RS QUEST Crewed'},
+                {s:'blue',c:'25',n:'Cold Water Shock'},
+                {s:'blue',c:'26',n:'Towpath I Spy'},
+                {s:'blue',c:'27',n:'Flag Etiquette'},
+                {s:'blue',c:'28',n:'Green and Clean'},
+                {s:'blue',c:'29',n:'Big Clean Up'},
+                {s:'blue',c:'29.2',n:'Plastic Eating Machine'},
+                
+                // GREEN Section
+                {s:'green',c:'1',n:'50 Things'},
+                {s:'green',c:'2',n:'Mapping It Out'},
+                {s:'green',c:'2.1',n:'Around the Globe'},
+                {s:'green',c:'3',n:'Grid References'},
+                {s:'green',c:'4',n:'Weather'},
+                {s:'green',c:'4.1',n:'Make it Rain!'},
+                {s:'green',c:'5',n:'Captain\'s Coming'},
+                {s:'green',c:'5.1',n:'Home Made Compass'},
+                {s:'green',c:'6',n:'Photography'},
+                {s:'green',c:'7',n:'Pacing It Out'},
+                {s:'green',c:'7.1',n:'Micro Journey'},
+                {s:'green',c:'7.2',n:'Unique Monopoly'},
+                {s:'green',c:'7.3',n:'Navigate Further'},
+                {s:'green',c:'8',n:'Basic Outdoors'},
+                {s:'green',c:'8.1',n:'Zero Trace'},
+                {s:'green',c:'8.2',n:'What to Wear'},
+                {s:'green',c:'8.3',n:'Keeping Tidy'},
+                {s:'green',c:'9',n:'Stoves'},
+                {s:'green',c:'9.1',n:'Open Fires 101'},
+                {s:'green',c:'9.2',n:'Fire Recipes'},
+                {s:'green',c:'9.3',n:'Junior Survivor'},
+                {s:'green',c:'9.4',n:'Master Chef Outdoors'},
+                {s:'green',c:'10',n:'Practice'},
+                {s:'green',c:'10.1',n:'Amazing Race Junior'},
+                {s:'green',c:'11',n:'Country Code'},
+                {s:'green',c:'11.1',n:'Country Code Guide'},
+                {s:'green',c:'11.2',n:'Environment'},
+                {s:'green',c:'12',n:'Tenting Around'},
+                {s:'green',c:'12.1',n:'Pitching Tent'},
+                {s:'green',c:'13',n:'Safe Outdoors'},
+                {s:'green',c:'13.1',n:'Stranger Danger'},
+                {s:'green',c:'14',n:'Meteorology'},
+                {s:'green',c:'14.1',n:'Weather on Water'},
+                {s:'green',c:'14.2',n:'Storm Surge'},
+                {s:'green',c:'14.3',n:'Low Visibility'},
+                {s:'green',c:'14.4',n:'Celestial Navigation'},
+                {s:'green',c:'15',n:'Wind Blowing'},
+                {s:'green',c:'16',n:'Warming Up'},
+                {s:'green',c:'16.1',n:'Warm Up Guide'},
+                {s:'green',c:'17',n:'Keep Fit'},
+                {s:'green',c:'17.1',n:'Training Games'},
+                {s:'green',c:'17.2',n:'Competitive'},
+                {s:'green',c:'17.3',n:'Happy Healthy'},
+                {s:'green',c:'17.4',n:'Eating Healthy'},
+                {s:'green',c:'17.5',n:'Games to Start'},
+                {s:'green',c:'18',n:'Bird Feeder'},
+                {s:'green',c:'18.1',n:'Bee Bombs'},
+                {s:'green',c:'18.2',n:'Seed Paper'},
+                {s:'green',c:'18.3',n:'Carbon Footprint'},
+                
+                // YELLOW Section
+                {s:'yellow',c:'1',n:'Local Heroes'},
+                {s:'yellow',c:'1.1',n:'Thank You Cards'},
+                {s:'yellow',c:'1.2',n:'Hero Portraits'},
+                {s:'yellow',c:'2',n:'D-Day'},
+                {s:'yellow',c:'2.1',n:'D-Day Art'},
+                {s:'yellow',c:'2.2',n:'D-Day Stories'},
+                {s:'yellow',c:'2.3',n:'D-Day Memory'},
+                {s:'yellow',c:'3',n:'Remembrance'},
+                {s:'yellow',c:'3.1',n:'Poppy Art'},
+                {s:'yellow',c:'3.2',n:'War Stories'},
+                {s:'yellow',c:'4',n:'Charities'},
+                {s:'yellow',c:'4.1',n:'Charity Event'},
+                {s:'yellow',c:'4.2',n:'Fundraising'},
+                {s:'yellow',c:'4.3',n:'Charity Visit'},
+                {s:'yellow',c:'5',n:'Litter Pick'},
+                {s:'yellow',c:'5.1',n:'Beach Clean'},
+                {s:'yellow',c:'5.2',n:'Recycle'},
+                {s:'yellow',c:'5.3',n:'Upcycle'},
+                {s:'yellow',c:'5.4',n:'Reduce Plastic'},
+                {s:'yellow',c:'5.5',n:'Compost'},
+                {s:'yellow',c:'5.6',n:'Energy Saving'},
+                {s:'yellow',c:'6',n:'Community Project'},
+                {s:'yellow',c:'6.1',n:'Helping Neighbours'},
+                {s:'yellow',c:'6.2',n:'Community Survey'},
+                {s:'yellow',c:'6.3',n:'Community Event'},
+                {s:'yellow',c:'7',n:'Democracy'},
+                {s:'yellow',c:'7.1',n:'Mock Election'},
+                {s:'yellow',c:'7.2',n:'Parliament'},
+                {s:'yellow',c:'7.3',n:'Local Council'},
+                {s:'yellow',c:'7.4',n:'Student Voice'},
+                {s:'yellow',c:'7.5',n:'Debate'},
+                {s:'yellow',c:'7.6',n:'Rights'},
+                {s:'yellow',c:'7.7',n:'Laws'},
+                {s:'yellow',c:'7.8',n:'Voting'},
+                {s:'yellow',c:'8',n:'British Values'},
+                {s:'yellow',c:'8.1',n:'Rule of Law'},
+                {s:'yellow',c:'8.2',n:'Democracy Value'},
+                {s:'yellow',c:'8.3',n:'Liberty'},
+                {s:'yellow',c:'8.4',n:'Respect'},
+                {s:'yellow',c:'8.5',n:'Tolerance'},
+                {s:'yellow',c:'8.6',n:'Values Project'},
+                {s:'yellow',c:'8.7',n:'Values Quiz'},
+                {s:'yellow',c:'8.8',n:'Values Discussion'},
+                {s:'yellow',c:'9',n:'Diversity'},
+                {s:'yellow',c:'9.1',n:'Different Cultures'},
+                {s:'yellow',c:'9.2',n:'World Religions'},
+                {s:'yellow',c:'9.3',n:'Celebrations'},
+                {s:'yellow',c:'10',n:'Armed Forces Day'},
+                {s:'yellow',c:'10.1',n:'Parade'},
+                {s:'yellow',c:'10.2',n:'Display'},
+                {s:'yellow',c:'11',n:'Sea Sunday'},
+                {s:'yellow',c:'11.1',n:'Church Service'},
+                {s:'yellow',c:'11.2',n:'Seafarers'},
+                {s:'yellow',c:'12',n:'Royal Events'},
+                {s:'yellow',c:'12.1',n:'Royal History'},
+                {s:'yellow',c:'12.2',n:'Royal Visit'},
+                {s:'yellow',c:'12.3',n:'Royal Celebration'},
+                {s:'yellow',c:'13',n:'Trafalgar Day'},
+                {s:'yellow',c:'13.1',n:'Nelson'},
+                {s:'yellow',c:'13.2',n:'Battle Facts'},
+                {s:'yellow',c:'13.3',n:'HMS Victory'},
+                {s:'yellow',c:'13.4',n:'Trafalgar Square'},
+                {s:'yellow',c:'13.5',n:'Naval History'},
+                {s:'yellow',c:'15',n:'Veterans'},
+                {s:'yellow',c:'15.1',n:'Meet Veteran'},
+                {s:'yellow',c:'16',n:'Cadets Worldwide'},
+                {s:'yellow',c:'17',n:'Sea Cadets History'},
+                {s:'yellow',c:'17.1',n:'Unit History'},
+                {s:'yellow',c:'17.2',n:'Old Photos'},
+                {s:'yellow',c:'18',n:'Famous Ships'},
+                {s:'yellow',c:'19',n:'Navy Careers'},
+                {s:'yellow',c:'19.1',n:'Navy Jobs'},
+                {s:'yellow',c:'19.2',n:'Navy Training'},
+                {s:'yellow',c:'19.3',n:'Navy Life'},
+                {s:'yellow',c:'19.4',n:'Navy Visit'},
+                {s:'yellow',c:'19.5',n:'Navy Talk'},
+                {s:'yellow',c:'20',n:'Future Goals'},
+                {s:'yellow',c:'20.1',n:'Career Ideas'},
+                {s:'yellow',c:'20.2',n:'Skills'},
+                {s:'yellow',c:'20.3',n:'Achievements'},
+                {s:'yellow',c:'20.4',n:'Action Plan'},
+                {s:'yellow',c:'21',n:'Online Safety'},
+                {s:'yellow',c:'22',n:'Mental Health'},
+                {s:'yellow',c:'22.1',n:'Wellbeing'},
+                {s:'yellow',c:'22.2',n:'Stress'},
+                {s:'yellow',c:'22.3',n:'Emotions'},
+                {s:'yellow',c:'22.4',n:'Support'},
+                {s:'yellow',c:'22.5',n:'Mindfulness'},
+                {s:'yellow',c:'22.6',n:'Exercise'},
+                {s:'yellow',c:'22.7',n:'Sleep'},
+                {s:'yellow',c:'22.8',n:'Nutrition'},
+                {s:'yellow',c:'22.9',n:'Friends'},
+                {s:'yellow',c:'23',n:'Personal Safety'},
+                {s:'yellow',c:'23.1',n:'Road Safety'},
+                {s:'yellow',c:'23.2',n:'Water Safety'},
+                {s:'yellow',c:'24',n:'Bullying'},
+                {s:'yellow',c:'24.1',n:'Anti-Bullying'},
+                {s:'yellow',c:'24.2',n:'Being Kind'},
+                {s:'yellow',c:'25',n:'Healthy Eating'},
+                {s:'yellow',c:'26',n:'First Aid'},
+                {s:'yellow',c:'27',n:'Music'},
+                {s:'yellow',c:'27.1',n:'Sea Songs'},
+                {s:'yellow',c:'27.2',n:'Instruments'},
+                {s:'yellow',c:'27.3',n:'Performance'},
+                {s:'yellow',c:'28',n:'Art'},
+                {s:'yellow',c:'28.1',n:'Maritime Art'},
+                {s:'yellow',c:'28.2',n:'Sculpture'},
+                {s:'yellow',c:'28.3',n:'Crafts'},
+                {s:'yellow',c:'28.4',n:'Exhibition'},
+                {s:'yellow',c:'29',n:'Drama'},
+                {s:'yellow',c:'30',n:'Dance'},
+                {s:'yellow',c:'70',n:'Platinum Jubilee'},
+                {s:'yellow',c:'70.1',n:'Jubilee Party'},
+                {s:'yellow',c:'70.2',n:'Jubilee Project'},
+                {s:'yellow',c:'71',n:'Commonwealth Games'},
+                {s:'yellow',c:'72',n:'Coronation'},
+                {s:'yellow',c:'72.1',n:'Coronation Event'},
+                {s:'yellow',c:'73',n:'Special Event'},
+                
+                // STEM Section
+                {s:'stem',c:'1',n:'Coding Basics'},
+                {s:'stem',c:'2',n:'Scratch'},
+                {s:'stem',c:'3',n:'Python'},
+                {s:'stem',c:'4',n:'Robotics'},
+                {s:'stem',c:'5',n:'Electronics'},
+                {s:'stem',c:'6',n:'Circuits'},
+                {s:'stem',c:'7',n:'LED Projects'},
+                {s:'stem',c:'8',n:'Raspberry Pi'},
+                {s:'stem',c:'9',n:'Arduino'},
+                {s:'stem',c:'10',n:'3D Printing'},
+                {s:'stem',c:'11',n:'CAD Design'},
+                {s:'stem',c:'12',n:'Engineering'},
+                {s:'stem',c:'13',n:'Bridges'},
+                {s:'stem',c:'14',n:'Structures'},
+                {s:'stem',c:'15',n:'Forces'},
+                {s:'stem',c:'16',n:'Energy'},
+                {s:'stem',c:'17',n:'Renewable Energy'},
+                {s:'stem',c:'18',n:'Solar Power'},
+                {s:'stem',c:'19',n:'Wind Power'},
+                {s:'stem',c:'20',n:'Water Power'},
+                {s:'stem',c:'21',n:'Chemistry'},
+                {s:'stem',c:'22',n:'Reactions'},
+                {s:'stem',c:'23',n:'Materials'},
+                {s:'stem',c:'24',n:'Biology'},
+                {s:'stem',c:'25',n:'Marine Life'},
+                {s:'stem',c:'26',n:'Ecosystems'},
+                {s:'stem',c:'27',n:'Physics'},
+                {s:'stem',c:'28',n:'Light'},
+                {s:'stem',c:'29',n:'Sound'},
+                {s:'stem',c:'30',n:'Space'},
+                {s:'stem',c:'31',n:'Astronomy'},
+                {s:'stem',c:'32',n:'Planets'},
+                {s:'stem',c:'33',n:'Rockets'},
+                {s:'stem',c:'34',n:'Satellites'},
+                {s:'stem',c:'35',n:'Navigation Tech'},
+                {s:'stem',c:'36',n:'GPS'},
+                {s:'stem',c:'37',n:'Radar'},
+                {s:'stem',c:'38',n:'Sonar'},
+                {s:'stem',c:'39',n:'Maths Games'},
+                {s:'stem',c:'40',n:'Data Science'},
+                {s:'stem',c:'41',n:'Statistics'},
+                {s:'stem',c:'42',n:'Problem Solving'}
+            ];
+            
+            const hasModule = (pNumber, section, code) => {
+                return juniorData.moduleCompletions.find(m => 
+                    m.pNumber === pNumber && m.section === section && m.moduleCode === code
+                );
+            };
+            
+            const getSectionColor = (section) => {
+                const colors = {
+                    red: 'bg-red-600',
+                    blue: 'bg-blue-600',
+                    green: 'bg-green-600',
+                    yellow: 'bg-yellow-600',
+                    stem: 'bg-purple-600'
+                };
+                return colors[section];
+            };
+            
+            const getSectionBg = (section) => {
+                const colors = {
+                    red: 'bg-red-50',
+                    blue: 'bg-blue-50',
+                    green: 'bg-green-50',
+                    yellow: 'bg-yellow-50',
+                    stem: 'bg-purple-50'
+                };
+                return colors[section];
+            };
+            
+            const getSectionModuleBg = (section) => {
+                const colors = {
+                    red: 'bg-red-100 text-red-900',
+                    blue: 'bg-blue-100 text-blue-900',
+                    green: 'bg-green-100 text-green-900',
+                    yellow: 'bg-yellow-100 text-yellow-900',
+                    stem: 'bg-purple-100 text-purple-900'
+                };
+                return colors[section];
             };
             
             return (
-                <div className="space-y-6">
-                    {/* Header */}
-                    <div className="bg-white rounded-lg shadow-xl p-6 border-l-4 border-purple-500">
-                        <div className="flex items-center gap-4">
-                            <div className="p-3 bg-purple-100 rounded-full">
-                                <Icon name="BarChart3" className="w-8 h-8 text-purple-700" />
-                            </div>
+                <div className="space-y-4">
+                    <div className="bg-white rounded-lg shadow p-4 border-l-4 border-purple-500">
+                        <div className="flex items-center gap-3">
+                            <Icon name="BarChart3" className="w-6 h-6 text-purple-700" />
                             <div>
-                                <h1 className="text-3xl font-extrabold text-slate-900">Junior Progress Chart</h1>
-                                <p className="text-slate-600">{juniors.length} junior{juniors.length !== 1 ? 's' : ''} tracked across all sections</p>
+                                <h1 className="text-2xl font-bold text-slate-900">Junior Progress Chart</h1>
+                                <p className="text-sm text-slate-600">{juniors.length} juniors tracked across {allModules.length} modules</p>
                             </div>
                         </div>
                     </div>
                     
-                    {/* Progress Tables by Section */}
-                    {sections.map(section => {
-                        const modules = sectionData[section];
-                        if (modules.length === 0) return null;
-                        
-                        const colors = sectionColors[section];
-                        
-                        return (
-                            <div key={section} className="bg-white rounded-lg shadow overflow-hidden">
-                                <div className={`p-4 ${colors.header}`}>
-                                    <h2 className="text-xl font-bold uppercase">{section} Section</h2>
-                                    <p className="text-sm opacity-90">{modules.length} modules tracked</p>
-                                </div>
-                                
-                                <div className="overflow-x-auto">
-                                    <table className="min-w-full">
-                                        <thead className="bg-slate-100">
-                                            <tr>
-                                                <th className="sticky left-0 bg-slate-100 px-4 py-3 text-left text-xs font-bold text-slate-700 uppercase tracking-wider z-10 border-r">
-                                                    Module / Cadet
-                                                </th>
-                                                {juniors.map(junior => (
-                                                    <th key={junior.pNumber} className="px-3 py-3 text-center text-xs font-semibold text-slate-700 border-r last:border-r-0 min-w-[120px]">
-                                                        <div className="font-bold">{junior.name}</div>
-                                                        <div className="text-[10px] font-normal text-slate-500">{junior.rank}</div>
-                                                    </th>
-                                                ))}
-                                            </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-slate-200">
-                                            {modules.map((modCode, idx) => (
-                                                <tr key={modCode} className={idx % 2 === 0 ? 'bg-white' : colors.bg}>
-                                                    <td className="sticky left-0 bg-inherit px-4 py-3 text-sm font-semibold text-slate-900 border-r z-10">
-                                                        {section.toUpperCase()} {modCode}
+                    <div className="bg-white rounded-lg shadow overflow-hidden">
+                        <div className="overflow-x-auto">
+                            <table className="min-w-full text-xs border-collapse">
+                                <thead className="bg-slate-100">
+                                    <tr>
+                                        <th className="sticky left-0 bg-slate-100 px-2 py-2 text-left font-bold text-slate-700 uppercase z-10 border-r text-xs whitespace-nowrap">
+                                            Module / Cadet
+                                        </th>
+                                        {juniors.map(junior => (
+                                            <th key={junior.pNumber} className="px-1 py-2 text-center font-semibold text-slate-700 border-r last:border-r-0 relative bg-slate-100" style={{width: '30px'}}>
+                                                <div className="flex items-center justify-center" style={{height: '140px'}}>
+                                                    <div style={{
+                                                        transform: 'rotate(-90deg)',
+                                                        transformOrigin: 'center center',
+                                                        whiteSpace: 'nowrap',
+                                                        width: '140px',
+                                                        textAlign: 'left',
+                                                        position: 'absolute'
+                                                    }}>
+                                                        <div className="text-[10px] font-bold leading-tight">{junior.name}</div>
+                                                        <div className="text-[8px] font-normal text-slate-500 leading-tight">{junior.rank}</div>
+                                                    </div>
+                                                </div>
+                                            </th>
+                                        ))}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {allModules.map((mod, idx) => (
+                                        <tr key={`${mod.s}-${mod.c}`} className={getSectionBg(mod.s)}>
+                                            <td className={`sticky left-0 px-2 py-1 font-semibold border-r border-b z-10 text-xs whitespace-nowrap ${getSectionModuleBg(mod.s)}`}>
+                                                <span className="font-bold">{mod.s.toUpperCase()} {mod.c}:</span> {mod.n}
+                                            </td>
+                                            {juniors.map(junior => {
+                                                const completion = hasModule(junior.pNumber, mod.s, mod.c);
+                                                return (
+                                                    <td key={junior.pNumber} style={{width: '30px'}} className={`px-0 py-1 text-center border-r border-b last:border-r-0 ${completion ? getSectionColor(mod.s) : ''}`}>
+                                                        {completion ? '\u00A0' : ''}
                                                     </td>
-                                                    {juniors.map(junior => {
-                                                        const completion = hasModule(junior.pNumber, section, modCode);
-                                                        return (
-                                                            <td key={junior.pNumber} className={`px-3 py-3 text-center text-xs border-r last:border-r-0 ${completion ? colors.completed : ''}`}>
-                                                                {completion ? (
-                                                                    <div className="font-semibold">
-                                                                        {formatDate(completion.dateCompleted)}
-                                                                    </div>
-                                                                ) : ''}
-                                                            </td>
-                                                        );
-                                                    })}
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        );
-                    })}
+                                                );
+                                            })}
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
             );
         };
@@ -4066,7 +4402,9 @@
                                     const url = URL.createObjectURL(blob);
                                     const a = document.createElement('a');
                                     a.href = url;
-                                    a.download = `juniors_backup_${new Date().toISOString().split('T')[0]}.json`;
+                                    const now = new Date();
+                                    const timestamp = now.toISOString().replace(/[:.]/g, '-').slice(0, -5);
+                                    a.download = `juniors_backup_${timestamp}.json`;
                                     a.click();
                                 }}
                                 className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 font-semibold"

@@ -100,7 +100,7 @@
         // ============================================================================
         
         // --- 1.1 VERSION ---
-        const DATA_VERSION = "1.0-RC2.18"; // RC2 Complete + Bulk Upload Template Feature 
+        const DATA_VERSION = "1.0-RC2.20"; // RC2 Complete + Bulk Upload Template Feature 
 
         // --- 1.2 BADGE & RANK IMAGE MAPS ---
         const RANK_IMG_MAP = {
@@ -271,6 +271,7 @@
             AlertCircle: lucide.icons.AlertCircle,
             Anchor: lucide.icons.Anchor,
             Shield: lucide.icons.Shield,
+            ShieldAlert: lucide.icons.ShieldAlert,
             Target: lucide.icons.Target,
             Lightbulb: lucide.icons.Lightbulb,
             User: lucide.icons.User,
@@ -278,6 +279,10 @@
             Command: lucide.icons.Command,
             ShipWheel: lucide.icons.ShipWheel,
             ChartGantt: lucide.icons.ChartGantt,
+            Database: lucide.icons.Database,
+            Download: lucide.icons.Download,
+            Settings: lucide.icons.Settings,
+            BarChart3: lucide.icons.BarChart3,
             Home: lucide.icons.Home
         };
 
@@ -2376,12 +2381,23 @@
                                 </div>
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                                {juniorsWithAwardsDue.map((item, idx) => (
-                                    <div key={idx} className={`bg-white p-3 rounded shadow-sm border-l-4 border-${item.color}-500`}>
-                                        <p className="font-bold text-sm text-slate-800">{item.cadet}</p>
-                                        <p className="text-xs text-slate-600 mt-1">{item.award}</p>
-                                    </div>
-                                ))}
+                                {juniorsWithAwardsDue.map((item, idx) => {
+                                    const borderColor = {
+                                        'red': 'border-red-500',
+                                        'blue': 'border-blue-500',
+                                        'green': 'border-green-500',
+                                        'yellow': 'border-yellow-500',
+                                        'purple': 'border-purple-500',
+                                        'amber': 'border-amber-500'
+                                    }[item.color] || 'border-slate-500';
+                                    
+                                    return (
+                                        <div key={idx} className={`bg-white p-3 rounded shadow-sm border-l-4 ${borderColor}`}>
+                                            <p className="font-bold text-sm text-slate-800">{item.cadet}</p>
+                                            <p className="text-xs text-slate-600 mt-1">{item.award}</p>
+                                        </div>
+                                    );
+                                })}
                             </div>
                         </div>
                     )}
@@ -4071,6 +4087,387 @@
 
 
         // --- 3.9 JUNIORS VIEW COMPONENT (RC2 Stage 2) ---
+        // ============================================================================
+        // DATA / UTILITIES VIEW COMPONENT
+        // ============================================================================
+        
+        const DataUtilitiesView = ({ clearData, wipeAllData, setView, personnel }) => {
+            const [uploadStatus, setUploadStatus] = useState('');
+            const juniorData = getJuniorData();
+            
+            const exportJuniorData = () => {
+                const dataStr = JSON.stringify(juniorData, null, 2);
+                const blob = new Blob([dataStr], {type: 'application/json'});
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                const now = new Date();
+                const timestamp = now.toISOString().replace(/[:.]/g, '-').slice(0, -5);
+                a.download = `juniors_backup_${timestamp}.json`;
+                a.click();
+                setUploadStatus('Junior data exported successfully!');
+                setTimeout(() => setUploadStatus(''), 3000);
+            };
+            
+            const importJuniorData = (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    try {
+                        const imported = JSON.parse(event.target.result);
+                        if (confirm('Import this data? This will replace all local junior data.')) {
+                            saveJuniorData(imported);
+                            window.location.reload();
+                        }
+                    } catch (e) {
+                        alert('Error parsing JSON file: ' + e.message);
+                    }
+                };
+                reader.readAsText(file);
+            };
+            
+            return (
+                <div className="space-y-6">
+                    {/* Header */}
+                    <div className="bg-white rounded-lg shadow p-6 border-l-4 border-slate-500">
+                        <div className="flex items-center gap-3">
+                            <Icon name="Database" className="w-8 h-8 text-slate-700" />
+                            <div>
+                                <h1 className="text-3xl font-extrabold text-slate-900">Data / Utilities</h1>
+                                <p className="text-slate-600">Manage all data imports, exports, and system settings</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {uploadStatus && (
+                        <div className="bg-green-50 border-l-4 border-green-500 p-4 rounded-lg">
+                            <p className="text-green-800 font-semibold">{uploadStatus}</p>
+                        </div>
+                    )}
+                    
+                    {/* Upload New Data Section */}
+                    <div className="bg-white rounded-lg shadow p-6">
+                        <h2 className="text-2xl font-bold text-slate-900 mb-4 flex items-center gap-2">
+                            <Icon name="Upload" className="w-6 h-6 text-blue-600" />
+                            Upload Westminster Data
+                        </h2>
+                        <p className="text-slate-600 mb-6">
+                            Upload fresh Westminster personnel and qualifications CSV files to refresh the dashboard data.
+                        </p>
+                        <button
+                            onClick={() => {
+                                if (confirm('Navigate to upload page? This will reload the dashboard. Any unsaved changes will be lost.')) {
+                                    window.location.reload();
+                                }
+                            }}
+                            className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 font-semibold flex items-center gap-2"
+                        >
+                            <Icon name="Upload" className="w-5 h-5" />
+                            Reload Dashboard
+                        </button>
+                    </div>
+                    
+                    {/* Junior Data Management */}
+                    <div className="bg-blue-50 rounded-lg shadow p-6 border-l-4 border-blue-500">
+                        <h2 className="text-2xl font-bold text-blue-900 mb-4 flex items-center gap-2">
+                            <Icon name="Users" className="w-6 h-6 text-blue-600" />
+                            Junior Sea Cadet Data
+                        </h2>
+                        <p className="text-slate-700 mb-6">
+                            Export junior data to share with other JTOs or create backups. Import to load shared data.
+                        </p>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                            <div className="bg-white p-4 rounded-lg border border-blue-200">
+                                <h3 className="font-bold text-blue-900 mb-2">Export Data</h3>
+                                <p className="text-sm text-slate-600 mb-3">
+                                    Download junior module completions as JSON file with timestamp.
+                                </p>
+                                <button
+                                    onClick={exportJuniorData}
+                                    className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 font-semibold w-full flex items-center justify-center gap-2"
+                                >
+                                    <Icon name="Download" className="w-4 h-4" />
+                                    Export Junior Data
+                                </button>
+                            </div>
+                            
+                            <div className="bg-white p-4 rounded-lg border border-blue-200">
+                                <h3 className="font-bold text-blue-900 mb-2">Import Data</h3>
+                                <p className="text-sm text-slate-600 mb-3">
+                                    Load junior data from a previously exported JSON file.
+                                </p>
+                                <label className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 font-semibold cursor-pointer flex items-center justify-center gap-2 w-full">
+                                    <Icon name="Upload" className="w-4 h-4" />
+                                    Import Junior Data
+                                    <input
+                                        type="file"
+                                        accept=".json"
+                                        className="hidden"
+                                        onChange={importJuniorData}
+                                    />
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div className="bg-blue-100 p-4 rounded-lg">
+                            <p className="text-sm text-blue-900">
+                                <strong>Current data:</strong> {juniorData.moduleCompletions.length} module completions tracked
+                            </p>
+                        </div>
+                    </div>
+                    
+                    {/* Bulk Upload Template for Legacy Data */}
+                    <div className="bg-amber-50 rounded-lg shadow p-6 border-l-4 border-amber-500">
+                        <h2 className="text-2xl font-bold text-amber-900 mb-4 flex items-center gap-2">
+                            <Icon name="Upload" className="w-6 h-6 text-amber-600" />
+                            Bulk Upload Legacy Modules
+                        </h2>
+                        <p className="text-slate-700 mb-4">
+                            Import existing paper-based module records. Download template, fill in completed modules, then upload.
+                        </p>
+                        
+                        <div className="bg-white rounded p-4 mb-4 text-sm border border-amber-200">
+                            <p className="font-semibold text-slate-700 mb-2">How it works:</p>
+                            <ol className="list-decimal ml-5 space-y-1 text-slate-600">
+                                <li>Click "Download Template" - gets CSV with all your juniors</li>
+                                <li>Open in Excel/Google Sheets</li>
+                                <li>Add rows for each completed module (one row per module)</li>
+                                <li>Save as CSV</li>
+                                <li>Click "Upload Template" to import all completions</li>
+                            </ol>
+                        </div>
+                        
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => {
+                                    const juniors = personnel.filter(c => {
+                                        if (!c.dob) return false;
+                                        const age = calculateAge(c.dob);
+                                        return age >= 9 && age <= 11;
+                                    });
+                                    
+                                    let csv = "PNumber,Name,Rank,Age,Section,ModuleCode,DateCompleted\n";
+                                    csv += "# Example rows (delete these and add your completions):\n";
+                                    
+                                    if (juniors.length > 0) {
+                                        const exampleJunior = juniors[0];
+                                        csv += `${exampleJunior.pNumber},${exampleJunior.name},${exampleJunior.rank},${calculateAge(exampleJunior.dob)},red,1.1,2025-01-15\n`;
+                                        csv += `${exampleJunior.pNumber},${exampleJunior.name},${exampleJunior.rank},${calculateAge(exampleJunior.dob)},blue,2,2025-01-20\n`;
+                                        csv += "\n# Your juniors (copy these rows and add module codes):\n";
+                                    }
+                                    
+                                    juniors.forEach(junior => {
+                                        csv += `${junior.pNumber},${junior.name},${junior.rank},${calculateAge(junior.dob)},,,\n`;
+                                    });
+                                    
+                                    const blob = new Blob([csv], {type: 'text/csv'});
+                                    const url = URL.createObjectURL(blob);
+                                    const a = document.createElement('a');
+                                    a.href = url;
+                                    a.download = `juniors_template_${new Date().toISOString().split('T')[0]}.csv`;
+                                    a.click();
+                                    setUploadStatus('Template downloaded successfully!');
+                                    setTimeout(() => setUploadStatus(''), 3000);
+                                }}
+                                className="bg-amber-600 text-white px-4 py-2 rounded-lg hover:bg-amber-700 font-semibold flex items-center gap-2"
+                            >
+                                <Icon name="Download" className="w-4 h-4" />
+                                Download Template
+                            </button>
+                            
+                            <label className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 font-semibold cursor-pointer flex items-center gap-2">
+                                <Icon name="Upload" className="w-4 h-4" />
+                                Upload Template
+                                <input
+                                    type="file"
+                                    accept=".csv"
+                                    className="hidden"
+                                    onChange={(e) => {
+                                        const file = e.target.files[0];
+                                        if (!file) return;
+                                        
+                                        const reader = new FileReader();
+                                        reader.onload = (event) => {
+                                            try {
+                                                const text = event.target.result;
+                                                const lines = text.split('\n').filter(line => 
+                                                    line.trim() && !line.startsWith('#')
+                                                );
+                                                
+                                                if (lines.length < 2) {
+                                                    alert('Template appears empty. Add module completions and try again.');
+                                                    return;
+                                                }
+                                                
+                                                const headers = lines[0].trim().toLowerCase().split(',');
+                                                const pnumIdx = headers.indexOf('pnumber');
+                                                const sectionIdx = headers.indexOf('section');
+                                                const moduleIdx = headers.indexOf('modulecode');
+                                                const dateIdx = headers.indexOf('datecompleted');
+                                                
+                                                if (pnumIdx === -1 || sectionIdx === -1 || moduleIdx === -1 || dateIdx === -1) {
+                                                    alert('Invalid template format. Use downloaded template.');
+                                                    return;
+                                                }
+                                                
+                                                const newCompletions = [];
+                                                let imported = 0;
+                                                
+                                                for (let i = 1; i < lines.length; i++) {
+                                                    const row = lines[i].trim().split(',');
+                                                    if (row.length < 4) continue;
+                                                    
+                                                    const pnum = row[pnumIdx]?.trim();
+                                                    const section = row[sectionIdx]?.trim().toLowerCase();
+                                                    const moduleCode = row[moduleIdx]?.trim();
+                                                    const dateComp = row[dateIdx]?.trim() || new Date().toISOString().split('T')[0];
+                                                    
+                                                    if (!pnum || !section || !moduleCode) continue;
+                                                    if (!['red', 'blue', 'green', 'yellow', 'stem'].includes(section)) continue;
+                                                    
+                                                    newCompletions.push({
+                                                        pNumber: pnum,
+                                                        section: section,
+                                                        moduleCode: moduleCode.toUpperCase(),
+                                                        moduleName: moduleCode,
+                                                        dateCompleted: dateComp,
+                                                        isCore: false
+                                                    });
+                                                    
+                                                    imported++;
+                                                }
+                                                
+                                                if (imported === 0) {
+                                                    alert('No valid completions found in template.');
+                                                    return;
+                                                }
+                                                
+                                                if (confirm(`Import ${imported} module completions? This will ADD to existing data.`)) {
+                                                    const currentData = getJuniorData();
+                                                    const updatedData = {
+                                                        ...currentData,
+                                                        moduleCompletions: [...currentData.moduleCompletions, ...newCompletions]
+                                                    };
+                                                    
+                                                    if (saveJuniorData(updatedData)) {
+                                                        setUploadStatus(`Successfully imported ${imported} completions!`);
+                                                        setTimeout(() => window.location.reload(), 1500);
+                                                    }
+                                                }
+                                            } catch (err) {
+                                                alert('Error processing template: ' + err.message);
+                                            }
+                                        };
+                                        reader.readAsText(file);
+                                    }}
+                                />
+                            </label>
+                        </div>
+                        
+                        <div className="mt-4 p-3 bg-amber-100 rounded text-xs text-amber-900">
+                            <p className="mb-1"><strong>CSV Format:</strong> PNumber, Name, Rank, Age, Section, ModuleCode, DateCompleted</p>
+                            <p><strong>Sections:</strong> red (Unit), blue (Waterborne), green (Outdoor), yellow (Community), stem (STEM)</p>
+                        </div>
+                    </div>
+                    
+                    {/* Data Management Actions */}
+                    <div className="bg-white rounded-lg shadow p-6">
+                        <h2 className="text-2xl font-bold text-slate-900 mb-4 flex items-center gap-2">
+                            <Icon name="Settings" className="w-6 h-6 text-slate-600" />
+                            Data Management
+                        </h2>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {/* Reset Cadet Data */}
+                            <div className="bg-blue-50 p-6 rounded-lg border-2 border-blue-200">
+                                <div className="flex items-start gap-3 mb-4">
+                                    <Icon name="RefreshCw" className="w-6 h-6 text-blue-600 flex-shrink-0 mt-1" />
+                                    <div>
+                                        <h3 className="font-bold text-blue-900 text-lg mb-2">Reset Cadet Data</h3>
+                                        <p className="text-sm text-slate-700 mb-4">
+                                            Clears personnel, qualifications, and junior module data. <strong>Keeps logos and settings.</strong>
+                                        </p>
+                                        <p className="text-xs text-blue-800 mb-4">
+                                            Use this when you want to upload fresh Westminster data without losing your unit logo.
+                                        </p>
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={() => {
+                                        if (confirm('Reset cadet data? This will clear personnel, qualifications, and junior module completions. Logos will be preserved.')) {
+                                            clearData();
+                                            setUploadStatus('Cadet data reset successfully!');
+                                            setTimeout(() => setUploadStatus(''), 3000);
+                                        }
+                                    }}
+                                    className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 font-semibold w-full flex items-center justify-center gap-2"
+                                >
+                                    <Icon name="RefreshCw" className="w-4 h-4" />
+                                    Reset Cadet Data
+                                </button>
+                            </div>
+                            
+                            {/* Wipe All Data */}
+                            <div className="bg-red-50 p-6 rounded-lg border-2 border-red-200">
+                                <div className="flex items-start gap-3 mb-4">
+                                    <Icon name="Trash2" className="w-6 h-6 text-red-600 flex-shrink-0 mt-1" />
+                                    <div>
+                                        <h3 className="font-bold text-red-900 text-lg mb-2">Wipe All Data</h3>
+                                        <p className="text-sm text-slate-700 mb-4">
+                                            Completely clears <strong>everything</strong> including logos, settings, and all cadet data.
+                                        </p>
+                                        <p className="text-xs text-red-800 mb-4">
+                                            <strong>Warning:</strong> This action cannot be undone. Use only when starting fresh.
+                                        </p>
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={() => {
+                                        if (confirm('WIPE ALL DATA? This will delete EVERYTHING including logos. This cannot be undone!')) {
+                                            if (confirm('Are you absolutely sure? This is your last chance to cancel.')) {
+                                                wipeAllData();
+                                                setUploadStatus('All data wiped. Redirecting to upload...');
+                                                setTimeout(() => window.location.reload(), 2000);
+                                            }
+                                        }
+                                    }}
+                                    className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 font-semibold w-full flex items-center justify-center gap-2"
+                                >
+                                    <Icon name="Trash2" className="w-4 h-4" />
+                                    Wipe All Data
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {/* System Information */}
+                    <div className="bg-slate-50 rounded-lg shadow p-6 border border-slate-200">
+                        <h2 className="text-xl font-bold text-slate-900 mb-4">System Information</h2>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                            <div>
+                                <p className="text-slate-600 font-semibold">Dashboard Version</p>
+                                <p className="text-slate-900 font-mono">{DATA_VERSION}</p>
+                            </div>
+                            <div>
+                                <p className="text-slate-600 font-semibold">Junior Completions</p>
+                                <p className="text-slate-900">{juniorData.moduleCompletions.length} records</p>
+                            </div>
+                            <div>
+                                <p className="text-slate-600 font-semibold">Storage Used</p>
+                                <p className="text-slate-900">~{Math.round(JSON.stringify(juniorData).length / 1024)}KB</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // ============================================================================
+        // JUNIORS VIEW COMPONENT
+        // ============================================================================
+        
         const JuniorsView = ({ personnel, qualifications }) => {
             const juniorData = getJuniorData();
             
@@ -4108,7 +4505,7 @@
                                 <Icon name="Users" className="w-8 h-8 text-purple-700" />
                             </div>
                             <div>
-                                <h1 className="text-3xl font-extrabold text-slate-900">Junior Sea Cadets</h1>
+                                <h1 className="text-3xl font-extrabold text-slate-900">Junior Focus</h1>
                                 <p className="text-slate-600">{juniors.length} junior{juniors.length !== 1 ? 's' : ''} (ages 9-11)</p>
                             </div>
                         </div>
@@ -4533,212 +4930,6 @@
                         )}
                     </div>
                     
-                    {/* Bulk Upload Template for Legacy Data */}
-                    <div className="bg-amber-50 rounded-lg shadow p-6 border-l-4 border-amber-500">
-                        <h3 className="text-lg font-bold mb-3 text-amber-900">Bulk Upload Legacy Modules</h3>
-                        <p className="text-sm text-amber-800 mb-4">
-                            Import existing paper-based module records. Download template, fill in completed modules, then upload.
-                        </p>
-                        
-                        <div className="bg-white rounded p-4 mb-4 text-sm">
-                            <p className="font-semibold text-slate-700 mb-2">How it works:</p>
-                            <ol className="list-decimal ml-5 space-y-1 text-slate-600">
-                                <li>Click "Download Template" - gets CSV with all your juniors</li>
-                                <li>Open in Excel/Google Sheets</li>
-                                <li>Add rows for each completed module (one row per module)</li>
-                                <li>Save as CSV</li>
-                                <li>Click "Upload Template" to import all completions</li>
-                            </ol>
-                        </div>
-                        
-                        <div className="flex gap-3">
-                            <button
-                                onClick={() => {
-                                    // Generate CSV template
-                                    const juniors = personnel.filter(c => isJunior(c.dob));
-                                    
-                                    let csv = "PNumber,Name,Rank,Age,Section,ModuleCode,DateCompleted\n";
-                                    
-                                    // Add example rows
-                                    csv += "# Example rows (delete these and add your completions):\n";
-                                    if (juniors.length > 0) {
-                                        const exampleJunior = juniors[0];
-                                        csv += `${exampleJunior.pNumber},${exampleJunior.name},${exampleJunior.rank},${calculateAge(exampleJunior.dob)},red,1.1,2025-01-15\n`;
-                                        csv += `${exampleJunior.pNumber},${exampleJunior.name},${exampleJunior.rank},${calculateAge(exampleJunior.dob)},blue,2,2025-01-20\n`;
-                                        csv += "\n# Your juniors (copy these rows and add module codes):\n";
-                                    }
-                                    
-                                    // Add all juniors as template rows
-                                    juniors.forEach(junior => {
-                                        csv += `${junior.pNumber},${junior.name},${junior.rank},${calculateAge(junior.dob)},,,\n`;
-                                    });
-                                    
-                                    const blob = new Blob([csv], {type: 'text/csv'});
-                                    const url = URL.createObjectURL(blob);
-                                    const a = document.createElement('a');
-                                    a.href = url;
-                                    a.download = `juniors_template_${new Date().toISOString().split('T')[0]}.csv`;
-                                    a.click();
-                                }}
-                                className="bg-amber-600 text-white px-4 py-2 rounded-lg hover:bg-amber-700 font-semibold"
-                            >
-                                📥 Download Template
-                            </button>
-                            
-                            <label className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 font-semibold cursor-pointer">
-                                📤 Upload Template
-                                <input
-                                    type="file"
-                                    accept=".csv"
-                                    className="hidden"
-                                    onChange={(e) => {
-                                        const file = e.target.files[0];
-                                        if (!file) return;
-                                        
-                                        const reader = new FileReader();
-                                        reader.onload = (event) => {
-                                            try {
-                                                const text = event.target.result;
-                                                const lines = text.split('\n').filter(line => 
-                                                    line.trim() && !line.startsWith('#')
-                                                );
-                                                
-                                                if (lines.length < 2) {
-                                                    alert('Template appears empty. Add module completions and try again.');
-                                                    return;
-                                                }
-                                                
-                                                const headers = splitCSVLine(lines[0].trim().toLowerCase());
-                                                const pnumIdx = headers.indexOf('pnumber');
-                                                const sectionIdx = headers.indexOf('section');
-                                                const moduleIdx = headers.indexOf('modulecode');
-                                                const dateIdx = headers.indexOf('datecompleted');
-                                                
-                                                if (pnumIdx === -1 || sectionIdx === -1 || moduleIdx === -1 || dateIdx === -1) {
-                                                    alert('Invalid template format. Use downloaded template.');
-                                                    return;
-                                                }
-                                                
-                                                const newCompletions = [];
-                                                let imported = 0;
-                                                
-                                                for (let i = 1; i < lines.length; i++) {
-                                                    const row = splitCSVLine(lines[i].trim());
-                                                    if (row.length < 4) continue;
-                                                    
-                                                    const pnum = sanitizeText(row[pnumIdx] || "").trim();
-                                                    const section = sanitizeText(row[sectionIdx] || "").trim().toLowerCase();
-                                                    const moduleCode = sanitizeText(row[moduleIdx] || "").trim();
-                                                    const dateComp = row[dateIdx] ? row[dateIdx].trim() : '';
-                                                    
-                                                    // Skip if essential fields missing
-                                                    if (!pnum || !section || !moduleCode) continue;
-                                                    
-                                                    // Validate section
-                                                    if (!['red', 'blue', 'green', 'yellow', 'stem'].includes(section)) {
-                                                        console.warn(`Invalid section "${section}" for ${pnum}, skipping`);
-                                                        continue;
-                                                    }
-                                                    
-                                                    newCompletions.push({
-                                                        pNumber: pnum,
-                                                        section: section,
-                                                        moduleCode: moduleCode.toUpperCase(),
-                                                        moduleName: moduleCode, // Could lookup from JUNIOR_MODULES in future
-                                                        dateCompleted: dateComp || new Date().toISOString().split('T')[0],
-                                                        isCore: false // Could lookup from JUNIOR_MODULES in future
-                                                    });
-                                                    
-                                                    imported++;
-                                                }
-                                                
-                                                if (imported === 0) {
-                                                    alert('No valid completions found in template. Check format and try again.');
-                                                    return;
-                                                }
-                                                
-                                                if (confirm(`Import ${imported} module completions? This will ADD to existing junior data.`)) {
-                                                    const currentData = getJuniorData();
-                                                    const updatedData = {
-                                                        ...currentData,
-                                                        moduleCompletions: [...currentData.moduleCompletions, ...newCompletions]
-                                                    };
-                                                    
-                                                    if (saveJuniorData(updatedData)) {
-                                                        alert(`✓ Successfully imported ${imported} module completions!`);
-                                                        window.location.reload();
-                                                    } else {
-                                                        alert('Error saving imported data.');
-                                                    }
-                                                }
-                                                
-                                            } catch (err) {
-                                                console.error('Upload error:', err);
-                                                alert('Error processing template: ' + err.message);
-                                            }
-                                        };
-                                        reader.readAsText(file);
-                                    }}
-                                />
-                            </label>
-                        </div>
-                        
-                        <div className="mt-3 text-xs text-amber-700">
-                            <p><strong>CSV Format:</strong> PNumber, Name, Rank, Age, Section (red/blue/green/yellow/stem), ModuleCode, DateCompleted</p>
-                            <p><strong>Sections:</strong> red (Unit), blue (Waterborne), green (Outdoor), yellow (Community), stem (STEM)</p>
-                        </div>
-                    </div>
-                    
-                    {/* Import/Export */}
-                    <div className="bg-blue-50 rounded-lg shadow p-6 border-l-4 border-blue-500">
-                        <h3 className="text-lg font-bold mb-3 text-blue-900">Import / Export Junior Data</h3>
-                        <p className="text-sm text-blue-800 mb-4">
-                            Export junior data to share with other JTOs or backup. Import to load shared data.
-                        </p>
-                        <div className="flex gap-3">
-                            <button
-                                onClick={() => {
-                                    const dataStr = JSON.stringify(juniorData, null, 2);
-                                    const blob = new Blob([dataStr], {type: 'application/json'});
-                                    const url = URL.createObjectURL(blob);
-                                    const a = document.createElement('a');
-                                    a.href = url;
-                                    const now = new Date();
-                                    const timestamp = now.toISOString().replace(/[:.]/g, '-').slice(0, -5);
-                                    a.download = `juniors_backup_${timestamp}.json`;
-                                    a.click();
-                                }}
-                                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 font-semibold"
-                            >
-                                Export Data
-                            </button>
-                            <label className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 font-semibold cursor-pointer">
-                                Import Data
-                                <input
-                                    type="file"
-                                    accept=".json"
-                                    className="hidden"
-                                    onChange={(e) => {
-                                        const file = e.target.files[0];
-                                        if (!file) return;
-                                        const reader = new FileReader();
-                                        reader.onload = (event) => {
-                                            try {
-                                                const imported = JSON.parse(event.target.result);
-                                                if (confirm('Import this data? This will replace all local junior data.')) {
-                                                    saveJuniorData(imported);
-                                                    window.location.reload();
-                                                }
-                                            } catch (e) {
-                                                alert('Error parsing JSON file: ' + e.message);
-                                            }
-                                        };
-                                        reader.readAsText(file);
-                                    }}
-                                />
-                            </label>
-                        </div>
-                    </div>
                 </div>
             );
         };
@@ -4870,42 +5061,21 @@
                                     <Icon name={sidebarCollapsed ? "ChevronRight" : "ChevronLeft"} className="w-5 h-5"/>
                                 </button>
                             </div>
-                            <nav className="flex-1 p-4 space-y-2 overflow-hidden">
+                            <nav className="flex-1 p-4 space-y-1 overflow-hidden">
                                 <NavItem id="home" icon="Home" label="Home" />
-                                <NavItem id="cadet_focus" icon="User" label="Cadet Focus" />
-                                <NavItem id="juniors" icon="Users" label="Juniors" />
+                                <NavItem id="juniors" icon="Users" label="Junior Focus" />
                                 <NavItem id="junior_progress" icon="BarChart3" label="Junior Progress" />
+                                <NavItem id="cadet_focus" icon="User" label="Cadet Focus" />
                                 <NavItem id="planner" icon="ShipWheel" label="SCC CTP Progress" />
                                 <NavItem id="rmc_planner" icon="Target" label="RMC CTS Progress" />
                                 <NavItem id="waterborne" icon="Anchor" label="Waterborne" />
                                 <NavItem id="awards" icon="Award" label="Awards" />
                                 <NavItem id="suggestions" icon="ChartGantt" label="Training Plan" />
+                                <NavItem id="data_utilities" icon="Database" label="Data / Utilities" />
                             </nav>
-                            <div className="p-4 border-t border-blue-800 space-y-3">
-                                <div>
-                                    <button onClick={clearData} className="flex items-center gap-2 text-xs text-blue-300 hover:text-white w-full">
-                                        <Icon name="RefreshCw" className="w-4 h-4 flex-shrink-0"/> 
-                                        {!sidebarCollapsed && <span>Reset Cadet Data</span>}
-                                    </button>
-                                    {!sidebarCollapsed && (
-                                        <p className="text-[10px] text-blue-400 mt-1 leading-tight">
-                                            Clears cadet data only (keeps logos)
-                                        </p>
-                                    )}
-                                </div>
-                                <div>
-                                    <button onClick={wipeAllData} className="flex items-center gap-2 text-xs text-red-300 hover:text-red-100 w-full">
-                                        <Icon name="Trash2" className="w-4 h-4 flex-shrink-0"/> 
-                                        {!sidebarCollapsed && <span>Wipe All Data</span>}
-                                    </button>
-                                    {!sidebarCollapsed && (
-                                        <p className="text-[10px] text-red-400 mt-1 leading-tight">
-                                            Clears everything including logos
-                                        </p>
-                                    )}
-                                </div>
+                            <div className="p-4 border-t border-blue-800">
                                 {!sidebarCollapsed && (
-                                    <div className="pt-3 border-t border-blue-800">
+                                    <div>
                                         <p className="text-[9px] text-blue-500 text-center">v{DATA_VERSION}</p>
                                     </div>
                                 )}
@@ -4921,6 +5091,7 @@
                             {(view === 'planner') && <TrainingPlanner personnel={personnelData} getCadetProgress={getCadetProgress} qualsData={qualsData} title="SCC CTP Progress" rankOrder={SCC_RANK_ORDER} syllabus={SCC_SYLLABUS} iconName="ShipWheel" onModuleClick={handleModuleDrillDown} />}
                             {(view === 'rmc_planner') && <TrainingPlanner personnel={personnelData} getCadetProgress={getCadetProgress} qualsData={qualsData} title="RMC CTS Progress" rankOrder={RMC_RANK_ORDER} syllabus={RMC_SYLLABUS} colorTheme="green" iconName="Target" onModuleClick={handleModuleDrillDown} />}
                             {(view === 'suggestions') && <TrainingSuggestions personnel={personnelData} getCadetProgress={getCadetProgress} qualsData={qualsData} />}
+                            {view === 'data_utilities' && <DataUtilitiesView clearData={clearData} wipeAllData={wipeAllData} setView={setView} personnel={personnelData} />}
                         </main>
                     </div>
                     {/* Render the Drill Down Modal */}

@@ -100,7 +100,7 @@
         // ============================================================================
         
         // --- 1.1 VERSION ---
-        const DATA_VERSION = "1.0-RC2.27"; // RC2.27: Unit name cleaning - removes Junior Section/RMCD references 
+        const DATA_VERSION = "1.0-RC2.34"; // Official STEM Module Names 
 
         // --- 1.2 BADGE & RANK IMAGE MAPS ---
         const RANK_IMG_MAP = {
@@ -1002,12 +1002,12 @@
         const JUNIOR_RANK_ORDER = ["Junior Cadet", "Junior Cadet 1st Class", "Able Junior Cadet", "Leading Junior Cadet"];
         
         // Junior modules database - 312 modules across 5 sections
-        // Red: 61 (11 core), Blue: 54 (3 core + Blue 1 from Westminster), Green: 49, Yellow: 107, STEM: 41
+        // Red: 65 (11 core), Blue: 61 (4 core inc. Blue 1 from Westminster), Green: 49, Yellow: 118, STEM: 42
         const JUNIOR_MODULES = {
             "metadata": {
                 "version": "1.0",
                 "source": "Official JSC Module List",
-                "totalModules": 312
+                "totalModules": 335
             },
             "sections": {
                 "red": {
@@ -1044,6 +1044,357 @@
         };
         
         console.log("Junior Sea Cadets data loaded - Stage 2 active");
+
+        
+        // --- 1.6 ALL JUNIOR MODULES (335 total) ---
+        // Complete list of all JSC modules across 5 sections for use in Junior Progress Chart and Data/Utilities
+        // RED: 65, BLUE: 61, GREEN: 49, YELLOW: 118, STEM: 42
+        const allModules = [
+            // RED Section
+            {s:'red',c:'1',n:'Unit Induction: Tour of Unit'},
+            {s:'red',c:'1.1',n:'Unit Induction: Unit Fire Drill'},
+            {s:'red',c:'1.2',n:'Unit Induction: Map Out Your Unit'},
+            {s:'red',c:'1.3',n:'Unit Induction: What\'s Important?'},
+            {s:'red',c:'1.4',n:'Unit Induction: Uniformed Art'},
+            {s:'red',c:'1.5',n:'Unit Induction: Badges & Ranks'},
+            {s:'red',c:'2',n:'Two Questions & A Funny'},
+            {s:'red',c:'2.1',n:'Paper Planes'},
+            {s:'red',c:'2.2',n:'Names and Beanbags'},
+            {s:'red',c:'2.3',n:'Mini Me'},
+            {s:'red',c:'3',n:'Unit Who\'s Who: Say Cheese'},
+            {s:'red',c:'4',n:'Basic Drill'},
+            {s:'red',c:'4.1',n:'Unit Calls (Piping)'},
+            {s:'red',c:'4.2',n:'Colours & Naval Customs'},
+            {s:'red',c:'4.3',n:'Treat Yourself'},
+            {s:'red',c:'5',n:'Junior Sea Cadet Uniform'},
+            {s:'red',c:'6',n:'Safeguarding: SHOUT'},
+            {s:'red',c:'7',n:'Organising Unit Activities'},
+            {s:'red',c:'7.1',n:'Unit Activities'},
+            {s:'red',c:'7.2',n:'Ready Aye Ready'},
+            {s:'red',c:'7.3',n:'Unit Elevator Pitch'},
+            {s:'red',c:'7.4',n:'Unit Advert'},
+            {s:'red',c:'7.5',n:'Theme Tune'},
+            {s:'red',c:'8',n:'How\'s Your Aim?'},
+            {s:'red',c:'9',n:'Royal Marines Cadet Guest'},
+            {s:'red',c:'9.1',n:'Royal Marines Cadets'},
+            {s:'red',c:'9.2',n:'Royal Marines Activities'},
+            {s:'red',c:'10',n:'Scrap Book Memories'},
+            {s:'red',c:'11',n:'Passing Messages: Flags'},
+            {s:'red',c:'11.1',n:'Lord Nelson\'s Message'},
+            {s:'red',c:'11.2',n:'Codebreaker: Morse'},
+            {s:'red',c:'11.3',n:'What\'s Your Position?'},
+            {s:'red',c:'11.4',n:'Turn Up The Radios'},
+            {s:'red',c:'11.5',n:'Phonetic Alphabet'},
+            {s:'red',c:'12',n:'Chocolate Crispies'},
+            {s:'red',c:'12.1',n:'Apple & Ginger'},
+            {s:'red',c:'12.2',n:'Chefs\' Sweet Tooth'},
+            {s:'red',c:'12.3',n:'Chefs Savoury Tooth'},
+            {s:'red',c:'12.4',n:'Chefs Cuppa'},
+            {s:'red',c:'13',n:'Who Can Help Me?'},
+            {s:'red',c:'13.1',n:'Emergency Visits'},
+            {s:'red',c:'14',n:'How International Are We?'},
+            {s:'red',c:'15',n:'First Aid Basics'},
+            {s:'red',c:'15.1',n:'First Aid Relay'},
+            {s:'red',c:'15.2',n:'Units Safety Poster'},
+            {s:'red',c:'16',n:'Naval Heraldry'},
+            {s:'red',c:'17',n:'Throw Yourself a Knot'},
+            {s:'red',c:'17.1',n:'Tasty Knots'},
+            {s:'red',c:'17.2',n:'Rope and Spoons'},
+            {s:'red',c:'17.3',n:'Knot Board'},
+            {s:'red',c:'17.4',n:'Paracord Keyrings'},
+            {s:'red',c:'17.5',n:'Parts of a Ship'},
+            {s:'red',c:'17.6',n:'Ship Ahoy!'},
+            {s:'red',c:'18',n:'Planning & Preparation'},
+            {s:'red',c:'18.1',n:'Food Storage'},
+            {s:'red',c:'18.2',n:'Keeping Germs at Bay'},
+            {s:'red',c:'18.3',n:'Missed a Spot!'},
+            {s:'red',c:'18.4',n:'Building Bacteria'},
+            {s:'red',c:'18.5',n:'Fuzzy Bread'},
+            {s:'red',c:'18.6',n:'Clean Hands?'},
+            {s:'red',c:'19',n:'Earthshot Challenge'},
+            {s:'red',c:'20',n:'Suggestion Box'},
+            {s:'red',c:'21',n:'Kindness and Wellbeing'},
+            {s:'red',c:'21.1',n:'Kindness and Wellbeing'},
+            {s:'red',c:'22',n:'Teamwork Skills'},
+            
+            // BLUE Section
+            {s:'blue',c:'T1',n:'Dinghy Sailing Taster'},
+            {s:'blue',c:'T2',n:'Paddlesport Taster'},
+            {s:'blue',c:'T3',n:'Windsurfing Taster'},
+            {s:'blue',c:'T4',n:'Rowing Taster'},
+            {s:'blue',c:'1',n:'Safety by the Water'},
+            {s:'blue',c:'1.1',n:'Rescue Line'},
+            {s:'blue',c:'1.2',n:'Help, I Need Help!'},
+            {s:'blue',c:'2',n:'Cardinal Marks'},
+            {s:'blue',c:'2.1',n:'Danger Zones'},
+            {s:'blue',c:'3',n:'Royal & Merchant Navy'},
+            {s:'blue',c:'4',n:'Going on a Mission'},
+            {s:'blue',c:'5',n:'Maritime Museum'},
+            {s:'blue',c:'6',n:'Battleships'},
+            {s:'blue',c:'7',n:'Remember The Facts'},
+            {s:'blue',c:'7.1',n:'Famous Figures'},
+            {s:'blue',c:'7.2',n:'Picasso\'s Nelson'},
+            {s:'blue',c:'8',n:'Boat Construction'},
+            {s:'blue',c:'8.1',n:'Build Boat'},
+            {s:'blue',c:'8.2',n:'Model Raft'},
+            {s:'blue',c:'8.3',n:'Water Raft'},
+            {s:'blue',c:'9',n:'Wise Near Water'},
+            {s:'blue',c:'9.1',n:'What Flag Am I?'},
+            {s:'blue',c:'10',n:'Lifeguards'},
+            {s:'blue',c:'11',n:'Keep Swimming'},
+            {s:'blue',c:'12',n:'Swimathon'},
+            {s:'blue',c:'13',n:'Marco Polo'},
+            {s:'blue',c:'13.1',n:'Synchronised Swim'},
+            {s:'blue',c:'13.2',n:'Water Polo'},
+            {s:'blue',c:'14',n:'Swimming Gala'},
+            {s:'blue',c:'15',n:'Signposts at Sea'},
+            {s:'blue',c:'15.1',n:'Edible Signposts'},
+            {s:'blue',c:'15.2',n:'Ropes on Biscuits'},
+            {s:'blue',c:'16',n:'Saving Sam'},
+            {s:'blue',c:'16.1',n:'Don\'t Fall Out!'},
+            {s:'blue',c:'17',n:'Go Rowing!'},
+            {s:'blue',c:'17.1',n:'Learn Rowing!'},
+            {s:'blue',c:'18',n:'Go Sailing!'},
+            {s:'blue',c:'18.1',n:'Learn Sailing!'},
+            {s:'blue',c:'19',n:'Go Paddling!'},
+            {s:'blue',c:'19.1',n:'Learn Paddlesport!'},
+            {s:'blue',c:'19.2',n:'Voyage of Discovery'},
+            {s:'blue',c:'20',n:'Learn Windsurfing!'},
+            {s:'blue',c:'20.1',n:'Go Windsurfing!'},
+            {s:'blue',c:'21',n:'Good Look Out'},
+            {s:'blue',c:'21.1',n:'Hazards'},
+            {s:'blue',c:'21.2',n:'Buoyancy'},
+            {s:'blue',c:'21.3',n:'Safe Speeds'},
+            {s:'blue',c:'22',n:'Navigation'},
+            {s:'blue',c:'23',n:'Crossing The Line'},
+            {s:'blue',c:'23.1',n:'Nautical Terms'},
+            {s:'blue',c:'23.2',n:'Sea Shanties'},
+            {s:'blue',c:'23.3',n:'Hornpipe Dance'},
+            {s:'blue',c:'24',n:'Boat Types'},
+            {s:'blue',c:'24.1',n:'RS ZEST Single'},
+            {s:'blue',c:'24.2',n:'RS QUEST Crewed'},
+            {s:'blue',c:'25',n:'Cold Water Shock'},
+            {s:'blue',c:'26',n:'Towpath I Spy'},
+            {s:'blue',c:'27',n:'Flag Etiquette'},
+            {s:'blue',c:'28',n:'Green and Clean'},
+            {s:'blue',c:'29',n:'Big Clean Up'},
+            {s:'blue',c:'29.2',n:'Plastic Eating Machine'},
+            
+            // GREEN Section
+            {s:'green',c:'1',n:'50 Things'},
+            {s:'green',c:'2',n:'Mapping It Out'},
+            {s:'green',c:'2.1',n:'Around the Globe'},
+            {s:'green',c:'3',n:'Grid References'},
+            {s:'green',c:'4',n:'Weather'},
+            {s:'green',c:'4.1',n:'Make it Rain!'},
+            {s:'green',c:'5',n:'Captain\'s Coming'},
+            {s:'green',c:'5.1',n:'Home Made Compass'},
+            {s:'green',c:'6',n:'Photography'},
+            {s:'green',c:'7',n:'Pacing It Out'},
+            {s:'green',c:'7.1',n:'Micro Journey'},
+            {s:'green',c:'7.2',n:'Unique Monopoly'},
+            {s:'green',c:'7.3',n:'Navigate Further'},
+            {s:'green',c:'8',n:'Basic Outdoors'},
+            {s:'green',c:'8.1',n:'Zero Trace'},
+            {s:'green',c:'8.2',n:'What to Wear'},
+            {s:'green',c:'8.3',n:'Keeping Tidy'},
+            {s:'green',c:'9',n:'Stoves'},
+            {s:'green',c:'9.1',n:'Open Fires 101'},
+            {s:'green',c:'9.2',n:'Fire Recipes'},
+            {s:'green',c:'9.3',n:'Junior Survivor'},
+            {s:'green',c:'9.4',n:'Master Chef Outdoors'},
+            {s:'green',c:'10',n:'Practice'},
+            {s:'green',c:'10.1',n:'Amazing Race Junior'},
+            {s:'green',c:'11',n:'Country Code'},
+            {s:'green',c:'11.1',n:'Country Code Guide'},
+            {s:'green',c:'11.2',n:'Environment'},
+            {s:'green',c:'12',n:'Tenting Around'},
+            {s:'green',c:'12.1',n:'Pitching Tent'},
+            {s:'green',c:'13',n:'Safe Outdoors'},
+            {s:'green',c:'13.1',n:'Stranger Danger'},
+            {s:'green',c:'14',n:'Meteorology'},
+            {s:'green',c:'14.1',n:'Weather on Water'},
+            {s:'green',c:'14.2',n:'Storm Surge'},
+            {s:'green',c:'14.3',n:'Low Visibility'},
+            {s:'green',c:'14.4',n:'Celestial Navigation'},
+            {s:'green',c:'15',n:'Wind Blowing'},
+            {s:'green',c:'16',n:'Warming Up'},
+            {s:'green',c:'16.1',n:'Warm Up Guide'},
+            {s:'green',c:'17',n:'Keep Fit'},
+            {s:'green',c:'17.1',n:'Training Games'},
+            {s:'green',c:'17.2',n:'Competitive'},
+            {s:'green',c:'17.3',n:'Happy Healthy'},
+            {s:'green',c:'17.4',n:'Eating Healthy'},
+            {s:'green',c:'17.5',n:'Games to Start'},
+            {s:'green',c:'18',n:'Bird Feeder'},
+            {s:'green',c:'18.1',n:'Bee Bombs'},
+            {s:'green',c:'18.2',n:'Seed Paper'},
+            {s:'green',c:'18.3',n:'Carbon Footprint'},
+            
+            // YELLOW Section
+            {s:'yellow',c:'1',n:'Mardi Gras/Fat Tuesday/Shrove Tuesday'},
+            {s:'yellow',c:'1.1',n:'Parade with Mardi Gras Masks'},
+            {s:'yellow',c:'1.2',n:'Musical Celebration: Jazz Band'},
+            {s:'yellow',c:'2',n:'Celebrating Easter'},
+            {s:'yellow',c:'2.1',n:'Yummy Easter Hot Cross Buns'},
+            {s:'yellow',c:'2.2',n:'Twisted Pretzel: A Food of Lent'},
+            {s:'yellow',c:'2.3',n:'Creative Easter Eggs'},
+            {s:'yellow',c:'3',n:'Festival of Colour Holi'},
+            {s:'yellow',c:'3.1',n:'Colours of Holi'},
+            {s:'yellow',c:'3.2',n:'Nariyal Barfi'},
+            {s:'yellow',c:'4',n:'Happy Diwali (Divali)'},
+            {s:'yellow',c:'4.1',n:'Festival of Lights'},
+            {s:'yellow',c:'4.2',n:'Rangoli Designs'},
+            {s:'yellow',c:'4.3',n:'Karah Parshad'},
+            {s:'yellow',c:'5',n:'Snap It Up With Chinese New Year!'},
+            {s:'yellow',c:'5.1',n:'Taste of China: Sweet Dumplings'},
+            {s:'yellow',c:'5.2',n:'Fortune Cookie Jar'},
+            {s:'yellow',c:'5.3',n:'Prosperity & Good Fortune in Red'},
+            {s:'yellow',c:'5.4',n:'Chinese Dragon Costume (Individual)'},
+            {s:'yellow',c:'5.5',n:'Chinese Dragon Costume (large)'},
+            {s:'yellow',c:'5.6',n:'The Beating Drum'},
+            {s:'yellow',c:'6',n:'Celebrate with an Australian Cork Hat'},
+            {s:'yellow',c:'6.1',n:'Getting to know indigenous Australia'},
+            {s:'yellow',c:'6.2',n:'Didgeridoo: Music Maker'},
+            {s:'yellow',c:'6.3',n:'Australian Bakes: ANZAC Biscuits'},
+            {s:'yellow',c:'7',n:'Everything Christmas: Decorating Time!'},
+            {s:'yellow',c:'7.1',n:'Christmas Bingo!'},
+            {s:'yellow',c:'7.2',n:'A Ginger Christmas'},
+            {s:'yellow',c:'7.3',n:'Chocolate Logs Yule Love!'},
+            {s:'yellow',c:'7.4',n:'Chocolate Logs Made Easy'},
+            {s:'yellow',c:'7.5',n:'Gingerbread Biscuits'},
+            {s:'yellow',c:'7.6',n:'Christmas Gift photo frame'},
+            {s:'yellow',c:'7.7',n:'Seasonal Festive Wreath'},
+            {s:'yellow',c:'7.8',n:'Odd Sock Beanbag Characters'},
+            {s:'yellow',c:'8',n:'Research Time!'},
+            {s:'yellow',c:'8.1',n:'Unit Spookyville'},
+            {s:'yellow',c:'8.2',n:'All Things Spooky'},
+            {s:'yellow',c:'8.3',n:'What Are The Nine Candles?'},
+            {s:'yellow',c:'8.4',n:'Saint Valentine\'s Day Kindness Box'},
+            {s:'yellow',c:'8.5',n:'Saint Patrick\'s Day: Shamrock Shake'},
+            {s:'yellow',c:'8.6',n:'A Special Sunday for Mothers & Caregivers'},
+            {s:'yellow',c:'8.7',n:'Celebrating the Iranian New Year'},
+            {s:'yellow',c:'8.8',n:'Halloween Trick or Treats'},
+            {s:'yellow',c:'9',n:'All About The Community'},
+            {s:'yellow',c:'9.1',n:'Community 101'},
+            {s:'yellow',c:'9.2',n:'Community Tree'},
+            {s:'yellow',c:'9.3',n:'Community Mind Map'},
+            {s:'yellow',c:'10',n:'Survey Mania'},
+            {s:'yellow',c:'10.1',n:'Chips Ahoy! Chip Shop Survey'},
+            {s:'yellow',c:'10.2',n:'Shop Surveys'},
+            {s:'yellow',c:'11',n:'Getting Involved: Community Projects'},
+            {s:'yellow',c:'11.1',n:'Junior Cadets of the World!'},
+            {s:'yellow',c:'11.2',n:'Celebrating Diversity in Your Community'},
+            {s:'yellow',c:'12',n:'Welsh Style: Traditional Welsh Cakes'},
+            {s:'yellow',c:'12.1',n:'Welsh Style: Welsh Rarebit'},
+            {s:'yellow',c:'12.2',n:'Yr laith Gymraeg: Welsh Language'},
+            {s:'yellow',c:'12.3',n:'Y Ddraig Goch Flag: The Red Dragon'},
+            {s:'yellow',c:'13',n:'The Scottish Way: Haggis, Neeps & Tatties'},
+            {s:'yellow',c:'13.1',n:'The Scottish Way: Cèilidh'},
+            {s:'yellow',c:'13.2',n:'The Scottish Way: The Flag of Scotland'},
+            {s:'yellow',c:'13.3',n:'The Scottish Way: Scots Gàidhlig'},
+            {s:'yellow',c:'13.4',n:'Celebrate Saint Andrews Day: Scottish Kilt Card'},
+            {s:'yellow',c:'13.5',n:'Exploring Burns Night Supper'},
+            {s:'yellow',c:'15',n:'The Arrival of Summer: Maypole Dancing'},
+            {s:'yellow',c:'15.1',n:'Morris Dancing'},
+            {s:'yellow',c:'16',n:'4 Nations in 1'},
+            {s:'yellow',c:'17',n:'Places of Interest'},
+            {s:'yellow',c:'17.1',n:'Scavenger Hunt'},
+            {s:'yellow',c:'17.2',n:'Town Maps, Maps of Your Town'},
+            {s:'yellow',c:'18',n:'Broadening The Horizon'},
+            {s:'yellow',c:'19',n:'We Are Different, We are the Same!'},
+            {s:'yellow',c:'19.1',n:'Embrace It: Inclusion & Diversity'},
+            {s:'yellow',c:'19.2',n:'All in a phrase'},
+            {s:'yellow',c:'19.3',n:'Communicating Through Sign Language'},
+            {s:'yellow',c:'19.4',n:'Ditch The Labels!'},
+            {s:'yellow',c:'19.5',n:'Communicating through Braille'},
+            {s:'yellow',c:'20',n:'It\'s Never the Same!'},
+            {s:'yellow',c:'20.1',n:'The Issue'},
+            {s:'yellow',c:'20.2',n:'Wear It On Your Wrist!'},
+            {s:'yellow',c:'20.3',n:'Activists in Action! Anti-bullying Campaign'},
+            {s:'yellow',c:'20.4',n:'Online: It is Still Not Okay!'},
+            {s:'yellow',c:'21',n:'Ten Keys'},
+            {s:'yellow',c:'22',n:'Remembrance Day Parade'},
+            {s:'yellow',c:'22.1',n:'Cenotaphs In The Community'},
+            {s:'yellow',c:'22.2',n:'Paper Plate Poppies'},
+            {s:'yellow',c:'22.3',n:'Recycled Remembrance Poppies'},
+            {s:'yellow',c:'22.4',n:'Remembrance Art'},
+            {s:'yellow',c:'22.5',n:'Medals to Remember'},
+            {s:'yellow',c:'22.6',n:'Portraits of Boy Seaman John T. Cornwell V.C.'},
+            {s:'yellow',c:'22.7',n:'What is your unit\'s History?'},
+            {s:'yellow',c:'22.8',n:'Remembrance Light Jars'},
+            {s:'yellow',c:'22.9',n:'Remembrance Day Wreath'},
+            {s:'yellow',c:'23',n:'The Home Front'},
+            {s:'yellow',c:'23.1',n:'Ration It Out'},
+            {s:'yellow',c:'23.2',n:'Re-enactment Time'},
+            {s:'yellow',c:'24',n:'Values and Citizenship: What about Governments?'},
+            {s:'yellow',c:'24.1',n:'Your Local Government: Face to Face'},
+            {s:'yellow',c:'24.2',n:'Who\'s Who: Mayors or Provosts?'},
+            {s:'yellow',c:'25',n:'Saint George\'s Day'},
+            {s:'yellow',c:'26',n:'VE Victory Sponge'},
+            {s:'yellow',c:'27',n:'#SCRAPPLASTIC Swap Out Your Plastics'},
+            {s:'yellow',c:'27.1',n:'#SCRAPPLASTIC Plastic Free Day'},
+            {s:'yellow',c:'27.2',n:'#SCRAPPLASTIC Supermarket Challenge'},
+            {s:'yellow',c:'27.3',n:'#SCRAPPLASTIC Share What You Know'},
+            {s:'yellow',c:'28',n:'EARTHSHOT (WFW) - Tote-tally Awesome Up-cycled Bag'},
+            {s:'yellow',c:'28.1',n:'Earthshot (WFW) - Ecobricks'},
+            {s:'yellow',c:'28.2',n:'EARTHSHOT (WFW) - Need v Want'},
+            {s:'yellow',c:'28.3',n:'EARTHSHOT (FOC) - Utilising Technology'},
+            {s:'yellow',c:'28.4',n:'EARTHSHOT (WFW) - Where does our waste go?'},
+            {s:'yellow',c:'29',n:'Junior Sea Cadets Competitions'},
+            {s:'yellow',c:'30',n:'Your Identity Matters - Celebrating PRIDE'},
+            {s:'yellow',c:'70',n:'Special Edition Platinum Jubilee'},
+            {s:'yellow',c:'70.1',n:'The Platinum Thread'},
+            {s:'yellow',c:'70.2',n:'Platinum Jubilee Fact Find'},
+            {s:'yellow',c:'71',n:'Remembering Our Patron'},
+            {s:'yellow',c:'72',n:'King\'s Coronation Party event'},
+            {s:'yellow',c:'72.1',n:'King\'s Coronation POM POM decorations'},
+            {s:'yellow',c:'73',n:'Big Help Out - Special Call at a Landmark'},
+            
+            // STEM Section
+            {s:'stem',c:'1',n:'Satellite Intelligence Mission'},
+            {s:'stem',c:'2',n:'Egg Drop Challenge: Protecting The Vessels'},
+            {s:'stem',c:'3',n:'Sink Or Swim: Tinfoil Boat Float Challenge'},
+            {s:'stem',c:'4',n:'Launched Out To Sea: Pom Pom Catapult'},
+            {s:'stem',c:'5',n:'Propeller Nation'},
+            {s:'stem',c:'6',n:'Steer The Ship: Eco-Friendly Giant Maze'},
+            {s:'stem',c:'7',n:'Why It Just Won\'t Work: Salt Pendulum'},
+            {s:'stem',c:'8',n:'Amazing Anchors'},
+            {s:'stem',c:'9',n:'Setting Sail'},
+            {s:'stem',c:'10',n:'Ancient Compasses'},
+            {s:'stem',c:'11',n:'Balancing Boats'},
+            {s:'stem',c:'12',n:'Carrying Cargo'},
+            {s:'stem',c:'13',n:'Electric Engines'},
+            {s:'stem',c:'14',n:'Incredible Insulation'},
+            {s:'stem',c:'15',n:'Invisible Islands'},
+            {s:'stem',c:'16',n:'Luminous Lighthouses'},
+            {s:'stem',c:'17',n:'Oceans In A Bottle'},
+            {s:'stem',c:'18',n:'Salt In The Seas'},
+            {s:'stem',c:'19',n:'Speedy Ships'},
+            {s:'stem',c:'20',n:'The World Around Us: Which Metal? Rust!'},
+            {s:'stem',c:'21',n:'Special Edition: Somewhere Over The Rainbow'},
+            {s:'stem',c:'22',n:'Wind Speed And Pressure: Anemometer'},
+            {s:'stem',c:'23',n:'Elastic Band Powered Cars'},
+            {s:'stem',c:'24',n:'Propelling Forward'},
+            {s:'stem',c:'25',n:'Get Moving - A Chemical Reaction Powered Model Boat!'},
+            {s:'stem',c:'26',n:'Weather Warning - Making A Barometer'},
+            {s:'stem',c:'27',n:'Underwater Volcano - A Force Of Nature!'},
+            {s:'stem',c:'28',n:'Tornado In A Bottle'},
+            {s:'stem',c:'29',n:'Cartesian Diver'},
+            {s:'stem',c:'30',n:'How Long Is A Minute? - Water Clock'},
+            {s:'stem',c:'31',n:'The Science Behind Making The Right Choice!'},
+            {s:'stem',c:'32',n:'Up Periscope - Make Your Own Submarine Periscope'},
+            {s:'stem',c:'33',n:'Geodesic Domes'},
+            {s:'stem',c:'34',n:'Sublime Slime'},
+            {s:'stem',c:'35',n:'Air Power: Balloon Car'},
+            {s:'stem',c:'36',n:'Ruffle Some Feathers - Mini Vortex Cannon'},
+            {s:'stem',c:'37',n:'Paper Roller Coaster - Kinetic & Potential Energy'},
+            {s:'stem',c:'38',n:'Moon Dial'},
+            {s:'stem',c:'39',n:'Paper Glider'},
+            {s:'stem',c:'40',n:'Lava Lamp'},
+            {s:'stem',c:'41',n:'Puffer Fish'},
+            {s:'stem',c:'42',n:'Waste-Free Lunch'}
+        ];
 
         // ============================================================================
         // SECTION 2: HELPER FUNCTIONS
@@ -2091,11 +2442,12 @@
                     const juniorData = getJuniorData();
                     const juniorModules = juniorData.moduleCompletions.filter(m => m.pNumber === junior.pNumber);
                     
-                    const redCount = juniorModules.filter(m => m.section === 'red').length;
-                    const blueCount = juniorModules.filter(m => m.section === 'blue').length;
-                    const greenCount = juniorModules.filter(m => m.section === 'green').length;
-                    const yellowCount = juniorModules.filter(m => m.section === 'yellow').length;
-                    const stemCount = juniorModules.filter(m => m.section === 'stem').length;
+                    // Count unique modules only (duplicates count as one)
+                    const redCount = new Set(juniorModules.filter(m => m.section === 'red').map(m => m.moduleCode)).size;
+                    const blueCount = new Set(juniorModules.filter(m => m.section === 'blue').map(m => m.moduleCode)).size;
+                    const greenCount = new Set(juniorModules.filter(m => m.section === 'green').map(m => m.moduleCode)).size;
+                    const yellowCount = new Set(juniorModules.filter(m => m.section === 'yellow').map(m => m.moduleCode)).size;
+                    const stemCount = new Set(juniorModules.filter(m => m.section === 'stem').map(m => m.moduleCode)).size;
                     
                     const d = new Date(); // All junior awards are "due now"
                     
@@ -3640,353 +3992,6 @@
                 );
             }
             
-            // ALL 333 official modules with names
-            const allModules = [
-                // RED Section
-                {s:'red',c:'1',n:'Unit Induction: Tour of Unit'},
-                {s:'red',c:'1.1',n:'Unit Induction: Unit Fire Drill'},
-                {s:'red',c:'1.2',n:'Unit Induction: Map Out Your Unit'},
-                {s:'red',c:'1.3',n:'Unit Induction: What\'s Important?'},
-                {s:'red',c:'1.4',n:'Unit Induction: Uniformed Art'},
-                {s:'red',c:'1.5',n:'Unit Induction: Badges & Ranks'},
-                {s:'red',c:'2',n:'Two Questions & A Funny'},
-                {s:'red',c:'2.1',n:'Paper Planes'},
-                {s:'red',c:'2.2',n:'Names and Beanbags'},
-                {s:'red',c:'2.3',n:'Mini Me'},
-                {s:'red',c:'3',n:'Unit Who\'s Who: Say Cheese'},
-                {s:'red',c:'4',n:'Basic Drill'},
-                {s:'red',c:'4.1',n:'Unit Calls (Piping)'},
-                {s:'red',c:'4.2',n:'Colours & Naval Customs'},
-                {s:'red',c:'4.3',n:'Treat Yourself'},
-                {s:'red',c:'5',n:'Junior Sea Cadet Uniform'},
-                {s:'red',c:'6',n:'Safeguarding: SHOUT'},
-                {s:'red',c:'7',n:'Organising Unit Activities'},
-                {s:'red',c:'7.1',n:'Unit Activities'},
-                {s:'red',c:'7.2',n:'Ready Aye Ready'},
-                {s:'red',c:'7.3',n:'Unit Elevator Pitch'},
-                {s:'red',c:'7.4',n:'Unit Advert'},
-                {s:'red',c:'7.5',n:'Theme Tune'},
-                {s:'red',c:'8',n:'How\'s Your Aim?'},
-                {s:'red',c:'9',n:'Royal Marines Cadet Guest'},
-                {s:'red',c:'9.1',n:'Royal Marines Cadets'},
-                {s:'red',c:'9.2',n:'Royal Marines Activities'},
-                {s:'red',c:'10',n:'Scrap Book Memories'},
-                {s:'red',c:'11',n:'Passing Messages: Flags'},
-                {s:'red',c:'11.1',n:'Lord Nelson\'s Message'},
-                {s:'red',c:'11.2',n:'Codebreaker: Morse'},
-                {s:'red',c:'11.3',n:'What\'s Your Position?'},
-                {s:'red',c:'11.4',n:'Turn Up The Radios'},
-                {s:'red',c:'11.5',n:'Phonetic Alphabet'},
-                {s:'red',c:'12',n:'Chocolate Crispies'},
-                {s:'red',c:'12.1',n:'Apple & Ginger'},
-                {s:'red',c:'12.2',n:'Chefs\' Sweet Tooth'},
-                {s:'red',c:'12.3',n:'Chefs Savoury Tooth'},
-                {s:'red',c:'12.4',n:'Chefs Cuppa'},
-                {s:'red',c:'13',n:'Who Can Help Me?'},
-                {s:'red',c:'13.1',n:'Emergency Visits'},
-                {s:'red',c:'14',n:'How International Are We?'},
-                {s:'red',c:'15',n:'First Aid Basics'},
-                {s:'red',c:'15.1',n:'First Aid Relay'},
-                {s:'red',c:'15.2',n:'Units Safety Poster'},
-                {s:'red',c:'16',n:'Naval Heraldry'},
-                {s:'red',c:'17',n:'Throw Yourself a Knot'},
-                {s:'red',c:'17.1',n:'Tasty Knots'},
-                {s:'red',c:'17.2',n:'Rope and Spoons'},
-                {s:'red',c:'17.3',n:'Knot Board'},
-                {s:'red',c:'17.4',n:'Paracord Keyrings'},
-                {s:'red',c:'17.5',n:'Parts of a Ship'},
-                {s:'red',c:'17.6',n:'Ship Ahoy!'},
-                {s:'red',c:'18',n:'Planning & Preparation'},
-                {s:'red',c:'18.1',n:'Food Storage'},
-                {s:'red',c:'18.2',n:'Keeping Germs at Bay'},
-                {s:'red',c:'18.3',n:'Missed a Spot!'},
-                {s:'red',c:'18.4',n:'Building Bacteria'},
-                {s:'red',c:'18.5',n:'Fuzzy Bread'},
-                {s:'red',c:'18.6',n:'Clean Hands?'},
-                {s:'red',c:'19',n:'Earthshot Challenge'},
-                {s:'red',c:'20',n:'Suggestion Box'},
-                {s:'red',c:'21',n:'Kindness and Wellbeing'},
-                {s:'red',c:'21.1',n:'Kindness and Wellbeing'},
-                {s:'red',c:'22',n:'Teamwork Skills'},
-                
-                // BLUE Section
-                {s:'blue',c:'T1',n:'Dinghy Sailing Taster'},
-                {s:'blue',c:'T2',n:'Paddlesport Taster'},
-                {s:'blue',c:'T3',n:'Windsurfing Taster'},
-                {s:'blue',c:'T4',n:'Rowing Taster'},
-                {s:'blue',c:'1',n:'Safety by the Water'},
-                {s:'blue',c:'1.1',n:'Rescue Line'},
-                {s:'blue',c:'1.2',n:'Help, I Need Help!'},
-                {s:'blue',c:'2',n:'Cardinal Marks'},
-                {s:'blue',c:'2.1',n:'Danger Zones'},
-                {s:'blue',c:'3',n:'Royal & Merchant Navy'},
-                {s:'blue',c:'4',n:'Going on a Mission'},
-                {s:'blue',c:'5',n:'Maritime Museum'},
-                {s:'blue',c:'6',n:'Battleships'},
-                {s:'blue',c:'7',n:'Remember The Facts'},
-                {s:'blue',c:'7.1',n:'Famous Figures'},
-                {s:'blue',c:'7.2',n:'Picasso\'s Nelson'},
-                {s:'blue',c:'8',n:'Boat Construction'},
-                {s:'blue',c:'8.1',n:'Build Boat'},
-                {s:'blue',c:'8.2',n:'Model Raft'},
-                {s:'blue',c:'8.3',n:'Water Raft'},
-                {s:'blue',c:'9',n:'Wise Near Water'},
-                {s:'blue',c:'9.1',n:'What Flag Am I?'},
-                {s:'blue',c:'10',n:'Lifeguards'},
-                {s:'blue',c:'11',n:'Keep Swimming'},
-                {s:'blue',c:'12',n:'Swimathon'},
-                {s:'blue',c:'13',n:'Marco Polo'},
-                {s:'blue',c:'13.1',n:'Synchronised Swim'},
-                {s:'blue',c:'13.2',n:'Water Polo'},
-                {s:'blue',c:'14',n:'Swimming Gala'},
-                {s:'blue',c:'15',n:'Signposts at Sea'},
-                {s:'blue',c:'15.1',n:'Edible Signposts'},
-                {s:'blue',c:'15.2',n:'Ropes on Biscuits'},
-                {s:'blue',c:'16',n:'Saving Sam'},
-                {s:'blue',c:'16.1',n:'Don\'t Fall Out!'},
-                {s:'blue',c:'17',n:'Go Rowing!'},
-                {s:'blue',c:'17.1',n:'Learn Rowing!'},
-                {s:'blue',c:'18',n:'Go Sailing!'},
-                {s:'blue',c:'18.1',n:'Learn Sailing!'},
-                {s:'blue',c:'19',n:'Go Paddling!'},
-                {s:'blue',c:'19.1',n:'Learn Paddlesport!'},
-                {s:'blue',c:'19.2',n:'Voyage of Discovery'},
-                {s:'blue',c:'20',n:'Learn Windsurfing!'},
-                {s:'blue',c:'20.1',n:'Go Windsurfing!'},
-                {s:'blue',c:'21',n:'Good Look Out'},
-                {s:'blue',c:'21.1',n:'Hazards'},
-                {s:'blue',c:'21.2',n:'Buoyancy'},
-                {s:'blue',c:'21.3',n:'Safe Speeds'},
-                {s:'blue',c:'22',n:'Navigation'},
-                {s:'blue',c:'23',n:'Crossing The Line'},
-                {s:'blue',c:'23.1',n:'Nautical Terms'},
-                {s:'blue',c:'23.2',n:'Sea Shanties'},
-                {s:'blue',c:'23.3',n:'Hornpipe Dance'},
-                {s:'blue',c:'24',n:'Boat Types'},
-                {s:'blue',c:'24.1',n:'RS ZEST Single'},
-                {s:'blue',c:'24.2',n:'RS QUEST Crewed'},
-                {s:'blue',c:'25',n:'Cold Water Shock'},
-                {s:'blue',c:'26',n:'Towpath I Spy'},
-                {s:'blue',c:'27',n:'Flag Etiquette'},
-                {s:'blue',c:'28',n:'Green and Clean'},
-                {s:'blue',c:'29',n:'Big Clean Up'},
-                {s:'blue',c:'29.2',n:'Plastic Eating Machine'},
-                
-                // GREEN Section
-                {s:'green',c:'1',n:'50 Things'},
-                {s:'green',c:'2',n:'Mapping It Out'},
-                {s:'green',c:'2.1',n:'Around the Globe'},
-                {s:'green',c:'3',n:'Grid References'},
-                {s:'green',c:'4',n:'Weather'},
-                {s:'green',c:'4.1',n:'Make it Rain!'},
-                {s:'green',c:'5',n:'Captain\'s Coming'},
-                {s:'green',c:'5.1',n:'Home Made Compass'},
-                {s:'green',c:'6',n:'Photography'},
-                {s:'green',c:'7',n:'Pacing It Out'},
-                {s:'green',c:'7.1',n:'Micro Journey'},
-                {s:'green',c:'7.2',n:'Unique Monopoly'},
-                {s:'green',c:'7.3',n:'Navigate Further'},
-                {s:'green',c:'8',n:'Basic Outdoors'},
-                {s:'green',c:'8.1',n:'Zero Trace'},
-                {s:'green',c:'8.2',n:'What to Wear'},
-                {s:'green',c:'8.3',n:'Keeping Tidy'},
-                {s:'green',c:'9',n:'Stoves'},
-                {s:'green',c:'9.1',n:'Open Fires 101'},
-                {s:'green',c:'9.2',n:'Fire Recipes'},
-                {s:'green',c:'9.3',n:'Junior Survivor'},
-                {s:'green',c:'9.4',n:'Master Chef Outdoors'},
-                {s:'green',c:'10',n:'Practice'},
-                {s:'green',c:'10.1',n:'Amazing Race Junior'},
-                {s:'green',c:'11',n:'Country Code'},
-                {s:'green',c:'11.1',n:'Country Code Guide'},
-                {s:'green',c:'11.2',n:'Environment'},
-                {s:'green',c:'12',n:'Tenting Around'},
-                {s:'green',c:'12.1',n:'Pitching Tent'},
-                {s:'green',c:'13',n:'Safe Outdoors'},
-                {s:'green',c:'13.1',n:'Stranger Danger'},
-                {s:'green',c:'14',n:'Meteorology'},
-                {s:'green',c:'14.1',n:'Weather on Water'},
-                {s:'green',c:'14.2',n:'Storm Surge'},
-                {s:'green',c:'14.3',n:'Low Visibility'},
-                {s:'green',c:'14.4',n:'Celestial Navigation'},
-                {s:'green',c:'15',n:'Wind Blowing'},
-                {s:'green',c:'16',n:'Warming Up'},
-                {s:'green',c:'16.1',n:'Warm Up Guide'},
-                {s:'green',c:'17',n:'Keep Fit'},
-                {s:'green',c:'17.1',n:'Training Games'},
-                {s:'green',c:'17.2',n:'Competitive'},
-                {s:'green',c:'17.3',n:'Happy Healthy'},
-                {s:'green',c:'17.4',n:'Eating Healthy'},
-                {s:'green',c:'17.5',n:'Games to Start'},
-                {s:'green',c:'18',n:'Bird Feeder'},
-                {s:'green',c:'18.1',n:'Bee Bombs'},
-                {s:'green',c:'18.2',n:'Seed Paper'},
-                {s:'green',c:'18.3',n:'Carbon Footprint'},
-                
-                // YELLOW Section
-                {s:'yellow',c:'1',n:'Local Heroes'},
-                {s:'yellow',c:'1.1',n:'Thank You Cards'},
-                {s:'yellow',c:'1.2',n:'Hero Portraits'},
-                {s:'yellow',c:'2',n:'D-Day'},
-                {s:'yellow',c:'2.1',n:'D-Day Art'},
-                {s:'yellow',c:'2.2',n:'D-Day Stories'},
-                {s:'yellow',c:'2.3',n:'D-Day Memory'},
-                {s:'yellow',c:'3',n:'Remembrance'},
-                {s:'yellow',c:'3.1',n:'Poppy Art'},
-                {s:'yellow',c:'3.2',n:'War Stories'},
-                {s:'yellow',c:'4',n:'Charities'},
-                {s:'yellow',c:'4.1',n:'Charity Event'},
-                {s:'yellow',c:'4.2',n:'Fundraising'},
-                {s:'yellow',c:'4.3',n:'Charity Visit'},
-                {s:'yellow',c:'5',n:'Litter Pick'},
-                {s:'yellow',c:'5.1',n:'Beach Clean'},
-                {s:'yellow',c:'5.2',n:'Recycle'},
-                {s:'yellow',c:'5.3',n:'Upcycle'},
-                {s:'yellow',c:'5.4',n:'Reduce Plastic'},
-                {s:'yellow',c:'5.5',n:'Compost'},
-                {s:'yellow',c:'5.6',n:'Energy Saving'},
-                {s:'yellow',c:'6',n:'Community Project'},
-                {s:'yellow',c:'6.1',n:'Helping Neighbours'},
-                {s:'yellow',c:'6.2',n:'Community Survey'},
-                {s:'yellow',c:'6.3',n:'Community Event'},
-                {s:'yellow',c:'7',n:'Democracy'},
-                {s:'yellow',c:'7.1',n:'Mock Election'},
-                {s:'yellow',c:'7.2',n:'Parliament'},
-                {s:'yellow',c:'7.3',n:'Local Council'},
-                {s:'yellow',c:'7.4',n:'Student Voice'},
-                {s:'yellow',c:'7.5',n:'Debate'},
-                {s:'yellow',c:'7.6',n:'Rights'},
-                {s:'yellow',c:'7.7',n:'Laws'},
-                {s:'yellow',c:'7.8',n:'Voting'},
-                {s:'yellow',c:'8',n:'British Values'},
-                {s:'yellow',c:'8.1',n:'Rule of Law'},
-                {s:'yellow',c:'8.2',n:'Democracy Value'},
-                {s:'yellow',c:'8.3',n:'Liberty'},
-                {s:'yellow',c:'8.4',n:'Respect'},
-                {s:'yellow',c:'8.5',n:'Tolerance'},
-                {s:'yellow',c:'8.6',n:'Values Project'},
-                {s:'yellow',c:'8.7',n:'Values Quiz'},
-                {s:'yellow',c:'8.8',n:'Values Discussion'},
-                {s:'yellow',c:'9',n:'Diversity'},
-                {s:'yellow',c:'9.1',n:'Different Cultures'},
-                {s:'yellow',c:'9.2',n:'World Religions'},
-                {s:'yellow',c:'9.3',n:'Celebrations'},
-                {s:'yellow',c:'10',n:'Armed Forces Day'},
-                {s:'yellow',c:'10.1',n:'Parade'},
-                {s:'yellow',c:'10.2',n:'Display'},
-                {s:'yellow',c:'11',n:'Sea Sunday'},
-                {s:'yellow',c:'11.1',n:'Church Service'},
-                {s:'yellow',c:'11.2',n:'Seafarers'},
-                {s:'yellow',c:'12',n:'Royal Events'},
-                {s:'yellow',c:'12.1',n:'Royal History'},
-                {s:'yellow',c:'12.2',n:'Royal Visit'},
-                {s:'yellow',c:'12.3',n:'Royal Celebration'},
-                {s:'yellow',c:'13',n:'Trafalgar Day'},
-                {s:'yellow',c:'13.1',n:'Nelson'},
-                {s:'yellow',c:'13.2',n:'Battle Facts'},
-                {s:'yellow',c:'13.3',n:'HMS Victory'},
-                {s:'yellow',c:'13.4',n:'Trafalgar Square'},
-                {s:'yellow',c:'13.5',n:'Naval History'},
-                {s:'yellow',c:'15',n:'Veterans'},
-                {s:'yellow',c:'15.1',n:'Meet Veteran'},
-                {s:'yellow',c:'16',n:'Cadets Worldwide'},
-                {s:'yellow',c:'17',n:'Sea Cadets History'},
-                {s:'yellow',c:'17.1',n:'Unit History'},
-                {s:'yellow',c:'17.2',n:'Old Photos'},
-                {s:'yellow',c:'18',n:'Famous Ships'},
-                {s:'yellow',c:'19',n:'Navy Careers'},
-                {s:'yellow',c:'19.1',n:'Navy Jobs'},
-                {s:'yellow',c:'19.2',n:'Navy Training'},
-                {s:'yellow',c:'19.3',n:'Navy Life'},
-                {s:'yellow',c:'19.4',n:'Navy Visit'},
-                {s:'yellow',c:'19.5',n:'Navy Talk'},
-                {s:'yellow',c:'20',n:'Future Goals'},
-                {s:'yellow',c:'20.1',n:'Career Ideas'},
-                {s:'yellow',c:'20.2',n:'Skills'},
-                {s:'yellow',c:'20.3',n:'Achievements'},
-                {s:'yellow',c:'20.4',n:'Action Plan'},
-                {s:'yellow',c:'21',n:'Online Safety'},
-                {s:'yellow',c:'22',n:'Mental Health'},
-                {s:'yellow',c:'22.1',n:'Wellbeing'},
-                {s:'yellow',c:'22.2',n:'Stress'},
-                {s:'yellow',c:'22.3',n:'Emotions'},
-                {s:'yellow',c:'22.4',n:'Support'},
-                {s:'yellow',c:'22.5',n:'Mindfulness'},
-                {s:'yellow',c:'22.6',n:'Exercise'},
-                {s:'yellow',c:'22.7',n:'Sleep'},
-                {s:'yellow',c:'22.8',n:'Nutrition'},
-                {s:'yellow',c:'22.9',n:'Friends'},
-                {s:'yellow',c:'23',n:'Personal Safety'},
-                {s:'yellow',c:'23.1',n:'Road Safety'},
-                {s:'yellow',c:'23.2',n:'Water Safety'},
-                {s:'yellow',c:'24',n:'Bullying'},
-                {s:'yellow',c:'24.1',n:'Anti-Bullying'},
-                {s:'yellow',c:'24.2',n:'Being Kind'},
-                {s:'yellow',c:'25',n:'Healthy Eating'},
-                {s:'yellow',c:'26',n:'First Aid'},
-                {s:'yellow',c:'27',n:'Music'},
-                {s:'yellow',c:'27.1',n:'Sea Songs'},
-                {s:'yellow',c:'27.2',n:'Instruments'},
-                {s:'yellow',c:'27.3',n:'Performance'},
-                {s:'yellow',c:'28',n:'Art'},
-                {s:'yellow',c:'28.1',n:'Maritime Art'},
-                {s:'yellow',c:'28.2',n:'Sculpture'},
-                {s:'yellow',c:'28.3',n:'Crafts'},
-                {s:'yellow',c:'28.4',n:'Exhibition'},
-                {s:'yellow',c:'29',n:'Drama'},
-                {s:'yellow',c:'30',n:'Dance'},
-                {s:'yellow',c:'70',n:'Platinum Jubilee'},
-                {s:'yellow',c:'70.1',n:'Jubilee Party'},
-                {s:'yellow',c:'70.2',n:'Jubilee Project'},
-                {s:'yellow',c:'71',n:'Commonwealth Games'},
-                {s:'yellow',c:'72',n:'Coronation'},
-                {s:'yellow',c:'72.1',n:'Coronation Event'},
-                {s:'yellow',c:'73',n:'Special Event'},
-                
-                // STEM Section
-                {s:'stem',c:'1',n:'Coding Basics'},
-                {s:'stem',c:'2',n:'Scratch'},
-                {s:'stem',c:'3',n:'Python'},
-                {s:'stem',c:'4',n:'Robotics'},
-                {s:'stem',c:'5',n:'Electronics'},
-                {s:'stem',c:'6',n:'Circuits'},
-                {s:'stem',c:'7',n:'LED Projects'},
-                {s:'stem',c:'8',n:'Raspberry Pi'},
-                {s:'stem',c:'9',n:'Arduino'},
-                {s:'stem',c:'10',n:'3D Printing'},
-                {s:'stem',c:'11',n:'CAD Design'},
-                {s:'stem',c:'12',n:'Engineering'},
-                {s:'stem',c:'13',n:'Bridges'},
-                {s:'stem',c:'14',n:'Structures'},
-                {s:'stem',c:'15',n:'Forces'},
-                {s:'stem',c:'16',n:'Energy'},
-                {s:'stem',c:'17',n:'Renewable Energy'},
-                {s:'stem',c:'18',n:'Solar Power'},
-                {s:'stem',c:'19',n:'Wind Power'},
-                {s:'stem',c:'20',n:'Water Power'},
-                {s:'stem',c:'21',n:'Chemistry'},
-                {s:'stem',c:'22',n:'Reactions'},
-                {s:'stem',c:'23',n:'Materials'},
-                {s:'stem',c:'24',n:'Biology'},
-                {s:'stem',c:'25',n:'Marine Life'},
-                {s:'stem',c:'26',n:'Ecosystems'},
-                {s:'stem',c:'27',n:'Physics'},
-                {s:'stem',c:'28',n:'Light'},
-                {s:'stem',c:'29',n:'Sound'},
-                {s:'stem',c:'30',n:'Space'},
-                {s:'stem',c:'31',n:'Astronomy'},
-                {s:'stem',c:'32',n:'Planets'},
-                {s:'stem',c:'33',n:'Rockets'},
-                {s:'stem',c:'34',n:'Satellites'},
-                {s:'stem',c:'35',n:'Navigation Tech'},
-                {s:'stem',c:'36',n:'GPS'},
-                {s:'stem',c:'37',n:'Radar'},
-                {s:'stem',c:'38',n:'Sonar'},
-                {s:'stem',c:'39',n:'Maths Games'},
-                {s:'stem',c:'40',n:'Data Science'},
-                {s:'stem',c:'41',n:'Statistics'},
-                {s:'stem',c:'42',n:'Problem Solving'}
-            ];
             
             const hasModule = (pNumber, section, code) => {
                 return juniorData.moduleCompletions.find(m => 
@@ -4113,343 +4118,6 @@
             const [showBulkSuccess, setShowBulkSuccess] = useState(false);
             
             // All 336 modules for bulk award
-            const allModules = [
-                {s:'red',c:'1',n:'Unit Induction: Tour of Unit'},
-                {s:'red',c:'1.1',n:'Unit Induction: Unit Fire Drill'},
-                {s:'red',c:'1.2',n:'Unit Induction: Map Out Your Unit'},
-                {s:'red',c:'1.3',n:'Unit Induction: What\'s Important?'},
-                {s:'red',c:'1.4',n:'Unit Induction: Uniformed Art'},
-                {s:'red',c:'1.5',n:'Unit Induction: Badges & Ranks'},
-                {s:'red',c:'2',n:'Two Questions & A Funny'},
-                {s:'red',c:'2.1',n:'Paper Planes'},
-                {s:'red',c:'2.2',n:'Names and Beanbags'},
-                {s:'red',c:'2.3',n:'Mini Me'},
-                {s:'red',c:'3',n:'Unit Who\'s Who: Say Cheese'},
-                {s:'red',c:'4',n:'Basic Drill'},
-                {s:'red',c:'4.1',n:'Unit Calls (Piping)'},
-                {s:'red',c:'4.2',n:'Colours & Naval Customs'},
-                {s:'red',c:'4.3',n:'Treat Yourself'},
-                {s:'red',c:'5',n:'Junior Sea Cadet Uniform'},
-                {s:'red',c:'6',n:'Safeguarding: SHOUT'},
-                {s:'red',c:'7',n:'Organising Unit Activities'},
-                {s:'red',c:'7.1',n:'Unit Activities'},
-                {s:'red',c:'7.2',n:'Ready Aye Ready'},
-                {s:'red',c:'7.3',n:'Unit Elevator Pitch'},
-                {s:'red',c:'7.4',n:'Unit Advert'},
-                {s:'red',c:'7.5',n:'Theme Tune'},
-                {s:'red',c:'8',n:'How\'s Your Aim?'},
-                {s:'red',c:'9',n:'Royal Marines Cadet Guest'},
-                {s:'red',c:'9.1',n:'Royal Marines Cadets'},
-                {s:'red',c:'9.2',n:'Royal Marines Activities'},
-                {s:'red',c:'10',n:'Scrap Book Memories'},
-                {s:'red',c:'11',n:'Passing Messages: Flags'},
-                {s:'red',c:'11.1',n:'Lord Nelson\'s Message'},
-                {s:'red',c:'11.2',n:'Codebreaker: Morse'},
-                {s:'red',c:'11.3',n:'What\'s Your Position?'},
-                {s:'red',c:'11.4',n:'Turn Up The Radios'},
-                {s:'red',c:'11.5',n:'Phonetic Alphabet'},
-                {s:'red',c:'12',n:'Chocolate Crispies'},
-                {s:'red',c:'12.1',n:'Apple & Ginger'},
-                {s:'red',c:'12.2',n:'Chefs\' Sweet Tooth'},
-                {s:'red',c:'12.3',n:'Chefs Savoury Tooth'},
-                {s:'red',c:'12.4',n:'Chefs Cuppa'},
-                {s:'red',c:'13',n:'Who Can Help Me?'},
-                {s:'red',c:'13.1',n:'Emergency Visits'},
-                {s:'red',c:'14',n:'How International Are We?'},
-                {s:'red',c:'15',n:'First Aid Basics'},
-                {s:'red',c:'15.1',n:'First Aid Relay'},
-                {s:'red',c:'15.2',n:'Units Safety Poster'},
-                {s:'red',c:'16',n:'Naval Heraldry'},
-                {s:'red',c:'17',n:'Throw Yourself a Knot'},
-                {s:'red',c:'17.1',n:'Tasty Knots'},
-                {s:'red',c:'17.2',n:'Rope and Spoons'},
-                {s:'red',c:'17.3',n:'Knot Board'},
-                {s:'red',c:'17.4',n:'Paracord Keyrings'},
-                {s:'red',c:'17.5',n:'Parts of a Ship'},
-                {s:'red',c:'17.6',n:'Ship Ahoy!'},
-                {s:'red',c:'18',n:'Planning & Preparation'},
-                {s:'red',c:'18.1',n:'Food Storage'},
-                {s:'red',c:'18.2',n:'Keeping Germs at Bay'},
-                {s:'red',c:'18.3',n:'Missed a Spot!'},
-                {s:'red',c:'18.4',n:'Building Bacteria'},
-                {s:'red',c:'18.5',n:'Fuzzy Bread'},
-                {s:'red',c:'18.6',n:'Clean Hands?'},
-                {s:'red',c:'19',n:'Earthshot Challenge'},
-                {s:'red',c:'20',n:'Suggestion Box'},
-                {s:'red',c:'21',n:'Kindness and Wellbeing'},
-                {s:'red',c:'21.1',n:'Kindness and Wellbeing'},
-                {s:'red',c:'22',n:'Teamwork Skills'},
-                {s:'blue',c:'T1',n:'Dinghy Sailing Taster'},
-                {s:'blue',c:'T2',n:'Paddlesport Taster'},
-                {s:'blue',c:'T3',n:'Windsurfing Taster'},
-                {s:'blue',c:'T4',n:'Rowing Taster'},
-                {s:'blue',c:'1',n:'Safety by the Water'},
-                {s:'blue',c:'1.1',n:'Rescue Line'},
-                {s:'blue',c:'1.2',n:'Help I Need Help!'},
-                {s:'blue',c:'2',n:'Cardinal Marks'},
-                {s:'blue',c:'2.1',n:'Danger Zones'},
-                {s:'blue',c:'3',n:'Royal & Merchant Navy'},
-                {s:'blue',c:'4',n:'Going on a Mission'},
-                {s:'blue',c:'5',n:'Maritime Museum'},
-                {s:'blue',c:'6',n:'Battleships'},
-                {s:'blue',c:'7',n:'Remember The Facts'},
-                {s:'blue',c:'7.1',n:'Famous Figures'},
-                {s:'blue',c:'7.2',n:'Picasso\'s Nelson'},
-                {s:'blue',c:'8',n:'Boat Construction'},
-                {s:'blue',c:'8.1',n:'Build Boat'},
-                {s:'blue',c:'8.2',n:'Model Raft'},
-                {s:'blue',c:'8.3',n:'Water Raft'},
-                {s:'blue',c:'9',n:'Wise Near Water'},
-                {s:'blue',c:'9.1',n:'What Flag Am I?'},
-                {s:'blue',c:'10',n:'Lifeguards'},
-                {s:'blue',c:'11',n:'Keep Swimming'},
-                {s:'blue',c:'12',n:'Swimathon'},
-                {s:'blue',c:'13',n:'Marco Polo'},
-                {s:'blue',c:'13.1',n:'Synchronised Swim'},
-                {s:'blue',c:'13.2',n:'Water Polo'},
-                {s:'blue',c:'14',n:'Swimming Gala'},
-                {s:'blue',c:'15',n:'Signposts at Sea'},
-                {s:'blue',c:'15.1',n:'Edible Signposts'},
-                {s:'blue',c:'15.2',n:'Ropes on Biscuits'},
-                {s:'blue',c:'16',n:'Saving Sam'},
-                {s:'blue',c:'16.1',n:'Don\'t Fall Out!'},
-                {s:'blue',c:'17',n:'Go Rowing!'},
-                {s:'blue',c:'17.1',n:'Learn Rowing!'},
-                {s:'blue',c:'18',n:'Go Sailing!'},
-                {s:'blue',c:'18.1',n:'Learn Sailing!'},
-                {s:'blue',c:'19',n:'Go Paddling!'},
-                {s:'blue',c:'19.1',n:'Learn Paddlesport!'},
-                {s:'blue',c:'19.2',n:'Voyage of Discovery'},
-                {s:'blue',c:'20',n:'Learn Windsurfing!'},
-                {s:'blue',c:'20.1',n:'Go Windsurfing!'},
-                {s:'blue',c:'21',n:'Good Look Out'},
-                {s:'blue',c:'21.1',n:'Hazards'},
-                {s:'blue',c:'21.2',n:'Buoyancy'},
-                {s:'blue',c:'21.3',n:'Safe Speeds'},
-                {s:'blue',c:'22',n:'Navigation'},
-                {s:'blue',c:'23',n:'Crossing The Line'},
-                {s:'blue',c:'23.1',n:'Nautical Terms'},
-                {s:'blue',c:'23.2',n:'Sea Shanties'},
-                {s:'blue',c:'23.3',n:'Hornpipe Dance'},
-                {s:'blue',c:'24',n:'Boat Types'},
-                {s:'blue',c:'24.1',n:'RS ZEST Single'},
-                {s:'blue',c:'24.2',n:'RS QUEST Crewed'},
-                {s:'blue',c:'25',n:'Cold Water Shock'},
-                {s:'blue',c:'26',n:'Towpath I Spy'},
-                {s:'blue',c:'27',n:'Flag Etiquette'},
-                {s:'blue',c:'28',n:'Green and Clean'},
-                {s:'blue',c:'29',n:'Big Clean Up'},
-                {s:'blue',c:'29.2',n:'Plastic Eating Machine'},
-                {s:'green',c:'1',n:'50 Things'},
-                {s:'green',c:'2',n:'Mapping It Out'},
-                {s:'green',c:'2.1',n:'Around the Globe'},
-                {s:'green',c:'3',n:'Grid References'},
-                {s:'green',c:'4',n:'Weather'},
-                {s:'green',c:'4.1',n:'Make it Rain!'},
-                {s:'green',c:'5',n:'Captain\'s Coming'},
-                {s:'green',c:'5.1',n:'Home Made Compass'},
-                {s:'green',c:'6',n:'Photography'},
-                {s:'green',c:'7',n:'Pacing It Out'},
-                {s:'green',c:'7.1',n:'Micro Journey'},
-                {s:'green',c:'7.2',n:'Unique Monopoly'},
-                {s:'green',c:'7.3',n:'Navigate Further'},
-                {s:'green',c:'8',n:'Basic Outdoors'},
-                {s:'green',c:'8.1',n:'Zero Trace'},
-                {s:'green',c:'8.2',n:'What to Wear'},
-                {s:'green',c:'8.3',n:'Keeping Tidy'},
-                {s:'green',c:'9',n:'Stoves'},
-                {s:'green',c:'9.1',n:'Open Fires 101'},
-                {s:'green',c:'9.2',n:'Fire Recipes'},
-                {s:'green',c:'9.3',n:'Junior Survivor'},
-                {s:'green',c:'9.4',n:'Master Chef Outdoors'},
-                {s:'green',c:'10',n:'Practice'},
-                {s:'green',c:'10.1',n:'Amazing Race Junior'},
-                {s:'green',c:'11',n:'Country Code'},
-                {s:'green',c:'11.1',n:'Country Code Guide'},
-                {s:'green',c:'11.2',n:'Environment'},
-                {s:'green',c:'12',n:'Tenting Around'},
-                {s:'green',c:'12.1',n:'Pitching Tent'},
-                {s:'green',c:'13',n:'Safe Outdoors'},
-                {s:'green',c:'13.1',n:'Stranger Danger'},
-                {s:'green',c:'14',n:'Meteorology'},
-                {s:'green',c:'14.1',n:'Weather on Water'},
-                {s:'green',c:'14.2',n:'Storm Surge'},
-                {s:'green',c:'14.3',n:'Low Visibility'},
-                {s:'green',c:'14.4',n:'Celestial Navigation'},
-                {s:'green',c:'15',n:'Wind Blowing'},
-                {s:'green',c:'16',n:'Warming Up'},
-                {s:'green',c:'16.1',n:'Warm Up Guide'},
-                {s:'green',c:'17',n:'Keep Fit'},
-                {s:'green',c:'17.1',n:'Training Games'},
-                {s:'green',c:'17.2',n:'Competitive'},
-                {s:'green',c:'17.3',n:'Happy Healthy'},
-                {s:'green',c:'17.4',n:'Eating Healthy'},
-                {s:'green',c:'17.5',n:'Games to Start'},
-                {s:'green',c:'18',n:'Bird Feeder'},
-                {s:'green',c:'18.1',n:'Bee Bombs'},
-                {s:'green',c:'18.2',n:'Seed Paper'},
-                {s:'green',c:'18.3',n:'Carbon Footprint'},
-                {s:'yellow',c:'1',n:'Local Heroes'},
-                {s:'yellow',c:'1.1',n:'Thank You Cards'},
-                {s:'yellow',c:'1.2',n:'Hero Portraits'},
-                {s:'yellow',c:'2',n:'D-Day'},
-                {s:'yellow',c:'2.1',n:'D-Day Art'},
-                {s:'yellow',c:'2.2',n:'D-Day Stories'},
-                {s:'yellow',c:'2.3',n:'D-Day Memory'},
-                {s:'yellow',c:'3',n:'Remembrance'},
-                {s:'yellow',c:'3.1',n:'Poppy Art'},
-                {s:'yellow',c:'3.2',n:'War Stories'},
-                {s:'yellow',c:'4',n:'Charities'},
-                {s:'yellow',c:'4.1',n:'Charity Event'},
-                {s:'yellow',c:'4.2',n:'Fundraising'},
-                {s:'yellow',c:'4.3',n:'Charity Visit'},
-                {s:'yellow',c:'5',n:'Litter Pick'},
-                {s:'yellow',c:'5.1',n:'Beach Clean'},
-                {s:'yellow',c:'5.2',n:'Recycle'},
-                {s:'yellow',c:'5.3',n:'Upcycle'},
-                {s:'yellow',c:'5.4',n:'Reduce Plastic'},
-                {s:'yellow',c:'5.5',n:'Compost'},
-                {s:'yellow',c:'5.6',n:'Energy Saving'},
-                {s:'yellow',c:'6',n:'Community Project'},
-                {s:'yellow',c:'6.1',n:'Helping Neighbours'},
-                {s:'yellow',c:'6.2',n:'Community Survey'},
-                {s:'yellow',c:'6.3',n:'Community Event'},
-                {s:'yellow',c:'7',n:'Democracy'},
-                {s:'yellow',c:'7.1',n:'Mock Election'},
-                {s:'yellow',c:'7.2',n:'Parliament'},
-                {s:'yellow',c:'7.3',n:'Local Council'},
-                {s:'yellow',c:'7.4',n:'Student Voice'},
-                {s:'yellow',c:'7.5',n:'Debate'},
-                {s:'yellow',c:'7.6',n:'Rights'},
-                {s:'yellow',c:'7.7',n:'Laws'},
-                {s:'yellow',c:'7.8',n:'Voting'},
-                {s:'yellow',c:'8',n:'British Values'},
-                {s:'yellow',c:'8.1',n:'Rule of Law'},
-                {s:'yellow',c:'8.2',n:'Democracy Value'},
-                {s:'yellow',c:'8.3',n:'Liberty'},
-                {s:'yellow',c:'8.4',n:'Respect'},
-                {s:'yellow',c:'8.5',n:'Tolerance'},
-                {s:'yellow',c:'8.6',n:'Values Project'},
-                {s:'yellow',c:'8.7',n:'Values Quiz'},
-                {s:'yellow',c:'8.8',n:'Values Discussion'},
-                {s:'yellow',c:'9',n:'Diversity'},
-                {s:'yellow',c:'9.1',n:'Different Cultures'},
-                {s:'yellow',c:'9.2',n:'World Religions'},
-                {s:'yellow',c:'9.3',n:'Celebrations'},
-                {s:'yellow',c:'10',n:'Armed Forces Day'},
-                {s:'yellow',c:'10.1',n:'Parade'},
-                {s:'yellow',c:'10.2',n:'Display'},
-                {s:'yellow',c:'11',n:'Sea Sunday'},
-                {s:'yellow',c:'11.1',n:'Church Service'},
-                {s:'yellow',c:'11.2',n:'Seafarers'},
-                {s:'yellow',c:'12',n:'Royal Events'},
-                {s:'yellow',c:'12.1',n:'Royal History'},
-                {s:'yellow',c:'12.2',n:'Royal Visit'},
-                {s:'yellow',c:'12.3',n:'Royal Celebration'},
-                {s:'yellow',c:'13',n:'Trafalgar Day'},
-                {s:'yellow',c:'13.1',n:'Nelson'},
-                {s:'yellow',c:'13.2',n:'Battle Facts'},
-                {s:'yellow',c:'13.3',n:'HMS Victory'},
-                {s:'yellow',c:'13.4',n:'Trafalgar Square'},
-                {s:'yellow',c:'13.5',n:'Naval History'},
-                {s:'yellow',c:'15',n:'Veterans'},
-                {s:'yellow',c:'15.1',n:'Meet Veteran'},
-                {s:'yellow',c:'16',n:'Cadets Worldwide'},
-                {s:'yellow',c:'17',n:'Sea Cadets History'},
-                {s:'yellow',c:'17.1',n:'Unit History'},
-                {s:'yellow',c:'17.2',n:'Old Photos'},
-                {s:'yellow',c:'18',n:'Famous Ships'},
-                {s:'yellow',c:'19',n:'Navy Careers'},
-                {s:'yellow',c:'19.1',n:'Navy Jobs'},
-                {s:'yellow',c:'19.2',n:'Navy Training'},
-                {s:'yellow',c:'19.3',n:'Navy Life'},
-                {s:'yellow',c:'19.4',n:'Navy Visit'},
-                {s:'yellow',c:'19.5',n:'Navy Talk'},
-                {s:'yellow',c:'20',n:'Future Goals'},
-                {s:'yellow',c:'20.1',n:'Career Ideas'},
-                {s:'yellow',c:'20.2',n:'Skills'},
-                {s:'yellow',c:'20.3',n:'Achievements'},
-                {s:'yellow',c:'20.4',n:'Action Plan'},
-                {s:'yellow',c:'21',n:'Online Safety'},
-                {s:'yellow',c:'22',n:'Mental Health'},
-                {s:'yellow',c:'22.1',n:'Wellbeing'},
-                {s:'yellow',c:'22.2',n:'Stress'},
-                {s:'yellow',c:'22.3',n:'Emotions'},
-                {s:'yellow',c:'22.4',n:'Support'},
-                {s:'yellow',c:'22.5',n:'Mindfulness'},
-                {s:'yellow',c:'22.6',n:'Exercise'},
-                {s:'yellow',c:'22.7',n:'Sleep'},
-                {s:'yellow',c:'22.8',n:'Nutrition'},
-                {s:'yellow',c:'22.9',n:'Friends'},
-                {s:'yellow',c:'23',n:'Personal Safety'},
-                {s:'yellow',c:'23.1',n:'Road Safety'},
-                {s:'yellow',c:'23.2',n:'Water Safety'},
-                {s:'yellow',c:'24',n:'Bullying'},
-                {s:'yellow',c:'24.1',n:'Anti-Bullying'},
-                {s:'yellow',c:'24.2',n:'Being Kind'},
-                {s:'yellow',c:'25',n:'Healthy Eating'},
-                {s:'yellow',c:'26',n:'First Aid'},
-                {s:'yellow',c:'27',n:'Music'},
-                {s:'yellow',c:'27.1',n:'Sea Songs'},
-                {s:'yellow',c:'27.2',n:'Instruments'},
-                {s:'yellow',c:'27.3',n:'Performance'},
-                {s:'yellow',c:'28',n:'Art'},
-                {s:'yellow',c:'28.1',n:'Maritime Art'},
-                {s:'yellow',c:'28.2',n:'Sculpture'},
-                {s:'yellow',c:'28.3',n:'Crafts'},
-                {s:'yellow',c:'28.4',n:'Exhibition'},
-                {s:'yellow',c:'29',n:'Drama'},
-                {s:'yellow',c:'30',n:'Dance'},
-                {s:'yellow',c:'70',n:'Platinum Jubilee'},
-                {s:'yellow',c:'70.1',n:'Jubilee Party'},
-                {s:'yellow',c:'70.2',n:'Jubilee Project'},
-                {s:'yellow',c:'71',n:'Commonwealth Games'},
-                {s:'yellow',c:'72',n:'Coronation'},
-                {s:'yellow',c:'72.1',n:'Coronation Event'},
-                {s:'yellow',c:'73',n:'Special Event'},
-                {s:'stem',c:'1',n:'Coding Basics'},
-                {s:'stem',c:'2',n:'Scratch'},
-                {s:'stem',c:'3',n:'Python'},
-                {s:'stem',c:'4',n:'Robotics'},
-                {s:'stem',c:'5',n:'Electronics'},
-                {s:'stem',c:'6',n:'Circuits'},
-                {s:'stem',c:'7',n:'LED Projects'},
-                {s:'stem',c:'8',n:'Raspberry Pi'},
-                {s:'stem',c:'9',n:'Arduino'},
-                {s:'stem',c:'10',n:'3D Printing'},
-                {s:'stem',c:'11',n:'CAD Design'},
-                {s:'stem',c:'12',n:'Engineering'},
-                {s:'stem',c:'13',n:'Bridges'},
-                {s:'stem',c:'14',n:'Structures'},
-                {s:'stem',c:'15',n:'Forces'},
-                {s:'stem',c:'16',n:'Energy'},
-                {s:'stem',c:'17',n:'Renewable Energy'},
-                {s:'stem',c:'18',n:'Solar Power'},
-                {s:'stem',c:'19',n:'Wind Power'},
-                {s:'stem',c:'20',n:'Water Power'},
-                {s:'stem',c:'21',n:'Chemistry'},
-                {s:'stem',c:'22',n:'Reactions'},
-                {s:'stem',c:'23',n:'Materials'},
-                {s:'stem',c:'24',n:'Biology'},
-                {s:'stem',c:'25',n:'Marine Life'},
-                {s:'stem',c:'26',n:'Ecosystems'},
-                {s:'stem',c:'27',n:'Physics'},
-                {s:'stem',c:'28',n:'Light'},
-                {s:'stem',c:'29',n:'Sound'},
-                {s:'stem',c:'30',n:'Space'},
-                {s:'stem',c:'31',n:'Astronomy'},
-                {s:'stem',c:'32',n:'Planets'},
-                {s:'stem',c:'33',n:'Rockets'},
-                {s:'stem',c:'34',n:'Satellites'},
-                {s:'stem',c:'35',n:'Navigation Tech'},
-                {s:'stem',c:'36',n:'GPS'},
-                {s:'stem',c:'37',n:'Radar'},
-                {s:'stem',c:'38',n:'Sonar'},
-                {s:'stem',c:'39',n:'Maths Games'},
-                {s:'stem',c:'40',n:'Data Science'},
-                {s:'stem',c:'41',n:'Statistics'},
-                {s:'stem',c:'42',n:'Problem Solving'}
-            ];
             
             // Bulk Award Handlers
             const toggleCadetSelection = (pNumber) => {
@@ -4858,343 +4526,6 @@
                                     const juniorData = getJuniorData();
                                     
                                     // All 336 modules in order
-                                    const allModules = [
-                                        {s:'red',c:'1',n:'Unit Induction: Tour of Unit'},
-                                        {s:'red',c:'1.1',n:'Unit Induction: Unit Fire Drill'},
-                                        {s:'red',c:'1.2',n:'Unit Induction: Map Out Your Unit'},
-                                        {s:'red',c:'1.3',n:'Unit Induction: What\'s Important?'},
-                                        {s:'red',c:'1.4',n:'Unit Induction: Uniformed Art'},
-                                        {s:'red',c:'1.5',n:'Unit Induction: Badges & Ranks'},
-                                        {s:'red',c:'2',n:'Two Questions & A Funny'},
-                                        {s:'red',c:'2.1',n:'Paper Planes'},
-                                        {s:'red',c:'2.2',n:'Names and Beanbags'},
-                                        {s:'red',c:'2.3',n:'Mini Me'},
-                                        {s:'red',c:'3',n:'Unit Who\'s Who: Say Cheese'},
-                                        {s:'red',c:'4',n:'Basic Drill'},
-                                        {s:'red',c:'4.1',n:'Unit Calls (Piping)'},
-                                        {s:'red',c:'4.2',n:'Colours & Naval Customs'},
-                                        {s:'red',c:'4.3',n:'Treat Yourself'},
-                                        {s:'red',c:'5',n:'Junior Sea Cadet Uniform'},
-                                        {s:'red',c:'6',n:'Safeguarding: SHOUT'},
-                                        {s:'red',c:'7',n:'Organising Unit Activities'},
-                                        {s:'red',c:'7.1',n:'Unit Activities'},
-                                        {s:'red',c:'7.2',n:'Ready Aye Ready'},
-                                        {s:'red',c:'7.3',n:'Unit Elevator Pitch'},
-                                        {s:'red',c:'7.4',n:'Unit Advert'},
-                                        {s:'red',c:'7.5',n:'Theme Tune'},
-                                        {s:'red',c:'8',n:'How\'s Your Aim?'},
-                                        {s:'red',c:'9',n:'Royal Marines Cadet Guest'},
-                                        {s:'red',c:'9.1',n:'Royal Marines Cadets'},
-                                        {s:'red',c:'9.2',n:'Royal Marines Activities'},
-                                        {s:'red',c:'10',n:'Scrap Book Memories'},
-                                        {s:'red',c:'11',n:'Passing Messages: Flags'},
-                                        {s:'red',c:'11.1',n:'Lord Nelson\'s Message'},
-                                        {s:'red',c:'11.2',n:'Codebreaker: Morse'},
-                                        {s:'red',c:'11.3',n:'What\'s Your Position?'},
-                                        {s:'red',c:'11.4',n:'Turn Up The Radios'},
-                                        {s:'red',c:'11.5',n:'Phonetic Alphabet'},
-                                        {s:'red',c:'12',n:'Chocolate Crispies'},
-                                        {s:'red',c:'12.1',n:'Apple & Ginger'},
-                                        {s:'red',c:'12.2',n:'Chefs\' Sweet Tooth'},
-                                        {s:'red',c:'12.3',n:'Chefs Savoury Tooth'},
-                                        {s:'red',c:'12.4',n:'Chefs Cuppa'},
-                                        {s:'red',c:'13',n:'Who Can Help Me?'},
-                                        {s:'red',c:'13.1',n:'Emergency Visits'},
-                                        {s:'red',c:'14',n:'How International Are We?'},
-                                        {s:'red',c:'15',n:'First Aid Basics'},
-                                        {s:'red',c:'15.1',n:'First Aid Relay'},
-                                        {s:'red',c:'15.2',n:'Units Safety Poster'},
-                                        {s:'red',c:'16',n:'Naval Heraldry'},
-                                        {s:'red',c:'17',n:'Throw Yourself a Knot'},
-                                        {s:'red',c:'17.1',n:'Tasty Knots'},
-                                        {s:'red',c:'17.2',n:'Rope and Spoons'},
-                                        {s:'red',c:'17.3',n:'Knot Board'},
-                                        {s:'red',c:'17.4',n:'Paracord Keyrings'},
-                                        {s:'red',c:'17.5',n:'Parts of a Ship'},
-                                        {s:'red',c:'17.6',n:'Ship Ahoy!'},
-                                        {s:'red',c:'18',n:'Planning & Preparation'},
-                                        {s:'red',c:'18.1',n:'Food Storage'},
-                                        {s:'red',c:'18.2',n:'Keeping Germs at Bay'},
-                                        {s:'red',c:'18.3',n:'Missed a Spot!'},
-                                        {s:'red',c:'18.4',n:'Building Bacteria'},
-                                        {s:'red',c:'18.5',n:'Fuzzy Bread'},
-                                        {s:'red',c:'18.6',n:'Clean Hands?'},
-                                        {s:'red',c:'19',n:'Earthshot Challenge'},
-                                        {s:'red',c:'20',n:'Suggestion Box'},
-                                        {s:'red',c:'21',n:'Kindness and Wellbeing'},
-                                        {s:'red',c:'21.1',n:'Kindness and Wellbeing'},
-                                        {s:'red',c:'22',n:'Teamwork Skills'},
-                                        {s:'blue',c:'T1',n:'Dinghy Sailing Taster'},
-                                        {s:'blue',c:'T2',n:'Paddlesport Taster'},
-                                        {s:'blue',c:'T3',n:'Windsurfing Taster'},
-                                        {s:'blue',c:'T4',n:'Rowing Taster'},
-                                        {s:'blue',c:'1',n:'Safety by the Water'},
-                                        {s:'blue',c:'1.1',n:'Rescue Line'},
-                                        {s:'blue',c:'1.2',n:'Help, I Need Help!'},
-                                        {s:'blue',c:'2',n:'Cardinal Marks'},
-                                        {s:'blue',c:'2.1',n:'Danger Zones'},
-                                        {s:'blue',c:'3',n:'Royal & Merchant Navy'},
-                                        {s:'blue',c:'4',n:'Going on a Mission'},
-                                        {s:'blue',c:'5',n:'Maritime Museum'},
-                                        {s:'blue',c:'6',n:'Battleships'},
-                                        {s:'blue',c:'7',n:'Remember The Facts'},
-                                        {s:'blue',c:'7.1',n:'Famous Figures'},
-                                        {s:'blue',c:'7.2',n:'Picasso\'s Nelson'},
-                                        {s:'blue',c:'8',n:'Boat Construction'},
-                                        {s:'blue',c:'8.1',n:'Build Boat'},
-                                        {s:'blue',c:'8.2',n:'Model Raft'},
-                                        {s:'blue',c:'8.3',n:'Water Raft'},
-                                        {s:'blue',c:'9',n:'Wise Near Water'},
-                                        {s:'blue',c:'9.1',n:'What Flag Am I?'},
-                                        {s:'blue',c:'10',n:'Lifeguards'},
-                                        {s:'blue',c:'11',n:'Keep Swimming'},
-                                        {s:'blue',c:'12',n:'Swimathon'},
-                                        {s:'blue',c:'13',n:'Marco Polo'},
-                                        {s:'blue',c:'13.1',n:'Synchronised Swim'},
-                                        {s:'blue',c:'13.2',n:'Water Polo'},
-                                        {s:'blue',c:'14',n:'Swimming Gala'},
-                                        {s:'blue',c:'15',n:'Signposts at Sea'},
-                                        {s:'blue',c:'15.1',n:'Edible Signposts'},
-                                        {s:'blue',c:'15.2',n:'Ropes on Biscuits'},
-                                        {s:'blue',c:'16',n:'Saving Sam'},
-                                        {s:'blue',c:'16.1',n:'Don\'t Fall Out!'},
-                                        {s:'blue',c:'17',n:'Go Rowing!'},
-                                        {s:'blue',c:'17.1',n:'Learn Rowing!'},
-                                        {s:'blue',c:'18',n:'Go Sailing!'},
-                                        {s:'blue',c:'18.1',n:'Learn Sailing!'},
-                                        {s:'blue',c:'19',n:'Go Paddling!'},
-                                        {s:'blue',c:'19.1',n:'Learn Paddlesport!'},
-                                        {s:'blue',c:'19.2',n:'Voyage of Discovery'},
-                                        {s:'blue',c:'20',n:'Learn Windsurfing!'},
-                                        {s:'blue',c:'20.1',n:'Go Windsurfing!'},
-                                        {s:'blue',c:'21',n:'Good Look Out'},
-                                        {s:'blue',c:'21.1',n:'Hazards'},
-                                        {s:'blue',c:'21.2',n:'Buoyancy'},
-                                        {s:'blue',c:'21.3',n:'Safe Speeds'},
-                                        {s:'blue',c:'22',n:'Navigation'},
-                                        {s:'blue',c:'23',n:'Crossing The Line'},
-                                        {s:'blue',c:'23.1',n:'Nautical Terms'},
-                                        {s:'blue',c:'23.2',n:'Sea Shanties'},
-                                        {s:'blue',c:'23.3',n:'Hornpipe Dance'},
-                                        {s:'blue',c:'24',n:'Boat Types'},
-                                        {s:'blue',c:'24.1',n:'RS ZEST Single'},
-                                        {s:'blue',c:'24.2',n:'RS QUEST Crewed'},
-                                        {s:'blue',c:'25',n:'Cold Water Shock'},
-                                        {s:'blue',c:'26',n:'Towpath I Spy'},
-                                        {s:'blue',c:'27',n:'Flag Etiquette'},
-                                        {s:'blue',c:'28',n:'Green and Clean'},
-                                        {s:'blue',c:'29',n:'Big Clean Up'},
-                                        {s:'blue',c:'29.2',n:'Plastic Eating Machine'},
-                                        {s:'green',c:'1',n:'50 Things'},
-                                        {s:'green',c:'2',n:'Mapping It Out'},
-                                        {s:'green',c:'2.1',n:'Around the Globe'},
-                                        {s:'green',c:'3',n:'Grid References'},
-                                        {s:'green',c:'4',n:'Weather'},
-                                        {s:'green',c:'4.1',n:'Make it Rain!'},
-                                        {s:'green',c:'5',n:'Captain\'s Coming'},
-                                        {s:'green',c:'5.1',n:'Home Made Compass'},
-                                        {s:'green',c:'6',n:'Photography'},
-                                        {s:'green',c:'7',n:'Pacing It Out'},
-                                        {s:'green',c:'7.1',n:'Micro Journey'},
-                                        {s:'green',c:'7.2',n:'Unique Monopoly'},
-                                        {s:'green',c:'7.3',n:'Navigate Further'},
-                                        {s:'green',c:'8',n:'Basic Outdoors'},
-                                        {s:'green',c:'8.1',n:'Zero Trace'},
-                                        {s:'green',c:'8.2',n:'What to Wear'},
-                                        {s:'green',c:'8.3',n:'Keeping Tidy'},
-                                        {s:'green',c:'9',n:'Stoves'},
-                                        {s:'green',c:'9.1',n:'Open Fires 101'},
-                                        {s:'green',c:'9.2',n:'Fire Recipes'},
-                                        {s:'green',c:'9.3',n:'Junior Survivor'},
-                                        {s:'green',c:'9.4',n:'Master Chef Outdoors'},
-                                        {s:'green',c:'10',n:'Practice'},
-                                        {s:'green',c:'10.1',n:'Amazing Race Junior'},
-                                        {s:'green',c:'11',n:'Country Code'},
-                                        {s:'green',c:'11.1',n:'Country Code Guide'},
-                                        {s:'green',c:'11.2',n:'Environment'},
-                                        {s:'green',c:'12',n:'Tenting Around'},
-                                        {s:'green',c:'12.1',n:'Pitching Tent'},
-                                        {s:'green',c:'13',n:'Safe Outdoors'},
-                                        {s:'green',c:'13.1',n:'Stranger Danger'},
-                                        {s:'green',c:'14',n:'Meteorology'},
-                                        {s:'green',c:'14.1',n:'Weather on Water'},
-                                        {s:'green',c:'14.2',n:'Storm Surge'},
-                                        {s:'green',c:'14.3',n:'Low Visibility'},
-                                        {s:'green',c:'14.4',n:'Celestial Navigation'},
-                                        {s:'green',c:'15',n:'Wind Blowing'},
-                                        {s:'green',c:'16',n:'Warming Up'},
-                                        {s:'green',c:'16.1',n:'Warm Up Guide'},
-                                        {s:'green',c:'17',n:'Keep Fit'},
-                                        {s:'green',c:'17.1',n:'Training Games'},
-                                        {s:'green',c:'17.2',n:'Competitive'},
-                                        {s:'green',c:'17.3',n:'Happy Healthy'},
-                                        {s:'green',c:'17.4',n:'Eating Healthy'},
-                                        {s:'green',c:'17.5',n:'Games to Start'},
-                                        {s:'green',c:'18',n:'Bird Feeder'},
-                                        {s:'green',c:'18.1',n:'Bee Bombs'},
-                                        {s:'green',c:'18.2',n:'Seed Paper'},
-                                        {s:'green',c:'18.3',n:'Carbon Footprint'},
-                                        {s:'yellow',c:'1',n:'Local Heroes'},
-                                        {s:'yellow',c:'1.1',n:'Thank You Cards'},
-                                        {s:'yellow',c:'1.2',n:'Hero Portraits'},
-                                        {s:'yellow',c:'2',n:'D-Day'},
-                                        {s:'yellow',c:'2.1',n:'D-Day Art'},
-                                        {s:'yellow',c:'2.2',n:'D-Day Stories'},
-                                        {s:'yellow',c:'2.3',n:'D-Day Memory'},
-                                        {s:'yellow',c:'3',n:'Remembrance'},
-                                        {s:'yellow',c:'3.1',n:'Poppy Art'},
-                                        {s:'yellow',c:'3.2',n:'War Stories'},
-                                        {s:'yellow',c:'4',n:'Charities'},
-                                        {s:'yellow',c:'4.1',n:'Charity Event'},
-                                        {s:'yellow',c:'4.2',n:'Fundraising'},
-                                        {s:'yellow',c:'4.3',n:'Charity Visit'},
-                                        {s:'yellow',c:'5',n:'Litter Pick'},
-                                        {s:'yellow',c:'5.1',n:'Beach Clean'},
-                                        {s:'yellow',c:'5.2',n:'Recycle'},
-                                        {s:'yellow',c:'5.3',n:'Upcycle'},
-                                        {s:'yellow',c:'5.4',n:'Reduce Plastic'},
-                                        {s:'yellow',c:'5.5',n:'Compost'},
-                                        {s:'yellow',c:'5.6',n:'Energy Saving'},
-                                        {s:'yellow',c:'6',n:'Community Project'},
-                                        {s:'yellow',c:'6.1',n:'Helping Neighbours'},
-                                        {s:'yellow',c:'6.2',n:'Community Survey'},
-                                        {s:'yellow',c:'6.3',n:'Community Event'},
-                                        {s:'yellow',c:'7',n:'Democracy'},
-                                        {s:'yellow',c:'7.1',n:'Mock Election'},
-                                        {s:'yellow',c:'7.2',n:'Parliament'},
-                                        {s:'yellow',c:'7.3',n:'Local Council'},
-                                        {s:'yellow',c:'7.4',n:'Student Voice'},
-                                        {s:'yellow',c:'7.5',n:'Debate'},
-                                        {s:'yellow',c:'7.6',n:'Rights'},
-                                        {s:'yellow',c:'7.7',n:'Laws'},
-                                        {s:'yellow',c:'7.8',n:'Voting'},
-                                        {s:'yellow',c:'8',n:'British Values'},
-                                        {s:'yellow',c:'8.1',n:'Rule of Law'},
-                                        {s:'yellow',c:'8.2',n:'Democracy Value'},
-                                        {s:'yellow',c:'8.3',n:'Liberty'},
-                                        {s:'yellow',c:'8.4',n:'Respect'},
-                                        {s:'yellow',c:'8.5',n:'Tolerance'},
-                                        {s:'yellow',c:'8.6',n:'Values Project'},
-                                        {s:'yellow',c:'8.7',n:'Values Quiz'},
-                                        {s:'yellow',c:'8.8',n:'Values Discussion'},
-                                        {s:'yellow',c:'9',n:'Diversity'},
-                                        {s:'yellow',c:'9.1',n:'Different Cultures'},
-                                        {s:'yellow',c:'9.2',n:'World Religions'},
-                                        {s:'yellow',c:'9.3',n:'Celebrations'},
-                                        {s:'yellow',c:'10',n:'Armed Forces Day'},
-                                        {s:'yellow',c:'10.1',n:'Parade'},
-                                        {s:'yellow',c:'10.2',n:'Display'},
-                                        {s:'yellow',c:'11',n:'Sea Sunday'},
-                                        {s:'yellow',c:'11.1',n:'Church Service'},
-                                        {s:'yellow',c:'11.2',n:'Seafarers'},
-                                        {s:'yellow',c:'12',n:'Royal Events'},
-                                        {s:'yellow',c:'12.1',n:'Royal History'},
-                                        {s:'yellow',c:'12.2',n:'Royal Visit'},
-                                        {s:'yellow',c:'12.3',n:'Royal Celebration'},
-                                        {s:'yellow',c:'13',n:'Trafalgar Day'},
-                                        {s:'yellow',c:'13.1',n:'Nelson'},
-                                        {s:'yellow',c:'13.2',n:'Battle Facts'},
-                                        {s:'yellow',c:'13.3',n:'HMS Victory'},
-                                        {s:'yellow',c:'13.4',n:'Trafalgar Square'},
-                                        {s:'yellow',c:'13.5',n:'Naval History'},
-                                        {s:'yellow',c:'15',n:'Veterans'},
-                                        {s:'yellow',c:'15.1',n:'Meet Veteran'},
-                                        {s:'yellow',c:'16',n:'Cadets Worldwide'},
-                                        {s:'yellow',c:'17',n:'Sea Cadets History'},
-                                        {s:'yellow',c:'17.1',n:'Unit History'},
-                                        {s:'yellow',c:'17.2',n:'Old Photos'},
-                                        {s:'yellow',c:'18',n:'Famous Ships'},
-                                        {s:'yellow',c:'19',n:'Navy Careers'},
-                                        {s:'yellow',c:'19.1',n:'Navy Jobs'},
-                                        {s:'yellow',c:'19.2',n:'Navy Training'},
-                                        {s:'yellow',c:'19.3',n:'Navy Life'},
-                                        {s:'yellow',c:'19.4',n:'Navy Visit'},
-                                        {s:'yellow',c:'19.5',n:'Navy Talk'},
-                                        {s:'yellow',c:'20',n:'Future Goals'},
-                                        {s:'yellow',c:'20.1',n:'Career Ideas'},
-                                        {s:'yellow',c:'20.2',n:'Skills'},
-                                        {s:'yellow',c:'20.3',n:'Achievements'},
-                                        {s:'yellow',c:'20.4',n:'Action Plan'},
-                                        {s:'yellow',c:'21',n:'Online Safety'},
-                                        {s:'yellow',c:'22',n:'Mental Health'},
-                                        {s:'yellow',c:'22.1',n:'Wellbeing'},
-                                        {s:'yellow',c:'22.2',n:'Stress'},
-                                        {s:'yellow',c:'22.3',n:'Emotions'},
-                                        {s:'yellow',c:'22.4',n:'Support'},
-                                        {s:'yellow',c:'22.5',n:'Mindfulness'},
-                                        {s:'yellow',c:'22.6',n:'Exercise'},
-                                        {s:'yellow',c:'22.7',n:'Sleep'},
-                                        {s:'yellow',c:'22.8',n:'Nutrition'},
-                                        {s:'yellow',c:'22.9',n:'Friends'},
-                                        {s:'yellow',c:'23',n:'Personal Safety'},
-                                        {s:'yellow',c:'23.1',n:'Road Safety'},
-                                        {s:'yellow',c:'23.2',n:'Water Safety'},
-                                        {s:'yellow',c:'24',n:'Bullying'},
-                                        {s:'yellow',c:'24.1',n:'Anti-Bullying'},
-                                        {s:'yellow',c:'24.2',n:'Being Kind'},
-                                        {s:'yellow',c:'25',n:'Healthy Eating'},
-                                        {s:'yellow',c:'26',n:'First Aid'},
-                                        {s:'yellow',c:'27',n:'Music'},
-                                        {s:'yellow',c:'27.1',n:'Sea Songs'},
-                                        {s:'yellow',c:'27.2',n:'Instruments'},
-                                        {s:'yellow',c:'27.3',n:'Performance'},
-                                        {s:'yellow',c:'28',n:'Art'},
-                                        {s:'yellow',c:'28.1',n:'Maritime Art'},
-                                        {s:'yellow',c:'28.2',n:'Sculpture'},
-                                        {s:'yellow',c:'28.3',n:'Crafts'},
-                                        {s:'yellow',c:'28.4',n:'Exhibition'},
-                                        {s:'yellow',c:'29',n:'Drama'},
-                                        {s:'yellow',c:'30',n:'Dance'},
-                                        {s:'yellow',c:'70',n:'Platinum Jubilee'},
-                                        {s:'yellow',c:'70.1',n:'Jubilee Party'},
-                                        {s:'yellow',c:'70.2',n:'Jubilee Project'},
-                                        {s:'yellow',c:'71',n:'Commonwealth Games'},
-                                        {s:'yellow',c:'72',n:'Coronation'},
-                                        {s:'yellow',c:'72.1',n:'Coronation Event'},
-                                        {s:'yellow',c:'73',n:'Special Event'},
-                                        {s:'stem',c:'1',n:'Coding Basics'},
-                                        {s:'stem',c:'2',n:'Scratch'},
-                                        {s:'stem',c:'3',n:'Python'},
-                                        {s:'stem',c:'4',n:'Robotics'},
-                                        {s:'stem',c:'5',n:'Electronics'},
-                                        {s:'stem',c:'6',n:'Circuits'},
-                                        {s:'stem',c:'7',n:'LED Projects'},
-                                        {s:'stem',c:'8',n:'Raspberry Pi'},
-                                        {s:'stem',c:'9',n:'Arduino'},
-                                        {s:'stem',c:'10',n:'3D Printing'},
-                                        {s:'stem',c:'11',n:'CAD Design'},
-                                        {s:'stem',c:'12',n:'Engineering'},
-                                        {s:'stem',c:'13',n:'Bridges'},
-                                        {s:'stem',c:'14',n:'Structures'},
-                                        {s:'stem',c:'15',n:'Forces'},
-                                        {s:'stem',c:'16',n:'Energy'},
-                                        {s:'stem',c:'17',n:'Renewable Energy'},
-                                        {s:'stem',c:'18',n:'Solar Power'},
-                                        {s:'stem',c:'19',n:'Wind Power'},
-                                        {s:'stem',c:'20',n:'Water Power'},
-                                        {s:'stem',c:'21',n:'Chemistry'},
-                                        {s:'stem',c:'22',n:'Reactions'},
-                                        {s:'stem',c:'23',n:'Materials'},
-                                        {s:'stem',c:'24',n:'Biology'},
-                                        {s:'stem',c:'25',n:'Marine Life'},
-                                        {s:'stem',c:'26',n:'Ecosystems'},
-                                        {s:'stem',c:'27',n:'Physics'},
-                                        {s:'stem',c:'28',n:'Light'},
-                                        {s:'stem',c:'29',n:'Sound'},
-                                        {s:'stem',c:'30',n:'Space'},
-                                        {s:'stem',c:'31',n:'Astronomy'},
-                                        {s:'stem',c:'32',n:'Planets'},
-                                        {s:'stem',c:'33',n:'Rockets'},
-                                        {s:'stem',c:'34',n:'Satellites'},
-                                        {s:'stem',c:'35',n:'Navigation Tech'},
-                                        {s:'stem',c:'36',n:'GPS'},
-                                        {s:'stem',c:'37',n:'Radar'},
-                                        {s:'stem',c:'38',n:'Sonar'},
-                                        {s:'stem',c:'39',n:'Maths Games'},
-                                        {s:'stem',c:'40',n:'Data Science'},
-                                        {s:'stem',c:'41',n:'Statistics'},
-                                        {s:'stem',c:'42',n:'Problem Solving'}
-                                    ];
                                     
                                     // Build CSV grid
                                     let csv = ', '; // Empty top-left corner
@@ -5475,6 +4806,15 @@
             
             const [selectedJuniorPNum, setSelectedJuniorPNum] = useState(juniors.length > 0 ? juniors[0].pNumber : "");
             
+            // Restore selected junior after reload (if saved)
+            useEffect(() => {
+                const tempJunior = localStorage.getItem('scc_temp_junior');
+                if (tempJunior && juniors.some(j => j.pNumber === tempJunior)) {
+                    setSelectedJuniorPNum(tempJunior);
+                    localStorage.removeItem('scc_temp_junior'); // Clean up
+                }
+            }, [juniors]);
+            
             if (juniors.length === 0) {
                 return (
                     <div className="p-8">
@@ -5546,11 +4886,12 @@
             const juniorModules = juniorData.moduleCompletions.filter(m => m.pNumber === junior.pNumber);
             
             // Get section progress
-            const redModules = juniorModules.filter(m => m.section === 'red').length;
-            const blueModules = juniorModules.filter(m => m.section === 'blue').length;
-            const greenModules = juniorModules.filter(m => m.section === 'green').length;
-            const yellowModules = juniorModules.filter(m => m.section === 'yellow').length;
-            const stemModules = juniorModules.filter(m => m.section === 'stem').length;
+            // Count unique modules only (duplicates count as one)
+            const redModules = new Set(juniorModules.filter(m => m.section === 'red').map(m => m.moduleCode)).size;
+            const blueModules = new Set(juniorModules.filter(m => m.section === 'blue').map(m => m.moduleCode)).size;
+            const greenModules = new Set(juniorModules.filter(m => m.section === 'green').map(m => m.moduleCode)).size;
+            const yellowModules = new Set(juniorModules.filter(m => m.section === 'yellow').map(m => m.moduleCode)).size;
+            const stemModules = new Set(juniorModules.filter(m => m.section === 'stem').map(m => m.moduleCode)).size;
             
             // Use rank from Westminster CSV (not calculated from modules)
             const currentRank = junior.rank || "Junior Cadet";
@@ -5820,12 +5161,48 @@
                 if (saveJuniorData(updatedData)) {
                     setShowSuccess(true);
                     setModuleCode('');
+                    // Save current state before reload
+                    localStorage.setItem('scc_temp_view', 'juniors');
+                    localStorage.setItem('scc_temp_junior', junior.pNumber);
                     setTimeout(() => {
                         setShowSuccess(false);
                         window.location.reload(); // Refresh to show new data
                     }, 1500);
                 } else {
                     alert("Error saving module completions");
+                }
+            };
+            
+            const handleModuleDelete = (moduleToDelete) => {
+                const confirmMsg = `Delete ${moduleToDelete.section.toUpperCase()} ${moduleToDelete.moduleCode} (completed ${formatDate(moduleToDelete.dateCompleted)})?\n\nThis cannot be undone.`;
+                
+                if (!confirm(confirmMsg)) {
+                    return; // User cancelled
+                }
+                
+                // Filter out the specific module entry
+                const updatedCompletions = juniorData.moduleCompletions.filter(m => {
+                    // Match by pNumber, section, moduleCode, and date to ensure we delete the exact entry
+                    return !(
+                        m.pNumber === moduleToDelete.pNumber &&
+                        m.section === moduleToDelete.section &&
+                        m.moduleCode === moduleToDelete.moduleCode &&
+                        m.dateCompleted === moduleToDelete.dateCompleted
+                    );
+                });
+                
+                const updatedData = {
+                    ...juniorData,
+                    moduleCompletions: updatedCompletions
+                };
+                
+                if (saveJuniorData(updatedData)) {
+                    // Save current state before reload
+                    localStorage.setItem('scc_temp_view', 'juniors');
+                    localStorage.setItem('scc_temp_junior', junior.pNumber);
+                    window.location.reload(); // Refresh to show updated data
+                } else {
+                    alert("Error deleting module");
                 }
             };
             
@@ -5893,9 +5270,15 @@
                                 <div className="w-full bg-red-200 rounded-full h-2 mt-2">
                                     <div className="bg-red-600 h-2 rounded-full" style={{width: `${Math.min((redModules/15)*100, 100)}%`}}></div>
                                 </div>
-                                {redModules >= 15 && !qualifications?.some(q => q.pNumber === junior.pNumber && q.module.includes("JSC Red Unit Activities Badge")) && (
-                                    <p className="text-xs font-bold text-red-900 mt-2 bg-red-100 py-1 px-2 rounded">AWARD DUE</p>
-                                )}
+                                {(() => {
+                                    const redAward = qualifications?.find(q => q.pNumber === junior.pNumber && q.module.includes("JSC Red Unit Activities Badge"));
+                                    if (redAward) {
+                                        return <p className="text-xs font-bold text-green-900 mt-2 bg-green-100 py-1 px-2 rounded">Awarded on {formatDate(redAward.date)}</p>;
+                                    } else if (redModules >= 15) {
+                                        return <p className="text-xs font-bold text-red-900 mt-2 bg-red-100 py-1 px-2 rounded">AWARD DUE</p>;
+                                    }
+                                    return null;
+                                })()}
                             </div>
                             <div className="text-center p-4 bg-blue-50 rounded-lg border-2 border-blue-200">
                                 <p className="text-sm font-semibold text-blue-800">Blue - Waterborne</p>
@@ -5903,9 +5286,15 @@
                                 <div className="w-full bg-blue-200 rounded-full h-2 mt-2">
                                     <div className="bg-blue-600 h-2 rounded-full" style={{width: `${Math.min((blueModules/15)*100, 100)}%`}}></div>
                                 </div>
-                                {blueModules >= 15 && !qualifications?.some(q => q.pNumber === junior.pNumber && q.module.includes("JSC Blue Waterborne Activities Badge")) && (
-                                    <p className="text-xs font-bold text-blue-900 mt-2 bg-blue-100 py-1 px-2 rounded">AWARD DUE</p>
-                                )}
+                                {(() => {
+                                    const blueAward = qualifications?.find(q => q.pNumber === junior.pNumber && q.module.includes("JSC Blue Waterborne Activities Badge"));
+                                    if (blueAward) {
+                                        return <p className="text-xs font-bold text-green-900 mt-2 bg-green-100 py-1 px-2 rounded">Awarded on {formatDate(blueAward.date)}</p>;
+                                    } else if (blueModules >= 15) {
+                                        return <p className="text-xs font-bold text-blue-900 mt-2 bg-blue-100 py-1 px-2 rounded">AWARD DUE</p>;
+                                    }
+                                    return null;
+                                })()}
                             </div>
                             <div className="text-center p-4 bg-green-50 rounded-lg border-2 border-green-200">
                                 <p className="text-sm font-semibold text-green-800">Green - Outdoor</p>
@@ -5913,9 +5302,15 @@
                                 <div className="w-full bg-green-200 rounded-full h-2 mt-2">
                                     <div className="bg-green-600 h-2 rounded-full" style={{width: `${Math.min((greenModules/15)*100, 100)}%`}}></div>
                                 </div>
-                                {greenModules >= 15 && !qualifications?.some(q => q.pNumber === junior.pNumber && q.module.includes("JSC Green Outdoor & Recreation Activities Badge")) && (
-                                    <p className="text-xs font-bold text-green-900 mt-2 bg-green-100 py-1 px-2 rounded">AWARD DUE</p>
-                                )}
+                                {(() => {
+                                    const greenAward = qualifications?.find(q => q.pNumber === junior.pNumber && q.module.includes("JSC Green Outdoor & Recreation Activities Badge"));
+                                    if (greenAward) {
+                                        return <p className="text-xs font-bold text-green-900 mt-2 bg-green-100 py-1 px-2 rounded">Awarded on {formatDate(greenAward.date)}</p>;
+                                    } else if (greenModules >= 15) {
+                                        return <p className="text-xs font-bold text-green-900 mt-2 bg-green-100 py-1 px-2 rounded">AWARD DUE</p>;
+                                    }
+                                    return null;
+                                })()}
                             </div>
                             <div className="text-center p-4 bg-yellow-50 rounded-lg border-2 border-yellow-200">
                                 <p className="text-sm font-semibold text-yellow-800">Yellow - Community</p>
@@ -5923,9 +5318,15 @@
                                 <div className="w-full bg-yellow-200 rounded-full h-2 mt-2">
                                     <div className="bg-yellow-600 h-2 rounded-full" style={{width: `${Math.min((yellowModules/15)*100, 100)}%`}}></div>
                                 </div>
-                                {yellowModules >= 15 && !qualifications?.some(q => q.pNumber === junior.pNumber && q.module.includes("JSC Yellow Community & Citizenship Activities Badge")) && (
-                                    <p className="text-xs font-bold text-yellow-900 mt-2 bg-yellow-100 py-1 px-2 rounded">AWARD DUE</p>
-                                )}
+                                {(() => {
+                                    const yellowAward = qualifications?.find(q => q.pNumber === junior.pNumber && q.module.includes("JSC Yellow Community & Citizenship Activities Badge"));
+                                    if (yellowAward) {
+                                        return <p className="text-xs font-bold text-green-900 mt-2 bg-green-100 py-1 px-2 rounded">Awarded on {formatDate(yellowAward.date)}</p>;
+                                    } else if (yellowModules >= 15) {
+                                        return <p className="text-xs font-bold text-yellow-900 mt-2 bg-yellow-100 py-1 px-2 rounded">AWARD DUE</p>;
+                                    }
+                                    return null;
+                                })()}
                             </div>
                             <div className="text-center p-4 bg-purple-50 rounded-lg border-2 border-purple-200">
                                 <p className="text-sm font-semibold text-purple-800">STEM</p>
@@ -5933,31 +5334,58 @@
                                 <div className="w-full bg-purple-200 rounded-full h-2 mt-2">
                                     <div className="bg-purple-600 h-2 rounded-full" style={{width: `${Math.min((stemModules/15)*100, 100)}%`}}></div>
                                 </div>
-                                {stemModules >= 15 && !qualifications?.some(q => q.pNumber === junior.pNumber && q.module.includes("JSC STEM Unit Activities Badge")) && (
-                                    <p className="text-xs font-bold text-purple-900 mt-2 bg-purple-100 py-1 px-2 rounded">STEM AWARD DUE</p>
-                                )}
-                                {stemModules >= 8 && stemModules < 15 && !qualifications?.some(q => q.pNumber === junior.pNumber && q.module.includes("JSC Crest Award")) && (
-                                    <p className="text-xs font-bold text-purple-900 mt-2 bg-purple-100 py-1 px-2 rounded">CREST AWARD DUE</p>
-                                )}
-                                {stemModules >= 15 && !qualifications?.some(q => q.pNumber === junior.pNumber && q.module.includes("JSC Crest Award")) && (
-                                    <p className="text-xs font-bold text-purple-900 mt-2 bg-purple-100 py-1 px-2 rounded">CREST AWARD DUE</p>
-                                )}
+                                {(() => {
+                                    const stemAward = qualifications?.find(q => q.pNumber === junior.pNumber && q.module.includes("JSC STEM Unit Activities Badge"));
+                                    const crestAward = qualifications?.find(q => q.pNumber === junior.pNumber && q.module.includes("JSC Crest Award"));
+                                    
+                                    // STEM Badge (15+ modules)
+                                    if (stemAward && stemModules >= 15) {
+                                        return <p className="text-xs font-bold text-green-900 mt-2 bg-green-100 py-1 px-2 rounded">STEM Awarded on {formatDate(stemAward.date)}</p>;
+                                    } else if (!stemAward && stemModules >= 15) {
+                                        return <p className="text-xs font-bold text-purple-900 mt-2 bg-purple-100 py-1 px-2 rounded">STEM AWARD DUE</p>;
+                                    }
+                                    
+                                    // CREST Award (8+ modules)
+                                    if (crestAward && stemModules >= 8) {
+                                        return <p className="text-xs font-bold text-green-900 mt-2 bg-green-100 py-1 px-2 rounded">CREST Awarded on {formatDate(crestAward.date)}</p>;
+                                    } else if (!crestAward && stemModules >= 8) {
+                                        return <p className="text-xs font-bold text-purple-900 mt-2 bg-purple-100 py-1 px-2 rounded">CREST AWARD DUE</p>;
+                                    }
+                                    
+                                    return null;
+                                })()}
                             </div>
                         </div>
                         
                         {/* Commodore's Broad Pennant Alert */}
-                        {redModules >= 15 && blueModules >= 15 && greenModules >= 15 && yellowModules >= 15 && 
-                         !qualifications?.some(q => q.pNumber === junior.pNumber && q.module.includes("JSC Commodores Broad Pennant")) && (
-                            <div className="mt-4 p-4 bg-gradient-to-r from-amber-50 to-yellow-50 border-2 border-amber-300 rounded-lg">
-                                <div className="flex items-center gap-3">
-                                    <Icon name="Award" className="w-8 h-8 text-amber-600" />
-                                    <div>
-                                        <p className="font-bold text-amber-900 text-lg">🎖️ COMMODORE'S BROAD PENNANT DUE!</p>
-                                        <p className="text-sm text-amber-800">All four core sections completed (RED, BLUE, GREEN, YELLOW)</p>
+                        {redModules >= 15 && blueModules >= 15 && greenModules >= 15 && yellowModules >= 15 && (() => {
+                            const broadPennant = qualifications?.find(q => q.pNumber === junior.pNumber && q.module.includes("JSC Commodores Broad Pennant"));
+                            if (broadPennant) {
+                                return (
+                                    <div className="mt-4 p-4 bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-300 rounded-lg">
+                                        <div className="flex items-center gap-3">
+                                            <Icon name="Award" className="w-8 h-8 text-green-600" />
+                                            <div>
+                                                <p className="font-bold text-green-900 text-lg">🎖️ COMMODORE'S BROAD PENNANT</p>
+                                                <p className="text-sm text-green-800">Awarded on {formatDate(broadPennant.date)}</p>
+                                            </div>
+                                        </div>
                                     </div>
-                                </div>
-                            </div>
-                        )}
+                                );
+                            } else {
+                                return (
+                                    <div className="mt-4 p-4 bg-gradient-to-r from-amber-50 to-yellow-50 border-2 border-amber-300 rounded-lg">
+                                        <div className="flex items-center gap-3">
+                                            <Icon name="Award" className="w-8 h-8 text-amber-600" />
+                                            <div>
+                                                <p className="font-bold text-amber-900 text-lg">🎖️ COMMODORE'S BROAD PENNANT DUE!</p>
+                                                <p className="text-sm text-amber-800">All four core sections completed (RED, BLUE, GREEN, YELLOW)</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            }
+                        })()}
                     </div>
                     
                     {/* Waterborne Proficiencies */}
@@ -6039,7 +5467,7 @@
                         ) : (
                             <div className="space-y-2 max-h-96 overflow-y-auto">
                                 {juniorModules.map((mod, idx) => (
-                                    <div key={idx} className="flex justify-between items-center p-3 bg-slate-50 rounded-lg">
+                                    <div key={idx} className="flex justify-between items-center p-3 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors">
                                         <div>
                                             <span className={`inline-block px-2 py-1 rounded text-xs font-semibold mr-2 ${
                                                 mod.section === 'red' ? 'bg-red-100 text-red-800' :
@@ -6052,7 +5480,22 @@
                                             </span>
                                             <span className="text-slate-700">{mod.moduleName}</span>
                                         </div>
-                                        <span className="text-sm text-slate-500">{formatDate(mod.dateCompleted)}</span>
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-sm text-slate-500">{formatDate(mod.dateCompleted)}</span>
+                                            <button
+                                                onClick={() => handleModuleDelete(mod)}
+                                                className="p-1.5 text-red-600 hover:bg-red-50 rounded transition-colors"
+                                                title="Delete this module"
+                                            >
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                    <path d="M3 6h18"></path>
+                                                    <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
+                                                    <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+                                                    <line x1="10" x2="10" y1="11" y2="17"></line>
+                                                    <line x1="14" x2="14" y1="11" y2="17"></line>
+                                                </svg>
+                                            </button>
+                                        </div>
                                     </div>
                                 ))}
                             </div>
@@ -6099,8 +5542,14 @@
                             
                             setPersonnelData(parsedP);
                             setQualsData(hydratedQ);
-                            // Set to 'home' view when data is loaded from storage
-                            setView('home'); 
+                            // Check for saved view (from module add/delete), otherwise default to home
+                            const tempView = localStorage.getItem('scc_temp_view');
+                            if (tempView) {
+                                setView(tempView);
+                                localStorage.removeItem('scc_temp_view'); // Clean up
+                            } else {
+                                setView('home');
+                            } 
                         } catch (e) {
                             console.error("Error rehydrating data", e);
                             localStorage.clear();
@@ -6232,8 +5681,8 @@
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<App />);
         
-        console.log(`RC2.27 loaded successfully! Version: ${DATA_VERSION}`);
-        console.log("RC2.27: Unit names cleaned (Junior Section/RMCD removed), bulk award moved to Data/Utilities");
+        console.log(`RC2.34 loaded successfully! Version: ${DATA_VERSION}`);
+        console.log("RC2.28: Duplicate modules now count only once in progress calculations");
     </script>
 </body>
 </html>

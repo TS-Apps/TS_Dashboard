@@ -100,7 +100,7 @@
         // ============================================================================
         
         // --- 1.1 VERSION ---
-        const DATA_VERSION = "1.0-RC2.20"; // RC2 Complete + Bulk Upload Template Feature 
+        const DATA_VERSION = "1.0-RC2.45"; // RC2 Complete + UI Improvements + Junior Tracking 
 
         // --- 1.2 BADGE & RANK IMAGE MAPS ---
         const RANK_IMG_MAP = {
@@ -2598,16 +2598,24 @@
 
             return (
                 <div className="space-y-6">
-                    <div className="bg-sky-50 p-6 rounded-lg border border-sky-100">
-                        <h2 className="text-xl font-bold text-sky-900 mb-2">Waterborne Qualifications</h2>
-                           <div className="flex items-center gap-4">
-                                <label className="text-sm font-semibold text-sky-800">Filter Activity:</label>
-                                <select value={filterActivity} onChange={(e) => setFilterActivity(e.target.value)} className="p-2 border border-sky-200 rounded shadow-sm text-sm">
-                                    {activityOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-                                </select>
+                    <div className="bg-white rounded-lg shadow-xl p-6 border-l-4 border-sky-500">
+                        <div className="flex items-center gap-4 mb-4">
+                            <div className="p-3 bg-sky-100 rounded-full">
+                                <Icon name="Anchor" className="w-8 h-8 text-sky-700" />
                             </div>
-                            <div className="mt-4 flex flex-wrap gap-3 text-xs">
-                                <div className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-[#add8e6] border border-black"></span> Coxswain (Pending)</div>
+                            <div>
+                                <h2 className="text-3xl font-extrabold text-slate-900">Waterborne Qualifications</h2>
+                                <p className="text-slate-600">Track all waterborne proficiencies and awards</p>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-4">
+                            <label className="text-sm font-semibold text-slate-700">Filter Activity:</label>
+                            <select value={filterActivity} onChange={(e) => setFilterActivity(e.target.value)} className="p-2 border border-slate-300 rounded-lg shadow-sm text-sm">
+                                {activityOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                            </select>
+                        </div>
+                        <div className="mt-4 flex flex-wrap gap-3 text-xs">
+                            <div className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-[#add8e6] border border-black"></span> Coxswain (Pending)</div>
                                 <div className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-[#003366]"></span> Coxswain (Awarded)</div>
                                 <div className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-[#ffffe0] border border-black"></span> Master (Pending)</div>
                                 <div className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-[#ffd700] border border-black"></span> Master (Awarded)</div>
@@ -2655,17 +2663,24 @@
         
         // --- 3.6 CADET FOCUS COMPONENT ---
         const CadetFocus = ({ personnel, qualsData }) => {
-            const [selectedCadetPNum, setSelectedCadetPNum] = useState(personnel.length > 0 ? personnel[0].pNumber : "");
+            // Filter to only show cadets aged 12-17 (not juniors under 12, not adults 18+)
+            const cadets = useMemo(() => personnel.filter(c => {
+                if (!c.dob) return false; // Exclude if no DOB - can't determine age
+                const age = calculateAge(c.dob);
+                return age !== "Unknown" && age >= 12 && age < 18;
+            }), [personnel]);
+            
+            const [selectedCadetPNum, setSelectedCadetPNum] = useState(cadets.length > 0 ? cadets[0].pNumber : "");
             
             // Force reset if selected cadet is not in list (e.g. new file load)
             useEffect(() => {
-                if (personnel.length > 0 && (!selectedCadetPNum || !personnel.find(p => p.pNumber === selectedCadetPNum))) {
-                    setSelectedCadetPNum(personnel[0].pNumber);
+                if (cadets.length > 0 && (!selectedCadetPNum || !cadets.find(p => p.pNumber === selectedCadetPNum))) {
+                    setSelectedCadetPNum(cadets[0].pNumber);
                 }
-            }, [personnel, selectedCadetPNum]);
+            }, [cadets, selectedCadetPNum]);
             
-            const sortedPersonnel = useMemo(() => [...personnel].sort((a, b) => a.name.localeCompare(b.name)), [personnel]);
-            const selectedCadet = useMemo(() => personnel.find(p => p.pNumber === selectedCadetPNum), [personnel, selectedCadetPNum]);
+            const sortedPersonnel = useMemo(() => [...cadets].sort((a, b) => a.name.localeCompare(b.name)), [cadets]);
+            const selectedCadet = useMemo(() => cadets.find(p => p.pNumber === selectedCadetPNum), [cadets, selectedCadetPNum]);
             
             const cadetAge = useMemo(() => selectedCadet?.dob ? calculateAge(selectedCadet.dob) : "Unknown", [selectedCadet]);
             const cadetAgeClass = useMemo(() => selectedCadet?.dob ? getCadetAgeColor(selectedCadet.dob) : "", [selectedCadet]);
@@ -3213,6 +3228,24 @@
                 };
             }, [qualsData, selectedCadetPNum, selectedCadet]);
 
+            // Check if there are no cadets aged 12-17
+            if (cadets.length === 0) {
+                return (
+                    <div className="p-8">
+                        <div className="bg-white rounded-lg shadow p-8 text-center">
+                            <Icon name="User" className="w-16 h-16 mx-auto text-slate-300 mb-4" />
+                            <h2 className="text-2xl font-bold text-slate-700 mb-2">No Cadets Found (Ages 12-17)</h2>
+                            <p className="text-slate-600">
+                                Cadet Focus shows cadets aged 12-17 only.
+                            </p>
+                            <p className="text-sm text-slate-500 mt-4">
+                                Juniors (under 12) have their own dedicated Junior Focus page.
+                                Adults (18+) are not yet supported in this dashboard.
+                            </p>
+                        </div>
+                    </div>
+                );
+            }
 
             if (!selectedCadet) return <div className="p-8 text-center text-slate-500">Please load data and select a cadet.</div>;
 
@@ -3477,13 +3510,22 @@
             if (!currentSyllabus) {
                 return (
                     <div className="space-y-6">
-                        <div className={`p-6 rounded-lg border ${colorTheme === "green" ? "bg-green-50 border-green-100" : "bg-indigo-50 border-indigo-100"}`}>
-                            <h2 className="text-xl font-bold text-slate-800">{title}</h2>
-                            <p className="text-sm">Select target rank: 
-                                <select value={selectedRank} onChange={(e) => setSelectedRank(e.target.value)} className="p-2 border rounded shadow-sm ml-2">
+                        <div className="bg-white rounded-lg shadow-xl p-6 border-l-4 border-indigo-500">
+                            <div className="flex items-center gap-4 mb-4">
+                                <div className={`p-3 rounded-full ${colorTheme === "green" ? "bg-green-100" : "bg-indigo-100"}`}>
+                                    <Icon name={iconName || "FileText"} className={`w-8 h-8 ${colorTheme === "green" ? "text-green-700" : "text-indigo-700"}`} />
+                                </div>
+                                <div>
+                                    <h2 className="text-3xl font-extrabold text-slate-900">{title}</h2>
+                                    <p className="text-slate-600">No syllabus data available</p>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-4">
+                                <label className="text-sm font-semibold text-slate-700">Select target rank:</label>
+                                <select value={selectedRank} onChange={(e) => setSelectedRank(e.target.value)} className="p-2 border border-slate-300 rounded-lg shadow-sm">
                                     {rankOrder.map(r => <option key={r} value={r}>{r}</option>)}
                                 </select>
-                            </p>
+                            </div>
                         </div>
                         <div className="text-center py-12 bg-white rounded border border-dashed border-slate-300 text-slate-400">
                              No syllabus defined for {selectedRank}.
@@ -3494,16 +3536,19 @@
 
             return (
                 <div className="space-y-6">
-                    <div className={`p-6 rounded-lg border ${colorTheme === "green" ? "bg-green-50 border-green-100" : "bg-indigo-50 border-indigo-100"}`}>
-                        <div className="flex items-center gap-3 mb-4">
-                            <div className={`p-3 rounded-full ${colorTheme === "green" ? "bg-green-200 text-green-800" : "bg-indigo-200 text-indigo-800"}`}>
-                                <Icon name={iconName || "FileText"} className="w-6 h-6" />
+                    <div className={`bg-white rounded-lg shadow-xl p-6 border-l-4 ${colorTheme === "green" ? "border-green-500" : "border-indigo-500"}`}>
+                        <div className="flex items-center gap-4 mb-4">
+                            <div className={`p-3 rounded-full ${colorTheme === "green" ? "bg-green-100" : "bg-indigo-100"}`}>
+                                <Icon name={iconName || "FileText"} className={`w-8 h-8 ${colorTheme === "green" ? "text-green-700" : "text-indigo-700"}`} />
                             </div>
-                            <h2 className="text-xl font-bold text-slate-800">{title}</h2>
+                            <div>
+                                <h2 className="text-3xl font-extrabold text-slate-900">{title}</h2>
+                                <p className="text-slate-600">Plan training for cadets at selected rank</p>
+                            </div>
                         </div>
                        <div className="flex items-center gap-4">
-                            <label className="text-sm font-semibold">Plan training for cadets currently ranked:</label>
-                            <select value={selectedRank} onChange={(e) => setSelectedRank(e.target.value)} className="p-2 border rounded shadow-sm">
+                            <label className="text-sm font-semibold text-slate-700">Plan training for cadets currently ranked:</label>
+                            <select value={selectedRank} onChange={(e) => setSelectedRank(e.target.value)} className="p-2 border border-slate-300 rounded-lg shadow-sm">
                                 {rankOrder.map(r => <option key={r} value={r}>{r}</option>)}
                             </select>
                         </div>
@@ -4544,33 +4589,31 @@
             
             return (
                 <div className="space-y-6">
-                    {/* Header */}
+                    {/* Header with Junior Selector */}
                     <div className="bg-white rounded-lg shadow-xl p-6 border-l-4 border-purple-500">
-                        <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-4 mb-4">
                             <div className="p-3 bg-purple-100 rounded-full">
                                 <Icon name="Users" className="w-8 h-8 text-purple-700" />
                             </div>
-                            <div>
+                            <div className="flex-1">
                                 <h1 className="text-3xl font-extrabold text-slate-900">Junior Focus</h1>
                                 <p className="text-slate-600">{juniors.length} junior{juniors.length !== 1 ? 's' : ''} (ages 9-11)</p>
                             </div>
                         </div>
-                    </div>
-                    
-                    {/* Junior Selector */}
-                    <div className="bg-white rounded-lg shadow p-4">
-                        <label className="block text-sm font-semibold text-slate-700 mb-2">Select Junior:</label>
-                        <select 
-                            value={selectedJuniorPNum}
-                            onChange={(e) => setSelectedJuniorPNum(e.target.value)}
-                            className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                        >
-                            {juniors.map(junior => (
-                                <option key={junior.pNumber} value={junior.pNumber}>
-                                    {junior.name} - {junior.rank} (Age: {calculateAge(junior.dob)})
-                                </option>
-                            ))}
-                        </select>
+                        <div>
+                            <label className="block text-sm font-semibold text-slate-700 mb-2">Select Junior</label>
+                            <select 
+                                value={selectedJuniorPNum}
+                                onChange={(e) => setSelectedJuniorPNum(e.target.value)}
+                                className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                            >
+                                {juniors.map(junior => (
+                                    <option key={junior.pNumber} value={junior.pNumber}>
+                                        {junior.name} - {junior.rank} (Age: {calculateAge(junior.dob)})
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
                     </div>
                     
                     {/* Junior Detail */}
@@ -4799,8 +4842,26 @@
                                 <p className="font-bold text-lg">{junior.name}</p>
                             </div>
                             <div>
-                                <p className="text-sm text-slate-600">Current Rank</p>
-                                <p className="font-bold text-2xl text-blue-700">{currentRank}</p>
+                                <p className="text-sm text-slate-600 mb-2">Current Rank</p>
+                                <div className="flex items-center gap-3">
+                                    {RANK_IMG_MAP[currentRank] ? (
+                                        currentRank === "Able Junior Cadet" || RANK_IMG_MAP[currentRank]?.count === 2 ? (
+                                            <div className="flex gap-1">
+                                                <img src="media/scc_junior_star.webp" className="h-12 w-auto object-contain shadow-sm" alt="Rank Star 1" onError={(e) => e.target.style.display = 'none'} />
+                                                <img src="media/scc_junior_star.webp" className="h-12 w-auto object-contain shadow-sm" alt="Rank Star 2" onError={(e) => e.target.style.display = 'none'} />
+                                            </div>
+                                        ) : (
+                                            RANK_IMG_MAP[currentRank]?.sleeve && <img src={`media/${RANK_IMG_MAP[currentRank].sleeve}`} className="h-12 w-auto object-contain shadow-sm" alt="Rank Badge" onError={(e) => e.target.style.display = 'none'} />
+                                        )
+                                    ) : (
+                                        <div className="h-12 w-12 bg-purple-100 rounded-full flex items-center justify-center text-purple-600">
+                                            <Icon name="Shield" className="w-6 h-6"/>
+                                        </div>
+                                    )}
+                                    <div>
+                                        <p className="font-bold text-2xl text-blue-700 leading-tight">{currentRank}</p>
+                                    </div>
+                                </div>
                                 <div className="mt-2 pt-2 border-t border-slate-200">
                                     <p className="text-xs text-slate-500 font-semibold">Next Rank</p>
                                     <p className="text-sm font-semibold text-purple-600">{nextRank}</p>
@@ -5069,9 +5130,9 @@
             }, [qualsData]);
 
             const NavItem = ({ id, icon, label }) => (
-                <button onClick={() => setView(id)} className={`flex items-center gap-3 w-full p-3 rounded-lg transition-all ${view === id ? 'bg-blue-800 text-white' : 'text-blue-100 hover:bg-blue-800/50'}`}>
-                    <Icon name={icon} className="w-5 h-5" />
-                    {!sidebarCollapsed && <span>{label}</span>}
+                <button onClick={() => setView(id)} className={`flex items-center gap-2 w-full p-2 rounded-lg transition-all text-sm ${view === id ? 'bg-blue-800 text-white' : 'text-blue-100 hover:bg-blue-800/50'}`}>
+                    <Icon name={icon} className="w-4 h-4" />
+                    {!sidebarCollapsed && <span className="text-sm">{label}</span>}
                 </button>
             );
 
@@ -5095,19 +5156,19 @@
             return (
                 <ErrorBoundary>
                     <div className="min-h-screen bg-slate-100 flex font-sans text-slate-900">
-                        <aside className={`${sidebarCollapsed ? 'w-20' : 'w-80'} bg-blue-900 text-white flex flex-col shadow-2xl fixed h-full z-10 transition-all duration-300`}>
-                            <div className="p-6 border-b border-blue-800 flex flex-col items-center relative">
+                        <aside className={`${sidebarCollapsed ? 'w-20' : 'w-64'} bg-blue-900 text-white flex flex-col shadow-2xl fixed h-full z-10 transition-all duration-300`}>
+                            <div className="p-4 border-b border-blue-800 flex flex-col items-center relative">
                                 {!sidebarCollapsed && (
                                     <div className="flex flex-col items-center mb-2 w-full">
-                                        <img src="media/ts_dashboard.webp" alt="TS Dashboard" className="object-contain w-[300px] h-auto mb-2" />
+                                        <img src="media/ts_dashboard.webp" alt="TS Dashboard" className="object-contain w-full h-auto mb-2" />
                                         <p className="text-xs text-blue-300 truncate font-semibold text-center w-full">{personnelData.length > 0 ? personnelData[0].unit : 'Unit Dashboard'}</p>
                                     </div>
                                 )}
-                                <button onClick={() => setSidebarCollapsed(!sidebarCollapsed)} title="Toggle Sidebar" className={`p-1 hover:bg-blue-800 rounded absolute top-4 right-4 ${sidebarCollapsed ? 'static mt-2' : ''}`}>
+                                <button onClick={() => setSidebarCollapsed(!sidebarCollapsed)} title="Toggle Sidebar" className={`p-1 hover:bg-blue-800 rounded absolute top-2 right-2 ${sidebarCollapsed ? 'static mt-2' : ''}`}>
                                     <Icon name={sidebarCollapsed ? "ChevronRight" : "ChevronLeft"} className="w-5 h-5"/>
                                 </button>
                             </div>
-                            <nav className="flex-1 p-4 space-y-1 overflow-hidden">
+                            <nav className="flex-1 p-3 space-y-0.5 overflow-hidden">
                                 <NavItem id="home" icon="Home" label="Home" />
                                 <NavItem id="juniors" icon="Users" label="Junior Focus" />
                                 <NavItem id="junior_progress" icon="BarChart3" label="Junior Progress" />
@@ -5119,7 +5180,7 @@
                                 <NavItem id="suggestions" icon="ChartGantt" label="Training Plan" />
                                 <NavItem id="data_utilities" icon="Database" label="Data / Utilities" />
                             </nav>
-                            <div className="p-4 border-t border-blue-800">
+                            <div className="p-3 border-t border-blue-800">
                                 {!sidebarCollapsed && (
                                     <div>
                                         <p className="text-[9px] text-blue-500 text-center">v{DATA_VERSION}</p>
@@ -5127,7 +5188,7 @@
                                 )}
                             </div>
                         </aside>
-                        <main className={`flex-1 ${sidebarCollapsed ? 'ml-20' : 'ml-80'} p-8 overflow-y-auto transition-all duration-300`}>
+                        <main className={`flex-1 ${sidebarCollapsed ? 'ml-20' : 'ml-64'} p-8 overflow-y-auto transition-all duration-300`}>
                             {view === 'home' && <HomeView personnel={personnelData} />} 
                             {view === 'cadet_focus' && <CadetFocus personnel={personnelData} qualsData={qualsData} />}
                             {view === 'juniors' && <JuniorsView personnel={personnelData} qualifications={qualsData} />}

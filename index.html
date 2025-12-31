@@ -100,7 +100,7 @@
         // ============================================================================
         
         // --- 1.1 VERSION ---
-        const DATA_VERSION = "1.0-RC2.39"; // CRITICAL FIX: 2-digit year parsing 
+        const DATA_VERSION = "1.0-RC2.20"; // RC2 Complete + Bulk Upload Template Feature 
 
         // --- 1.2 BADGE & RANK IMAGE MAPS ---
         const RANK_IMG_MAP = {
@@ -986,28 +986,16 @@
         const SCC_RANK_ORDER = ["New Entry Cadet", "Cadet", "Cadet 1st Class", "Ordinary Cadet", "Able Cadet", "Leading Cadet", "Petty Officer Cadet"];
         const RMC_RANK_ORDER = ["Recruit", "Marine Cadet", "Cadet Lance Corporal", "Cadet Corporal", "Cadet Sergeant"];
 
-        // --- 1.4.1 WATERBORNE PROFICIENCY HIERARCHY ---
-        const CADET_FOCUS_WATERBORNE_HIERARCHY = {
-            "General": ["Master Coxswain Award", "Coxswain Award"],
-            "Rowing": ["SCC Rowing Instructor", "Rowing Instructor", "Rowing Coxswswain", "Rowing Supervised Coxswain", "Rowing Competent Crew", "SCC Row Coxswain Module"], 
-            "Paddlesport": ["BC Paddlesport Instructor", "BC Paddle Discipline Specific", "BC Paddle Safety & Rescue Course (PSRC)", "BC Paddle Explore Award", "BC Paddle Discover Award"],
-            "Sailing": ["Dinghy Instructor", "RYA Dinghy Instructor", "Dinghy - RYA Instructor", "Sail - RYA Sailing with Spinnakers", "Sail - RYA Seamanship Skills", "Sail - RYA Start Racing", "Sail - RYA Performance Sailing", "Sail - RYA Day Sailing", "Sailing Stage 4", "Sailing Stage 3", "Sailing Stage 2", "Sail - RYA YSS Stage 4", "Sail - RYA YSS Stage 3", "Sail - RYA YSS Stage 2"],
-            "Windsurfing": ["RYA Start Windsurfing Instructor", "Windsurfing - RYA Start Windsurfing Instructor", "Wind - RYA YouthWS - Stage 4", "Wind - RYA YouthWS - Stage 3", "Wind - RYA YouthWS - Stage 2", "Wind - RYA YouthWS - Stage 1"],
-            "Powerboat": ["RYA Powerboat Instructor", "Powerboat - RYA Powerboat Instructor", "Powerboat - RYA Powerboat Intermediate", "RYA Powerboat Level 2", "RYA Powerboat Level 1"],
-            "Offshore Power": ["Offshore - Power Watch Leader", "Offshore - Power Seaman", "Offshore - Power Grade 2", "Offshore - Power Grade 1"],
-            "Offshore Sail": ["Offshore - Sail Watch Leader", "Offshore - Sail Seaman", "Offshore - Sail Grade 2", "Offshore - Sail Grade 1"]
-        };
-
         // --- 1.5 JUNIOR SEA CADETS DATA (RC2 Stage 2) ---
         const JUNIOR_RANK_ORDER = ["Junior Cadet", "Junior Cadet 1st Class", "Able Junior Cadet", "Leading Junior Cadet"];
         
         // Junior modules database - 312 modules across 5 sections
-        // Red: 65 (11 core), Blue: 61 (4 core inc. Blue 1 from Westminster), Green: 49, Yellow: 118, STEM: 42
+        // Red: 61 (11 core), Blue: 54 (3 core + Blue 1 from Westminster), Green: 49, Yellow: 107, STEM: 41
         const JUNIOR_MODULES = {
             "metadata": {
                 "version": "1.0",
                 "source": "Official JSC Module List",
-                "totalModules": 335
+                "totalModules": 312
             },
             "sections": {
                 "red": {
@@ -1044,357 +1032,6 @@
         };
         
         console.log("Junior Sea Cadets data loaded - Stage 2 active");
-
-        
-        // --- 1.6 ALL JUNIOR MODULES (335 total) ---
-        // Complete list of all JSC modules across 5 sections for use in Junior Progress Chart and Data/Utilities
-        // RED: 65, BLUE: 61, GREEN: 49, YELLOW: 118, STEM: 42
-        const allModules = [
-            // RED Section
-            {s:'red',c:'1',n:'Unit Induction: Tour of Unit'},
-            {s:'red',c:'1.1',n:'Unit Induction: Unit Fire Drill'},
-            {s:'red',c:'1.2',n:'Unit Induction: Map Out Your Unit'},
-            {s:'red',c:'1.3',n:'Unit Induction: What\'s Important?'},
-            {s:'red',c:'1.4',n:'Unit Induction: Uniformed Art'},
-            {s:'red',c:'1.5',n:'Unit Induction: Badges & Ranks'},
-            {s:'red',c:'2',n:'Two Questions & A Funny'},
-            {s:'red',c:'2.1',n:'Paper Planes'},
-            {s:'red',c:'2.2',n:'Names and Beanbags'},
-            {s:'red',c:'2.3',n:'Mini Me'},
-            {s:'red',c:'3',n:'Unit Who\'s Who: Say Cheese'},
-            {s:'red',c:'4',n:'Basic Drill'},
-            {s:'red',c:'4.1',n:'Unit Calls (Piping)'},
-            {s:'red',c:'4.2',n:'Colours & Naval Customs'},
-            {s:'red',c:'4.3',n:'Treat Yourself'},
-            {s:'red',c:'5',n:'Junior Sea Cadet Uniform'},
-            {s:'red',c:'6',n:'Safeguarding: SHOUT'},
-            {s:'red',c:'7',n:'Organising Unit Activities'},
-            {s:'red',c:'7.1',n:'Unit Activities'},
-            {s:'red',c:'7.2',n:'Ready Aye Ready'},
-            {s:'red',c:'7.3',n:'Unit Elevator Pitch'},
-            {s:'red',c:'7.4',n:'Unit Advert'},
-            {s:'red',c:'7.5',n:'Theme Tune'},
-            {s:'red',c:'8',n:'How\'s Your Aim?'},
-            {s:'red',c:'9',n:'Royal Marines Cadet Guest'},
-            {s:'red',c:'9.1',n:'Royal Marines Cadets'},
-            {s:'red',c:'9.2',n:'Royal Marines Activities'},
-            {s:'red',c:'10',n:'Scrap Book Memories'},
-            {s:'red',c:'11',n:'Passing Messages: Flags'},
-            {s:'red',c:'11.1',n:'Lord Nelson\'s Message'},
-            {s:'red',c:'11.2',n:'Codebreaker: Morse'},
-            {s:'red',c:'11.3',n:'What\'s Your Position?'},
-            {s:'red',c:'11.4',n:'Turn Up The Radios'},
-            {s:'red',c:'11.5',n:'Phonetic Alphabet'},
-            {s:'red',c:'12',n:'Chocolate Crispies'},
-            {s:'red',c:'12.1',n:'Apple & Ginger'},
-            {s:'red',c:'12.2',n:'Chefs\' Sweet Tooth'},
-            {s:'red',c:'12.3',n:'Chefs Savoury Tooth'},
-            {s:'red',c:'12.4',n:'Chefs Cuppa'},
-            {s:'red',c:'13',n:'Who Can Help Me?'},
-            {s:'red',c:'13.1',n:'Emergency Visits'},
-            {s:'red',c:'14',n:'How International Are We?'},
-            {s:'red',c:'15',n:'First Aid Basics'},
-            {s:'red',c:'15.1',n:'First Aid Relay'},
-            {s:'red',c:'15.2',n:'Units Safety Poster'},
-            {s:'red',c:'16',n:'Naval Heraldry'},
-            {s:'red',c:'17',n:'Throw Yourself a Knot'},
-            {s:'red',c:'17.1',n:'Tasty Knots'},
-            {s:'red',c:'17.2',n:'Rope and Spoons'},
-            {s:'red',c:'17.3',n:'Knot Board'},
-            {s:'red',c:'17.4',n:'Paracord Keyrings'},
-            {s:'red',c:'17.5',n:'Parts of a Ship'},
-            {s:'red',c:'17.6',n:'Ship Ahoy!'},
-            {s:'red',c:'18',n:'Planning & Preparation'},
-            {s:'red',c:'18.1',n:'Food Storage'},
-            {s:'red',c:'18.2',n:'Keeping Germs at Bay'},
-            {s:'red',c:'18.3',n:'Missed a Spot!'},
-            {s:'red',c:'18.4',n:'Building Bacteria'},
-            {s:'red',c:'18.5',n:'Fuzzy Bread'},
-            {s:'red',c:'18.6',n:'Clean Hands?'},
-            {s:'red',c:'19',n:'Earthshot Challenge'},
-            {s:'red',c:'20',n:'Suggestion Box'},
-            {s:'red',c:'21',n:'Kindness and Wellbeing'},
-            {s:'red',c:'21.1',n:'Kindness and Wellbeing'},
-            {s:'red',c:'22',n:'Teamwork Skills'},
-            
-            // BLUE Section
-            {s:'blue',c:'T1',n:'Dinghy Sailing Taster'},
-            {s:'blue',c:'T2',n:'Paddlesport Taster'},
-            {s:'blue',c:'T3',n:'Windsurfing Taster'},
-            {s:'blue',c:'T4',n:'Rowing Taster'},
-            {s:'blue',c:'1',n:'Safety by the Water'},
-            {s:'blue',c:'1.1',n:'Rescue Line'},
-            {s:'blue',c:'1.2',n:'Help, I Need Help!'},
-            {s:'blue',c:'2',n:'Cardinal Marks'},
-            {s:'blue',c:'2.1',n:'Danger Zones'},
-            {s:'blue',c:'3',n:'Royal & Merchant Navy'},
-            {s:'blue',c:'4',n:'Going on a Mission'},
-            {s:'blue',c:'5',n:'Maritime Museum'},
-            {s:'blue',c:'6',n:'Battleships'},
-            {s:'blue',c:'7',n:'Remember The Facts'},
-            {s:'blue',c:'7.1',n:'Famous Figures'},
-            {s:'blue',c:'7.2',n:'Picasso\'s Nelson'},
-            {s:'blue',c:'8',n:'Boat Construction'},
-            {s:'blue',c:'8.1',n:'Build Boat'},
-            {s:'blue',c:'8.2',n:'Model Raft'},
-            {s:'blue',c:'8.3',n:'Water Raft'},
-            {s:'blue',c:'9',n:'Wise Near Water'},
-            {s:'blue',c:'9.1',n:'What Flag Am I?'},
-            {s:'blue',c:'10',n:'Lifeguards'},
-            {s:'blue',c:'11',n:'Keep Swimming'},
-            {s:'blue',c:'12',n:'Swimathon'},
-            {s:'blue',c:'13',n:'Marco Polo'},
-            {s:'blue',c:'13.1',n:'Synchronised Swim'},
-            {s:'blue',c:'13.2',n:'Water Polo'},
-            {s:'blue',c:'14',n:'Swimming Gala'},
-            {s:'blue',c:'15',n:'Signposts at Sea'},
-            {s:'blue',c:'15.1',n:'Edible Signposts'},
-            {s:'blue',c:'15.2',n:'Ropes on Biscuits'},
-            {s:'blue',c:'16',n:'Saving Sam'},
-            {s:'blue',c:'16.1',n:'Don\'t Fall Out!'},
-            {s:'blue',c:'17',n:'Go Rowing!'},
-            {s:'blue',c:'17.1',n:'Learn Rowing!'},
-            {s:'blue',c:'18',n:'Go Sailing!'},
-            {s:'blue',c:'18.1',n:'Learn Sailing!'},
-            {s:'blue',c:'19',n:'Go Paddling!'},
-            {s:'blue',c:'19.1',n:'Learn Paddlesport!'},
-            {s:'blue',c:'19.2',n:'Voyage of Discovery'},
-            {s:'blue',c:'20',n:'Learn Windsurfing!'},
-            {s:'blue',c:'20.1',n:'Go Windsurfing!'},
-            {s:'blue',c:'21',n:'Good Look Out'},
-            {s:'blue',c:'21.1',n:'Hazards'},
-            {s:'blue',c:'21.2',n:'Buoyancy'},
-            {s:'blue',c:'21.3',n:'Safe Speeds'},
-            {s:'blue',c:'22',n:'Navigation'},
-            {s:'blue',c:'23',n:'Crossing The Line'},
-            {s:'blue',c:'23.1',n:'Nautical Terms'},
-            {s:'blue',c:'23.2',n:'Sea Shanties'},
-            {s:'blue',c:'23.3',n:'Hornpipe Dance'},
-            {s:'blue',c:'24',n:'Boat Types'},
-            {s:'blue',c:'24.1',n:'RS ZEST Single'},
-            {s:'blue',c:'24.2',n:'RS QUEST Crewed'},
-            {s:'blue',c:'25',n:'Cold Water Shock'},
-            {s:'blue',c:'26',n:'Towpath I Spy'},
-            {s:'blue',c:'27',n:'Flag Etiquette'},
-            {s:'blue',c:'28',n:'Green and Clean'},
-            {s:'blue',c:'29',n:'Big Clean Up'},
-            {s:'blue',c:'29.2',n:'Plastic Eating Machine'},
-            
-            // GREEN Section
-            {s:'green',c:'1',n:'50 Things'},
-            {s:'green',c:'2',n:'Mapping It Out'},
-            {s:'green',c:'2.1',n:'Around the Globe'},
-            {s:'green',c:'3',n:'Grid References'},
-            {s:'green',c:'4',n:'Weather'},
-            {s:'green',c:'4.1',n:'Make it Rain!'},
-            {s:'green',c:'5',n:'Captain\'s Coming'},
-            {s:'green',c:'5.1',n:'Home Made Compass'},
-            {s:'green',c:'6',n:'Photography'},
-            {s:'green',c:'7',n:'Pacing It Out'},
-            {s:'green',c:'7.1',n:'Micro Journey'},
-            {s:'green',c:'7.2',n:'Unique Monopoly'},
-            {s:'green',c:'7.3',n:'Navigate Further'},
-            {s:'green',c:'8',n:'Basic Outdoors'},
-            {s:'green',c:'8.1',n:'Zero Trace'},
-            {s:'green',c:'8.2',n:'What to Wear'},
-            {s:'green',c:'8.3',n:'Keeping Tidy'},
-            {s:'green',c:'9',n:'Stoves'},
-            {s:'green',c:'9.1',n:'Open Fires 101'},
-            {s:'green',c:'9.2',n:'Fire Recipes'},
-            {s:'green',c:'9.3',n:'Junior Survivor'},
-            {s:'green',c:'9.4',n:'Master Chef Outdoors'},
-            {s:'green',c:'10',n:'Practice'},
-            {s:'green',c:'10.1',n:'Amazing Race Junior'},
-            {s:'green',c:'11',n:'Country Code'},
-            {s:'green',c:'11.1',n:'Country Code Guide'},
-            {s:'green',c:'11.2',n:'Environment'},
-            {s:'green',c:'12',n:'Tenting Around'},
-            {s:'green',c:'12.1',n:'Pitching Tent'},
-            {s:'green',c:'13',n:'Safe Outdoors'},
-            {s:'green',c:'13.1',n:'Stranger Danger'},
-            {s:'green',c:'14',n:'Meteorology'},
-            {s:'green',c:'14.1',n:'Weather on Water'},
-            {s:'green',c:'14.2',n:'Storm Surge'},
-            {s:'green',c:'14.3',n:'Low Visibility'},
-            {s:'green',c:'14.4',n:'Celestial Navigation'},
-            {s:'green',c:'15',n:'Wind Blowing'},
-            {s:'green',c:'16',n:'Warming Up'},
-            {s:'green',c:'16.1',n:'Warm Up Guide'},
-            {s:'green',c:'17',n:'Keep Fit'},
-            {s:'green',c:'17.1',n:'Training Games'},
-            {s:'green',c:'17.2',n:'Competitive'},
-            {s:'green',c:'17.3',n:'Happy Healthy'},
-            {s:'green',c:'17.4',n:'Eating Healthy'},
-            {s:'green',c:'17.5',n:'Games to Start'},
-            {s:'green',c:'18',n:'Bird Feeder'},
-            {s:'green',c:'18.1',n:'Bee Bombs'},
-            {s:'green',c:'18.2',n:'Seed Paper'},
-            {s:'green',c:'18.3',n:'Carbon Footprint'},
-            
-            // YELLOW Section
-            {s:'yellow',c:'1',n:'Mardi Gras/Fat Tuesday/Shrove Tuesday'},
-            {s:'yellow',c:'1.1',n:'Parade with Mardi Gras Masks'},
-            {s:'yellow',c:'1.2',n:'Musical Celebration: Jazz Band'},
-            {s:'yellow',c:'2',n:'Celebrating Easter'},
-            {s:'yellow',c:'2.1',n:'Yummy Easter Hot Cross Buns'},
-            {s:'yellow',c:'2.2',n:'Twisted Pretzel: A Food of Lent'},
-            {s:'yellow',c:'2.3',n:'Creative Easter Eggs'},
-            {s:'yellow',c:'3',n:'Festival of Colour Holi'},
-            {s:'yellow',c:'3.1',n:'Colours of Holi'},
-            {s:'yellow',c:'3.2',n:'Nariyal Barfi'},
-            {s:'yellow',c:'4',n:'Happy Diwali (Divali)'},
-            {s:'yellow',c:'4.1',n:'Festival of Lights'},
-            {s:'yellow',c:'4.2',n:'Rangoli Designs'},
-            {s:'yellow',c:'4.3',n:'Karah Parshad'},
-            {s:'yellow',c:'5',n:'Snap It Up With Chinese New Year!'},
-            {s:'yellow',c:'5.1',n:'Taste of China: Sweet Dumplings'},
-            {s:'yellow',c:'5.2',n:'Fortune Cookie Jar'},
-            {s:'yellow',c:'5.3',n:'Prosperity & Good Fortune in Red'},
-            {s:'yellow',c:'5.4',n:'Chinese Dragon Costume (Individual)'},
-            {s:'yellow',c:'5.5',n:'Chinese Dragon Costume (large)'},
-            {s:'yellow',c:'5.6',n:'The Beating Drum'},
-            {s:'yellow',c:'6',n:'Celebrate with an Australian Cork Hat'},
-            {s:'yellow',c:'6.1',n:'Getting to know indigenous Australia'},
-            {s:'yellow',c:'6.2',n:'Didgeridoo: Music Maker'},
-            {s:'yellow',c:'6.3',n:'Australian Bakes: ANZAC Biscuits'},
-            {s:'yellow',c:'7',n:'Everything Christmas: Decorating Time!'},
-            {s:'yellow',c:'7.1',n:'Christmas Bingo!'},
-            {s:'yellow',c:'7.2',n:'A Ginger Christmas'},
-            {s:'yellow',c:'7.3',n:'Chocolate Logs Yule Love!'},
-            {s:'yellow',c:'7.4',n:'Chocolate Logs Made Easy'},
-            {s:'yellow',c:'7.5',n:'Gingerbread Biscuits'},
-            {s:'yellow',c:'7.6',n:'Christmas Gift photo frame'},
-            {s:'yellow',c:'7.7',n:'Seasonal Festive Wreath'},
-            {s:'yellow',c:'7.8',n:'Odd Sock Beanbag Characters'},
-            {s:'yellow',c:'8',n:'Research Time!'},
-            {s:'yellow',c:'8.1',n:'Unit Spookyville'},
-            {s:'yellow',c:'8.2',n:'All Things Spooky'},
-            {s:'yellow',c:'8.3',n:'What Are The Nine Candles?'},
-            {s:'yellow',c:'8.4',n:'Saint Valentine\'s Day Kindness Box'},
-            {s:'yellow',c:'8.5',n:'Saint Patrick\'s Day: Shamrock Shake'},
-            {s:'yellow',c:'8.6',n:'A Special Sunday for Mothers & Caregivers'},
-            {s:'yellow',c:'8.7',n:'Celebrating the Iranian New Year'},
-            {s:'yellow',c:'8.8',n:'Halloween Trick or Treats'},
-            {s:'yellow',c:'9',n:'All About The Community'},
-            {s:'yellow',c:'9.1',n:'Community 101'},
-            {s:'yellow',c:'9.2',n:'Community Tree'},
-            {s:'yellow',c:'9.3',n:'Community Mind Map'},
-            {s:'yellow',c:'10',n:'Survey Mania'},
-            {s:'yellow',c:'10.1',n:'Chips Ahoy! Chip Shop Survey'},
-            {s:'yellow',c:'10.2',n:'Shop Surveys'},
-            {s:'yellow',c:'11',n:'Getting Involved: Community Projects'},
-            {s:'yellow',c:'11.1',n:'Junior Cadets of the World!'},
-            {s:'yellow',c:'11.2',n:'Celebrating Diversity in Your Community'},
-            {s:'yellow',c:'12',n:'Welsh Style: Traditional Welsh Cakes'},
-            {s:'yellow',c:'12.1',n:'Welsh Style: Welsh Rarebit'},
-            {s:'yellow',c:'12.2',n:'Yr laith Gymraeg: Welsh Language'},
-            {s:'yellow',c:'12.3',n:'Y Ddraig Goch Flag: The Red Dragon'},
-            {s:'yellow',c:'13',n:'The Scottish Way: Haggis, Neeps & Tatties'},
-            {s:'yellow',c:'13.1',n:'The Scottish Way: Cèilidh'},
-            {s:'yellow',c:'13.2',n:'The Scottish Way: The Flag of Scotland'},
-            {s:'yellow',c:'13.3',n:'The Scottish Way: Scots Gàidhlig'},
-            {s:'yellow',c:'13.4',n:'Celebrate Saint Andrews Day: Scottish Kilt Card'},
-            {s:'yellow',c:'13.5',n:'Exploring Burns Night Supper'},
-            {s:'yellow',c:'15',n:'The Arrival of Summer: Maypole Dancing'},
-            {s:'yellow',c:'15.1',n:'Morris Dancing'},
-            {s:'yellow',c:'16',n:'4 Nations in 1'},
-            {s:'yellow',c:'17',n:'Places of Interest'},
-            {s:'yellow',c:'17.1',n:'Scavenger Hunt'},
-            {s:'yellow',c:'17.2',n:'Town Maps, Maps of Your Town'},
-            {s:'yellow',c:'18',n:'Broadening The Horizon'},
-            {s:'yellow',c:'19',n:'We Are Different, We are the Same!'},
-            {s:'yellow',c:'19.1',n:'Embrace It: Inclusion & Diversity'},
-            {s:'yellow',c:'19.2',n:'All in a phrase'},
-            {s:'yellow',c:'19.3',n:'Communicating Through Sign Language'},
-            {s:'yellow',c:'19.4',n:'Ditch The Labels!'},
-            {s:'yellow',c:'19.5',n:'Communicating through Braille'},
-            {s:'yellow',c:'20',n:'It\'s Never the Same!'},
-            {s:'yellow',c:'20.1',n:'The Issue'},
-            {s:'yellow',c:'20.2',n:'Wear It On Your Wrist!'},
-            {s:'yellow',c:'20.3',n:'Activists in Action! Anti-bullying Campaign'},
-            {s:'yellow',c:'20.4',n:'Online: It is Still Not Okay!'},
-            {s:'yellow',c:'21',n:'Ten Keys'},
-            {s:'yellow',c:'22',n:'Remembrance Day Parade'},
-            {s:'yellow',c:'22.1',n:'Cenotaphs In The Community'},
-            {s:'yellow',c:'22.2',n:'Paper Plate Poppies'},
-            {s:'yellow',c:'22.3',n:'Recycled Remembrance Poppies'},
-            {s:'yellow',c:'22.4',n:'Remembrance Art'},
-            {s:'yellow',c:'22.5',n:'Medals to Remember'},
-            {s:'yellow',c:'22.6',n:'Portraits of Boy Seaman John T. Cornwell V.C.'},
-            {s:'yellow',c:'22.7',n:'What is your unit\'s History?'},
-            {s:'yellow',c:'22.8',n:'Remembrance Light Jars'},
-            {s:'yellow',c:'22.9',n:'Remembrance Day Wreath'},
-            {s:'yellow',c:'23',n:'The Home Front'},
-            {s:'yellow',c:'23.1',n:'Ration It Out'},
-            {s:'yellow',c:'23.2',n:'Re-enactment Time'},
-            {s:'yellow',c:'24',n:'Values and Citizenship: What about Governments?'},
-            {s:'yellow',c:'24.1',n:'Your Local Government: Face to Face'},
-            {s:'yellow',c:'24.2',n:'Who\'s Who: Mayors or Provosts?'},
-            {s:'yellow',c:'25',n:'Saint George\'s Day'},
-            {s:'yellow',c:'26',n:'VE Victory Sponge'},
-            {s:'yellow',c:'27',n:'#SCRAPPLASTIC Swap Out Your Plastics'},
-            {s:'yellow',c:'27.1',n:'#SCRAPPLASTIC Plastic Free Day'},
-            {s:'yellow',c:'27.2',n:'#SCRAPPLASTIC Supermarket Challenge'},
-            {s:'yellow',c:'27.3',n:'#SCRAPPLASTIC Share What You Know'},
-            {s:'yellow',c:'28',n:'EARTHSHOT (WFW) - Tote-tally Awesome Up-cycled Bag'},
-            {s:'yellow',c:'28.1',n:'Earthshot (WFW) - Ecobricks'},
-            {s:'yellow',c:'28.2',n:'EARTHSHOT (WFW) - Need v Want'},
-            {s:'yellow',c:'28.3',n:'EARTHSHOT (FOC) - Utilising Technology'},
-            {s:'yellow',c:'28.4',n:'EARTHSHOT (WFW) - Where does our waste go?'},
-            {s:'yellow',c:'29',n:'Junior Sea Cadets Competitions'},
-            {s:'yellow',c:'30',n:'Your Identity Matters - Celebrating PRIDE'},
-            {s:'yellow',c:'70',n:'Special Edition Platinum Jubilee'},
-            {s:'yellow',c:'70.1',n:'The Platinum Thread'},
-            {s:'yellow',c:'70.2',n:'Platinum Jubilee Fact Find'},
-            {s:'yellow',c:'71',n:'Remembering Our Patron'},
-            {s:'yellow',c:'72',n:'King\'s Coronation Party event'},
-            {s:'yellow',c:'72.1',n:'King\'s Coronation POM POM decorations'},
-            {s:'yellow',c:'73',n:'Big Help Out - Special Call at a Landmark'},
-            
-            // STEM Section
-            {s:'stem',c:'1',n:'Satellite Intelligence Mission'},
-            {s:'stem',c:'2',n:'Egg Drop Challenge: Protecting The Vessels'},
-            {s:'stem',c:'3',n:'Sink Or Swim: Tinfoil Boat Float Challenge'},
-            {s:'stem',c:'4',n:'Launched Out To Sea: Pom Pom Catapult'},
-            {s:'stem',c:'5',n:'Propeller Nation'},
-            {s:'stem',c:'6',n:'Steer The Ship: Eco-Friendly Giant Maze'},
-            {s:'stem',c:'7',n:'Why It Just Won\'t Work: Salt Pendulum'},
-            {s:'stem',c:'8',n:'Amazing Anchors'},
-            {s:'stem',c:'9',n:'Setting Sail'},
-            {s:'stem',c:'10',n:'Ancient Compasses'},
-            {s:'stem',c:'11',n:'Balancing Boats'},
-            {s:'stem',c:'12',n:'Carrying Cargo'},
-            {s:'stem',c:'13',n:'Electric Engines'},
-            {s:'stem',c:'14',n:'Incredible Insulation'},
-            {s:'stem',c:'15',n:'Invisible Islands'},
-            {s:'stem',c:'16',n:'Luminous Lighthouses'},
-            {s:'stem',c:'17',n:'Oceans In A Bottle'},
-            {s:'stem',c:'18',n:'Salt In The Seas'},
-            {s:'stem',c:'19',n:'Speedy Ships'},
-            {s:'stem',c:'20',n:'The World Around Us: Which Metal? Rust!'},
-            {s:'stem',c:'21',n:'Special Edition: Somewhere Over The Rainbow'},
-            {s:'stem',c:'22',n:'Wind Speed And Pressure: Anemometer'},
-            {s:'stem',c:'23',n:'Elastic Band Powered Cars'},
-            {s:'stem',c:'24',n:'Propelling Forward'},
-            {s:'stem',c:'25',n:'Get Moving - A Chemical Reaction Powered Model Boat!'},
-            {s:'stem',c:'26',n:'Weather Warning - Making A Barometer'},
-            {s:'stem',c:'27',n:'Underwater Volcano - A Force Of Nature!'},
-            {s:'stem',c:'28',n:'Tornado In A Bottle'},
-            {s:'stem',c:'29',n:'Cartesian Diver'},
-            {s:'stem',c:'30',n:'How Long Is A Minute? - Water Clock'},
-            {s:'stem',c:'31',n:'The Science Behind Making The Right Choice!'},
-            {s:'stem',c:'32',n:'Up Periscope - Make Your Own Submarine Periscope'},
-            {s:'stem',c:'33',n:'Geodesic Domes'},
-            {s:'stem',c:'34',n:'Sublime Slime'},
-            {s:'stem',c:'35',n:'Air Power: Balloon Car'},
-            {s:'stem',c:'36',n:'Ruffle Some Feathers - Mini Vortex Cannon'},
-            {s:'stem',c:'37',n:'Paper Roller Coaster - Kinetic & Potential Energy'},
-            {s:'stem',c:'38',n:'Moon Dial'},
-            {s:'stem',c:'39',n:'Paper Glider'},
-            {s:'stem',c:'40',n:'Lava Lamp'},
-            {s:'stem',c:'41',n:'Puffer Fish'},
-            {s:'stem',c:'42',n:'Waste-Free Lunch'}
-        ];
 
         // ============================================================================
         // SECTION 2: HELPER FUNCTIONS
@@ -1475,38 +1112,25 @@
 
         const parseDate = (dateStr) => {
             if (!dateStr) return null;
+            let d = new Date(dateStr);
+            if (!isNaN(d.getTime())) return d;
             
-            // Parse DD/MM/YYYY, DD-MM-YYYY, or DD-MMM-YY format (UK/International standard)
             const parts = dateStr.split(/[\/\-\s]/);
             if (parts.length === 3) {
                 const day = parseInt(parts[0]);
-                let year = parseInt(parts[2]);
+                const year = parseInt(parts[2]);
                 let month = parseInt(parts[1]) - 1; 
 
-                // Handle text month names (e.g., "May", "Jan")
                 if (isNaN(month)) {
                     const months = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
                     month = months.findIndex(m => parts[1].toLowerCase().startsWith(m));
                 }
                 
-                // Handle 2-digit years (e.g., "15" should be 2015, not 15 AD)
-                if (year < 100) {
-                    // Westminster uses YY format: 00-30 = 2000-2030, 31-99 = 1931-1999
-                    year = year <= 30 ? 2000 + year : 1900 + year;
-                }
-                
                 if (!isNaN(day) && !isNaN(month) && !isNaN(year) && month >= 0) {
-                    const d = new Date(year, month, day);
+                    d = new Date(year, month, day);
                     if (!isNaN(d.getTime())) return d;
                 }
             }
-            
-            // Fallback for ISO format (YYYY-MM-DD) - used internally by the app
-            if (dateStr.includes('-') && dateStr.length === 10 && dateStr.charAt(4) === '-') {
-                const d = new Date(dateStr);
-                if (!isNaN(d.getTime())) return d;
-            }
-            
             return null;
         };
 
@@ -1568,24 +1192,6 @@
                 age--;
             }
             return age;
-        };
-        
-        // Clean unit name helper - removes Junior Section/RMCD references and converts to proper case
-        const cleanUnitName = (rawUnit) => {
-            if (!rawUnit) return "Unit";
-            
-            // Remove everything in parentheses (Junior Section, RMCD, etc.)
-            let cleaned = rawUnit.split('(')[0].trim();
-            
-            // If empty after cleaning, return default
-            if (!cleaned) return "Unit";
-            
-            // Convert to proper case (e.g., "MARKET HARBOROUGH" -> "Market Harborough")
-            cleaned = cleaned.toLowerCase().split(' ').map(word => 
-                word.charAt(0).toUpperCase() + word.slice(1)
-            ).join(' ');
-            
-            return cleaned;
         };
         
         // Age-based styling function
@@ -1829,7 +1435,6 @@
                 
                 const idx = {
                     pnum: findCol("PNumber") > -1 ? findCol("PNumber") : findCol("PNo"),
-                    type: findCol("Type"),
                     rank: findCol("Rank"),
                     surname: findCol("Surname"),
                     firstname: findCol("First Name"),
@@ -1849,10 +1454,6 @@
                 for (let i = 1; i < lines.length; i++) {
                     const row = splitCSVLine(lines[i].trim());
                     if (row.length < 3) continue;
-                    
-                    // Skip adults - only import cadets
-                    if (idx.type !== -1 && row[idx.type] && row[idx.type].toLowerCase().trim() === 'adult') continue;
-                    
                     personnelData.push({
                         pNumber: sanitizeText(row[idx.pnum] || "").trim(),
                         rank: normalizeRank(sanitizeText(row[idx.rank] || "Unknown")),
@@ -2208,7 +1809,7 @@
 
         // --- 3.3 HOME VIEW COMPONENT ---
         const HomeView = ({ personnel }) => {
-            const unitName = personnel.length > 0 ? cleanUnitName(personnel[0].unit) : "Sea Cadets";
+            const unitName = personnel.length > 0 ? (personnel[0].unit || "Your Unit") : "Sea Cadets";
 
             return (
                 <div className="space-y-8">
@@ -2247,7 +1848,7 @@
                     <div className="mt-10 max-w-4xl mx-auto text-center text-xs text-slate-400 p-4 border-t border-slate-300">
                         <p className="font-semibold mb-1">Disclaimer</p>
                         <p className="mb-2">
-                            This app was built independently by volunteers and is not an an official MSSC product. It’s provided “as is”, with no warranty or guarantees offered or implied, and you use it at your own risk. The code is open source, and parts of the solution, documentation, or content may be AI-generated. Always review outputs for accuracy.
+                            This app was built independently by volunteers and is not an an official MSSC product. Itâ€™s provided â€œas isâ€, with no warranty or guarantees offered or implied, and you use it at your own risk. The code is open source, and parts of the solution, documentation, or content may be AI-generated. Always review outputs for accuracy.
                         </p>
                         <p>
                             If you spot a bug, have a feature idea, or make an improvement, please share it so others can benefit. 
@@ -2449,119 +2050,6 @@
                     }
                 });
 
-                // --- Junior Awards Logic ---
-                const juniors = personnel.filter(c => {
-                    if (!c.dob) return false;
-                    const age = calculateAge(c.dob);
-                    return age >= 9 && age <= 11;
-                });
-                
-                juniors.forEach(junior => {
-                    const juniorData = getJuniorData();
-                    const juniorModules = juniorData.moduleCompletions.filter(m => m.pNumber === junior.pNumber);
-                    
-                    // Count unique modules only (duplicates count as one)
-                    const redCount = new Set(juniorModules.filter(m => m.section === 'red').map(m => m.moduleCode)).size;
-                    const blueCount = new Set(juniorModules.filter(m => m.section === 'blue').map(m => m.moduleCode)).size;
-                    const greenCount = new Set(juniorModules.filter(m => m.section === 'green').map(m => m.moduleCode)).size;
-                    const yellowCount = new Set(juniorModules.filter(m => m.section === 'yellow').map(m => m.moduleCode)).size;
-                    const stemCount = new Set(juniorModules.filter(m => m.section === 'stem').map(m => m.moduleCode)).size;
-                    
-                    const d = new Date(); // All junior awards are "due now"
-                    
-                    // Check RED Badge (15 modules)
-                    if (redCount >= 15 && !quals.some(q => q.pNumber === junior.pNumber && q.module.includes("JSC Red Unit Activities Badge"))) {
-                        const uniqueId = `${junior.pNumber}-JSC-RED-${d.getTime()}`;
-                        upcoming.push({
-                            cadetName: junior.name,
-                            module: "JSC Red - Unit Activities Badge",
-                            date: d,
-                            type: "Award Due",
-                            pNumber: junior.pNumber,
-                            uniqueId
-                        });
-                    }
-                    
-                    // Check BLUE Badge (15 modules)
-                    if (blueCount >= 15 && !quals.some(q => q.pNumber === junior.pNumber && q.module.includes("JSC Blue Waterborne Activities Badge"))) {
-                        const uniqueId = `${junior.pNumber}-JSC-BLUE-${d.getTime()}`;
-                        upcoming.push({
-                            cadetName: junior.name,
-                            module: "JSC Blue - Waterborne Activities Badge",
-                            date: d,
-                            type: "Award Due",
-                            pNumber: junior.pNumber,
-                            uniqueId
-                        });
-                    }
-                    
-                    // Check GREEN Badge (15 modules)
-                    if (greenCount >= 15 && !quals.some(q => q.pNumber === junior.pNumber && q.module.includes("JSC Green Outdoor & Recreation Activities Badge"))) {
-                        const uniqueId = `${junior.pNumber}-JSC-GREEN-${d.getTime()}`;
-                        upcoming.push({
-                            cadetName: junior.name,
-                            module: "JSC Green - Outdoor & Recreation Activities Badge",
-                            date: d,
-                            type: "Award Due",
-                            pNumber: junior.pNumber,
-                            uniqueId
-                        });
-                    }
-                    
-                    // Check YELLOW Badge (15 modules)
-                    if (yellowCount >= 15 && !quals.some(q => q.pNumber === junior.pNumber && q.module.includes("JSC Yellow Community & Citizenship Activities Badge"))) {
-                        const uniqueId = `${junior.pNumber}-JSC-YELLOW-${d.getTime()}`;
-                        upcoming.push({
-                            cadetName: junior.name,
-                            module: "JSC Yellow - Community & Citizenship Activities Badge",
-                            date: d,
-                            type: "Award Due",
-                            pNumber: junior.pNumber,
-                            uniqueId
-                        });
-                    }
-                    
-                    // Check CREST Award (8+ modules)
-                    if (stemCount >= 8 && !quals.some(q => q.pNumber === junior.pNumber && q.module.includes("JSC Crest Award"))) {
-                        const uniqueId = `${junior.pNumber}-JSC-CREST-${d.getTime()}`;
-                        upcoming.push({
-                            cadetName: junior.name,
-                            module: "JSC Crest Award",
-                            date: d,
-                            type: "Award Due",
-                            pNumber: junior.pNumber,
-                            uniqueId
-                        });
-                    }
-                    
-                    // Check STEM Badge (15 modules)
-                    if (stemCount >= 15 && !quals.some(q => q.pNumber === junior.pNumber && q.module.includes("JSC STEM Unit Activities Badge"))) {
-                        const uniqueId = `${junior.pNumber}-JSC-STEM-${d.getTime()}`;
-                        upcoming.push({
-                            cadetName: junior.name,
-                            module: "JSC STEM - Unit Activities Badge",
-                            date: d,
-                            type: "Award Due",
-                            pNumber: junior.pNumber,
-                            uniqueId
-                        });
-                    }
-                    
-                    // Check Commodore's Broad Pennant (all 4 core sections 15+)
-                    if (redCount >= 15 && blueCount >= 15 && greenCount >= 15 && yellowCount >= 15 && 
-                        !quals.some(q => q.pNumber === junior.pNumber && q.module.includes("JSC Commodores Broad Pennant"))) {
-                        const uniqueId = `${junior.pNumber}-JSC-CBP-${d.getTime()}`;
-                        upcoming.push({
-                            cadetName: junior.name,
-                            module: "JSC Commodores Broad Pennant",
-                            date: d,
-                            type: "Award Due",
-                            pNumber: junior.pNumber,
-                            uniqueId
-                        });
-                    }
-                });
-
                 return { 
                     pastAwards: past.sort((a,b) => b.date - a.date), 
                     upcomingAwards: upcoming.sort((a,b) => a.date - b.date) 
@@ -2597,8 +2085,14 @@
                 const { jsPDF} = window.jspdf;
                 const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
                 
-                // Clean unit name using helper function
-                const unitName = personnel.length > 0 ? cleanUnitName(personnel[0].unit) : "Unit";
+                // Clean unit name - remove anything in parentheses and convert to proper case
+                let unitName = personnel.length > 0 ? personnel[0].unit : "";
+                unitName = unitName.split('(')[0].trim(); // Remove everything after (
+                if (!unitName) unitName = "Unit";
+                // Convert to proper case (e.g., "MARKET HARBOROUGH" -> "Market Harborough")
+                unitName = unitName.toLowerCase().split(' ').map(word => 
+                    word.charAt(0).toUpperCase() + word.slice(1)
+                ).join(' ');
                 
                 // Load logos from localStorage
                 const unitCrest = localStorage.getItem('unit_crest');
@@ -2720,7 +2214,7 @@
                 
                 const { jsPDF } = window.jspdf;
                 const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
-                const unitName = personnel.length > 0 ? cleanUnitName(personnel[0].unit) : "Sea Cadets";
+                const unitName = personnel.length > 0 ? personnel[0].unit : "Sea Cadets";
                 
                 doc.setFont("helvetica", "bold");
                 doc.setFontSize(18);
@@ -2778,8 +2272,136 @@
                 doc.save(`SCC_Upcoming_Report_${monthName}.pdf`);
             };
 
+            // Calculate Junior Awards Due
+            const juniorsWithAwardsDue = useMemo(() => {
+                const juniors = personnel.filter(c => {
+                    if (!c.dob) return false;
+                    const age = calculateAge(c.dob);
+                    return age >= 9 && age <= 11;
+                });
+                
+                const dueAwards = [];
+                
+                juniors.forEach(junior => {
+                    // Get module completions for this junior
+                    const juniorData = getJuniorData();
+                    const juniorModules = juniorData.moduleCompletions.filter(m => m.pNumber === junior.pNumber);
+                    
+                    const redCount = juniorModules.filter(m => m.section === 'red').length;
+                    const blueCount = juniorModules.filter(m => m.section === 'blue').length;
+                    const greenCount = juniorModules.filter(m => m.section === 'green').length;
+                    const yellowCount = juniorModules.filter(m => m.section === 'yellow').length;
+                    const stemCount = juniorModules.filter(m => m.section === 'stem').length;
+                    
+                    // Check RED Badge (15 modules)
+                    if (redCount >= 15 && !quals?.some(q => q.pNumber === junior.pNumber && q.module.includes("JSC Red Unit Activities Badge"))) {
+                        dueAwards.push({ 
+                            cadet: junior.name, 
+                            pNumber: junior.pNumber,
+                            award: "JSC Red Unit Activities Badge",
+                            color: "red"
+                        });
+                    }
+                    
+                    // Check BLUE Badge (15 modules)
+                    if (blueCount >= 15 && !quals?.some(q => q.pNumber === junior.pNumber && q.module.includes("JSC Blue Waterborne Activities Badge"))) {
+                        dueAwards.push({ 
+                            cadet: junior.name, 
+                            pNumber: junior.pNumber,
+                            award: "JSC Blue Waterborne Activities Badge",
+                            color: "blue"
+                        });
+                    }
+                    
+                    // Check GREEN Badge (15 modules)
+                    if (greenCount >= 15 && !quals?.some(q => q.pNumber === junior.pNumber && q.module.includes("JSC Green Outdoor & Recreation Activities Badge"))) {
+                        dueAwards.push({ 
+                            cadet: junior.name, 
+                            pNumber: junior.pNumber,
+                            award: "JSC Green Outdoor & Recreation Activities Badge",
+                            color: "green"
+                        });
+                    }
+                    
+                    // Check YELLOW Badge (15 modules)
+                    if (yellowCount >= 15 && !quals?.some(q => q.pNumber === junior.pNumber && q.module.includes("JSC Yellow Community & Citizenship Activities Badge"))) {
+                        dueAwards.push({ 
+                            cadet: junior.name, 
+                            pNumber: junior.pNumber,
+                            award: "JSC Yellow Community & Citizenship Activities Badge",
+                            color: "yellow"
+                        });
+                    }
+                    
+                    // Check CREST Award (8+ modules)
+                    if (stemCount >= 8 && !quals?.some(q => q.pNumber === junior.pNumber && q.module.includes("JSC Crest Award"))) {
+                        dueAwards.push({ 
+                            cadet: junior.name, 
+                            pNumber: junior.pNumber,
+                            award: "JSC Crest Award",
+                            color: "purple"
+                        });
+                    }
+                    
+                    // Check STEM Badge (15 modules)
+                    if (stemCount >= 15 && !quals?.some(q => q.pNumber === junior.pNumber && q.module.includes("JSC STEM Unit Activities Badge"))) {
+                        dueAwards.push({ 
+                            cadet: junior.name, 
+                            pNumber: junior.pNumber,
+                            award: "JSC STEM Unit Activities Badge",
+                            color: "purple"
+                        });
+                    }
+                    
+                    // Check Commodore's Broad Pennant (all 4 core sections 15+)
+                    if (redCount >= 15 && blueCount >= 15 && greenCount >= 15 && yellowCount >= 15 && 
+                        !quals?.some(q => q.pNumber === junior.pNumber && q.module.includes("JSC Commodores Broad Pennant"))) {
+                        dueAwards.push({ 
+                            cadet: junior.name, 
+                            pNumber: junior.pNumber,
+                            award: "JSC Commodores Broad Pennant",
+                            color: "amber"
+                        });
+                    }
+                });
+                
+                return dueAwards;
+            }, [personnel, quals]);
+
             return (
                 <div className="space-y-6">
+                    {/* Junior Awards Due Section */}
+                    {juniorsWithAwardsDue.length > 0 && (
+                        <div className="bg-gradient-to-r from-amber-50 to-orange-50 p-4 rounded-lg shadow border-2 border-amber-300">
+                            <div className="flex items-center gap-3 mb-4">
+                                <Icon name="AlertCircle" className="w-6 h-6 text-amber-600" />
+                                <div>
+                                    <h2 className="text-lg font-bold text-amber-900">Junior Awards Due/Upcoming</h2>
+                                    <p className="text-sm text-amber-700">These cadets have earned awards but they're not yet on Westminster</p>
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                                {juniorsWithAwardsDue.map((item, idx) => {
+                                    const borderColor = {
+                                        'red': 'border-red-500',
+                                        'blue': 'border-blue-500',
+                                        'green': 'border-green-500',
+                                        'yellow': 'border-yellow-500',
+                                        'purple': 'border-purple-500',
+                                        'amber': 'border-amber-500'
+                                    }[item.color] || 'border-slate-500';
+                                    
+                                    return (
+                                        <div key={idx} className={`bg-white p-3 rounded shadow-sm border-l-4 ${borderColor}`}>
+                                            <p className="font-bold text-sm text-slate-800">{item.cadet}</p>
+                                            <p className="text-xs text-slate-600 mt-1">{item.award}</p>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    )}
+                    
                     <div className="bg-white p-4 rounded-lg shadow border border-slate-200">
                              <div className="flex justify-between items-center mb-6">
                                  <h2 className="text-lg font-bold text-slate-800">Awards & Recognition</h2>
@@ -3033,23 +2655,17 @@
         
         // --- 3.6 CADET FOCUS COMPONENT ---
         const CadetFocus = ({ personnel, qualsData }) => {
-            // Filter out juniors (under 12) - they have their own Junior Focus page
-            const seniorCadets = useMemo(() => 
-                personnel.filter(cadet => !isJunior(cadet.dob)), 
-                [personnel]
-            );
-            
-            const [selectedCadetPNum, setSelectedCadetPNum] = useState(seniorCadets.length > 0 ? seniorCadets[0].pNumber : "");
+            const [selectedCadetPNum, setSelectedCadetPNum] = useState(personnel.length > 0 ? personnel[0].pNumber : "");
             
             // Force reset if selected cadet is not in list (e.g. new file load)
             useEffect(() => {
-                if (seniorCadets.length > 0 && (!selectedCadetPNum || !seniorCadets.find(p => p.pNumber === selectedCadetPNum))) {
-                    setSelectedCadetPNum(seniorCadets[0].pNumber);
+                if (personnel.length > 0 && (!selectedCadetPNum || !personnel.find(p => p.pNumber === selectedCadetPNum))) {
+                    setSelectedCadetPNum(personnel[0].pNumber);
                 }
-            }, [seniorCadets, selectedCadetPNum]);
+            }, [personnel, selectedCadetPNum]);
             
-            const sortedPersonnel = useMemo(() => [...seniorCadets].sort((a, b) => a.name.localeCompare(b.name)), [seniorCadets]);
-            const selectedCadet = useMemo(() => seniorCadets.find(p => p.pNumber === selectedCadetPNum), [seniorCadets, selectedCadetPNum]);
+            const sortedPersonnel = useMemo(() => [...personnel].sort((a, b) => a.name.localeCompare(b.name)), [personnel]);
+            const selectedCadet = useMemo(() => personnel.find(p => p.pNumber === selectedCadetPNum), [personnel, selectedCadetPNum]);
             
             const cadetAge = useMemo(() => selectedCadet?.dob ? calculateAge(selectedCadet.dob) : "Unknown", [selectedCadet]);
             const cadetAgeClass = useMemo(() => selectedCadet?.dob ? getCadetAgeColor(selectedCadet.dob) : "", [selectedCadet]);
@@ -3303,6 +2919,17 @@
 
                 return awardedProfs;
             }, [qualsData, selectedCadetPNum]);
+
+            const CADET_FOCUS_WATERBORNE_HIERARCHY = {
+                "General": ["Master Coxswain Award", "Coxswain Award"],
+                "Rowing": ["SCC Rowing Instructor", "Rowing Instructor", "Rowing Coxswswain", "Rowing Supervised Coxswain", "Rowing Competent Crew", "SCC Row Coxswain Module"], 
+                "Paddlesport": ["BC Paddlesport Instructor", "BC Paddle Discipline Specific", "BC Paddle Safety & Rescue Course (PSRC)", "BC Paddle Explore Award", "BC Paddle Discover Award"],
+                "Sailing": ["Dinghy Instructor", "RYA Dinghy Instructor", "Dinghy - RYA Instructor", "Sail - RYA Sailing with Spinnakers", "Sail - RYA Seamanship Skills", "Sail - RYA Start Racing", "Sail - RYA Performance Sailing", "Sail - RYA Day Sailing", "Sailing Stage 4", "Sailing Stage 3", "Sailing Stage 2", "Sail - RYA YSS Stage 4", "Sail - RYA YSS Stage 3", "Sail - RYA YSS Stage 2"],
+                "Windsurfing": ["RYA Start Windsurfing Instructor", "Windsurfing - RYA Start Windsurfing Instructor", "Wind - RYA YouthWS - Stage 4", "Wind - RYA YouthWS - Stage 3", "Wind - RYA YouthWS - Stage 2", "Wind - RYA YouthWS - Stage 1"],
+                "Powerboat": ["RYA Powerboat Instructor", "Powerboat - RYA Powerboat Instructor", "Powerboat - RYA Powerboat Intermediate", "RYA Powerboat Level 2", "RYA Powerboat Level 1"],
+                "Offshore Power": ["Offshore - Power Watch Leader", "Offshore - Power Seaman", "Offshore - Power Grade 2", "Offshore - Power Grade 1"],
+                "Offshore Sail": ["Offshore - Sail Watch Leader", "Offshore - Sail Seaman", "Offshore - Sail Grade 2", "Offshore - Sail Grade 1"]
+            };
 
             const cadetWaterborne = useMemo(() => {
                 if (!selectedCadet) return [];
@@ -3587,19 +3214,6 @@
             }, [qualsData, selectedCadetPNum, selectedCadet]);
 
 
-            if (seniorCadets.length === 0) {
-                return (
-                    <div className="p-8 text-center">
-                        <div className="bg-white rounded-lg shadow p-8">
-                            <Icon name="Users" className="w-16 h-16 mx-auto text-slate-300 mb-4" />
-                            <h2 className="text-2xl font-bold text-slate-700 mb-2">No Senior Cadets Found</h2>
-                            <p className="text-slate-600">All cadets in your data are under 12 years old (juniors).</p>
-                            <p className="text-sm text-slate-500 mt-4">Use the Junior Focus page to view junior cadets.</p>
-                        </div>
-                    </div>
-                );
-            }
-
             if (!selectedCadet) return <div className="p-8 text-center text-slate-500">Please load data and select a cadet.</div>;
 
             return (
@@ -3628,10 +3242,19 @@
                             <div className="bg-slate-50 p-4 rounded border">
                                 <p className="text-xs text-slate-400 font-bold mb-2">Rank</p>
                                 <div className="flex items-center gap-3">
-                                    {rankImages ? (
+                                    {rankImages || selectedCadet.rank === "Able Junior Cadet" ? (
                                         <>
-                                            {rankImages?.sleeve && <img src={`media/${rankImages.sleeve}`} className="h-12 w-auto object-contain shadow-sm" alt="Sleeve Rank" title="Sleeve Badge" onError={(e) => e.target.style.display = 'none'} />}
-                                            {rankImages?.slide && <img src={`media/${rankImages.slide}`} className="h-12 w-auto object-contain shadow-sm" alt="Shoulder Slide" title="Shoulder Slide" onError={(e) => e.target.style.display = 'none'} />}
+                                            {selectedCadet.rank === "Able Junior Cadet" || rankImages?.count === 2 ? (
+                                                <div className="flex gap-1">
+                                                    <img src="media/scc_junior_star.webp" className="h-12 w-auto object-contain shadow-sm" alt="Rank Star 1" onError={(e) => e.target.style.display = 'none'} />
+                                                    <img src="media/scc_junior_star.webp" className="h-12 w-auto object-contain shadow-sm" alt="Rank Star 2" onError={(e) => e.target.style.display = 'none'} />
+                                                </div>
+                                            ) : (
+                                                <>
+                                                    {rankImages?.sleeve && <img src={`media/${rankImages.sleeve}`} className="h-12 w-auto object-contain shadow-sm" alt="Sleeve Rank" title="Sleeve Badge" onError={(e) => e.target.style.display = 'none'} />}
+                                                    {rankImages?.slide && <img src={`media/${rankImages.slide}`} className="h-12 w-auto object-contain shadow-sm" alt="Shoulder Slide" title="Shoulder Slide" onError={(e) => e.target.style.display = 'none'} />}
+                                                </>
+                                            )}
                                         </>
                                     ) : (
                                         <div className="h-12 w-12 bg-slate-200 rounded-full flex items-center justify-center text-slate-400">
@@ -3972,12 +3595,19 @@
 
             return (
                 <div className="space-y-6">
-                    <div className="bg-purple-50 p-6 rounded-lg border border-purple-100">
-                        <h2 className="text-xl font-bold text-purple-900 mb-2">Training Suggestions</h2>
-                        <p className="text-sm text-purple-700 mb-3">Shows the 12 most-needed modules for cadets at the selected rank.</p>
+                    <div className="bg-white rounded-lg shadow-xl p-6 border-l-4 border-purple-500">
+                        <div className="flex items-center gap-4 mb-4">
+                            <div className="p-3 bg-purple-100 rounded-full">
+                                <Icon name="Lightbulb" className="w-8 h-8 text-purple-700" />
+                            </div>
+                            <div>
+                                <h2 className="text-3xl font-extrabold text-slate-900">Training Plan</h2>
+                                <p className="text-slate-600">12 most-needed modules for selected rank</p>
+                            </div>
+                        </div>
                         <div className="flex items-center gap-4">
-                            <label className="text-sm font-semibold text-purple-800">Target Rank:</label>
-                            <select value={selectedRank} onChange={(e) => setSelectedRank(e.target.value)} className="p-2 border border-purple-200 rounded shadow-sm text-sm">{ALL_RANKS.map(r => <option key={r} value={r}>{r}</option>)}</select>
+                            <label className="text-sm font-semibold text-slate-700">Target Rank:</label>
+                            <select value={selectedRank} onChange={(e) => setSelectedRank(e.target.value)} className="p-2 border border-slate-300 rounded-lg shadow-sm text-sm">{ALL_RANKS.map(r => <option key={r} value={r}>{r}</option>)}</select>
                         </div>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -3995,6 +3625,7 @@
 
         // --- JUNIOR PROGRESS VIEW (Grid Chart) ---
         const JuniorProgressView = ({ personnel }) => {
+            const [selectedSection, setSelectedSection] = useState('all');
             const juniorData = getJuniorData();
             const juniors = personnel.filter(c => isJunior(c.dob));
             
@@ -4010,6 +3641,353 @@
                 );
             }
             
+            // ALL 333 official modules with names
+            const allModules = [
+                // RED Section
+                {s:'red',c:'1',n:'Unit Induction: Tour of Unit'},
+                {s:'red',c:'1.1',n:'Unit Induction: Unit Fire Drill'},
+                {s:'red',c:'1.2',n:'Unit Induction: Map Out Your Unit'},
+                {s:'red',c:'1.3',n:'Unit Induction: What\'s Important?'},
+                {s:'red',c:'1.4',n:'Unit Induction: Uniformed Art'},
+                {s:'red',c:'1.5',n:'Unit Induction: Badges & Ranks'},
+                {s:'red',c:'2',n:'Two Questions & A Funny'},
+                {s:'red',c:'2.1',n:'Paper Planes'},
+                {s:'red',c:'2.2',n:'Names and Beanbags'},
+                {s:'red',c:'2.3',n:'Mini Me'},
+                {s:'red',c:'3',n:'Unit Who\'s Who: Say Cheese'},
+                {s:'red',c:'4',n:'Basic Drill'},
+                {s:'red',c:'4.1',n:'Unit Calls (Piping)'},
+                {s:'red',c:'4.2',n:'Colours & Naval Customs'},
+                {s:'red',c:'4.3',n:'Treat Yourself'},
+                {s:'red',c:'5',n:'Junior Sea Cadet Uniform'},
+                {s:'red',c:'6',n:'Safeguarding: SHOUT'},
+                {s:'red',c:'7',n:'Organising Unit Activities'},
+                {s:'red',c:'7.1',n:'Unit Activities'},
+                {s:'red',c:'7.2',n:'Ready Aye Ready'},
+                {s:'red',c:'7.3',n:'Unit Elevator Pitch'},
+                {s:'red',c:'7.4',n:'Unit Advert'},
+                {s:'red',c:'7.5',n:'Theme Tune'},
+                {s:'red',c:'8',n:'How\'s Your Aim?'},
+                {s:'red',c:'9',n:'Royal Marines Cadet Guest'},
+                {s:'red',c:'9.1',n:'Royal Marines Cadets'},
+                {s:'red',c:'9.2',n:'Royal Marines Activities'},
+                {s:'red',c:'10',n:'Scrap Book Memories'},
+                {s:'red',c:'11',n:'Passing Messages: Flags'},
+                {s:'red',c:'11.1',n:'Lord Nelson\'s Message'},
+                {s:'red',c:'11.2',n:'Codebreaker: Morse'},
+                {s:'red',c:'11.3',n:'What\'s Your Position?'},
+                {s:'red',c:'11.4',n:'Turn Up The Radios'},
+                {s:'red',c:'11.5',n:'Phonetic Alphabet'},
+                {s:'red',c:'12',n:'Chocolate Crispies'},
+                {s:'red',c:'12.1',n:'Apple & Ginger'},
+                {s:'red',c:'12.2',n:'Chefs\' Sweet Tooth'},
+                {s:'red',c:'12.3',n:'Chefs Savoury Tooth'},
+                {s:'red',c:'12.4',n:'Chefs Cuppa'},
+                {s:'red',c:'13',n:'Who Can Help Me?'},
+                {s:'red',c:'13.1',n:'Emergency Visits'},
+                {s:'red',c:'14',n:'How International Are We?'},
+                {s:'red',c:'15',n:'First Aid Basics'},
+                {s:'red',c:'15.1',n:'First Aid Relay'},
+                {s:'red',c:'15.2',n:'Units Safety Poster'},
+                {s:'red',c:'16',n:'Naval Heraldry'},
+                {s:'red',c:'17',n:'Throw Yourself a Knot'},
+                {s:'red',c:'17.1',n:'Tasty Knots'},
+                {s:'red',c:'17.2',n:'Rope and Spoons'},
+                {s:'red',c:'17.3',n:'Knot Board'},
+                {s:'red',c:'17.4',n:'Paracord Keyrings'},
+                {s:'red',c:'17.5',n:'Parts of a Ship'},
+                {s:'red',c:'17.6',n:'Ship Ahoy!'},
+                {s:'red',c:'18',n:'Planning & Preparation'},
+                {s:'red',c:'18.1',n:'Food Storage'},
+                {s:'red',c:'18.2',n:'Keeping Germs at Bay'},
+                {s:'red',c:'18.3',n:'Missed a Spot!'},
+                {s:'red',c:'18.4',n:'Building Bacteria'},
+                {s:'red',c:'18.5',n:'Fuzzy Bread'},
+                {s:'red',c:'18.6',n:'Clean Hands?'},
+                {s:'red',c:'19',n:'Earthshot Challenge'},
+                {s:'red',c:'20',n:'Suggestion Box'},
+                {s:'red',c:'21',n:'Kindness and Wellbeing'},
+                {s:'red',c:'21.1',n:'Kindness and Wellbeing'},
+                {s:'red',c:'22',n:'Teamwork Skills'},
+                
+                // BLUE Section
+                {s:'blue',c:'T1',n:'Dinghy Sailing Taster'},
+                {s:'blue',c:'T2',n:'Paddlesport Taster'},
+                {s:'blue',c:'T3',n:'Windsurfing Taster'},
+                {s:'blue',c:'T4',n:'Rowing Taster'},
+                {s:'blue',c:'1',n:'Safety by the Water'},
+                {s:'blue',c:'1.1',n:'Rescue Line'},
+                {s:'blue',c:'1.2',n:'Help, I Need Help!'},
+                {s:'blue',c:'2',n:'Cardinal Marks'},
+                {s:'blue',c:'2.1',n:'Danger Zones'},
+                {s:'blue',c:'3',n:'Royal & Merchant Navy'},
+                {s:'blue',c:'4',n:'Going on a Mission'},
+                {s:'blue',c:'5',n:'Maritime Museum'},
+                {s:'blue',c:'6',n:'Battleships'},
+                {s:'blue',c:'7',n:'Remember The Facts'},
+                {s:'blue',c:'7.1',n:'Famous Figures'},
+                {s:'blue',c:'7.2',n:'Picasso\'s Nelson'},
+                {s:'blue',c:'8',n:'Boat Construction'},
+                {s:'blue',c:'8.1',n:'Build Boat'},
+                {s:'blue',c:'8.2',n:'Model Raft'},
+                {s:'blue',c:'8.3',n:'Water Raft'},
+                {s:'blue',c:'9',n:'Wise Near Water'},
+                {s:'blue',c:'9.1',n:'What Flag Am I?'},
+                {s:'blue',c:'10',n:'Lifeguards'},
+                {s:'blue',c:'11',n:'Keep Swimming'},
+                {s:'blue',c:'12',n:'Swimathon'},
+                {s:'blue',c:'13',n:'Marco Polo'},
+                {s:'blue',c:'13.1',n:'Synchronised Swim'},
+                {s:'blue',c:'13.2',n:'Water Polo'},
+                {s:'blue',c:'14',n:'Swimming Gala'},
+                {s:'blue',c:'15',n:'Signposts at Sea'},
+                {s:'blue',c:'15.1',n:'Edible Signposts'},
+                {s:'blue',c:'15.2',n:'Ropes on Biscuits'},
+                {s:'blue',c:'16',n:'Saving Sam'},
+                {s:'blue',c:'16.1',n:'Don\'t Fall Out!'},
+                {s:'blue',c:'17',n:'Go Rowing!'},
+                {s:'blue',c:'17.1',n:'Learn Rowing!'},
+                {s:'blue',c:'18',n:'Go Sailing!'},
+                {s:'blue',c:'18.1',n:'Learn Sailing!'},
+                {s:'blue',c:'19',n:'Go Paddling!'},
+                {s:'blue',c:'19.1',n:'Learn Paddlesport!'},
+                {s:'blue',c:'19.2',n:'Voyage of Discovery'},
+                {s:'blue',c:'20',n:'Learn Windsurfing!'},
+                {s:'blue',c:'20.1',n:'Go Windsurfing!'},
+                {s:'blue',c:'21',n:'Good Look Out'},
+                {s:'blue',c:'21.1',n:'Hazards'},
+                {s:'blue',c:'21.2',n:'Buoyancy'},
+                {s:'blue',c:'21.3',n:'Safe Speeds'},
+                {s:'blue',c:'22',n:'Navigation'},
+                {s:'blue',c:'23',n:'Crossing The Line'},
+                {s:'blue',c:'23.1',n:'Nautical Terms'},
+                {s:'blue',c:'23.2',n:'Sea Shanties'},
+                {s:'blue',c:'23.3',n:'Hornpipe Dance'},
+                {s:'blue',c:'24',n:'Boat Types'},
+                {s:'blue',c:'24.1',n:'RS ZEST Single'},
+                {s:'blue',c:'24.2',n:'RS QUEST Crewed'},
+                {s:'blue',c:'25',n:'Cold Water Shock'},
+                {s:'blue',c:'26',n:'Towpath I Spy'},
+                {s:'blue',c:'27',n:'Flag Etiquette'},
+                {s:'blue',c:'28',n:'Green and Clean'},
+                {s:'blue',c:'29',n:'Big Clean Up'},
+                {s:'blue',c:'29.2',n:'Plastic Eating Machine'},
+                
+                // GREEN Section
+                {s:'green',c:'1',n:'50 Things'},
+                {s:'green',c:'2',n:'Mapping It Out'},
+                {s:'green',c:'2.1',n:'Around the Globe'},
+                {s:'green',c:'3',n:'Grid References'},
+                {s:'green',c:'4',n:'Weather'},
+                {s:'green',c:'4.1',n:'Make it Rain!'},
+                {s:'green',c:'5',n:'Captain\'s Coming'},
+                {s:'green',c:'5.1',n:'Home Made Compass'},
+                {s:'green',c:'6',n:'Photography'},
+                {s:'green',c:'7',n:'Pacing It Out'},
+                {s:'green',c:'7.1',n:'Micro Journey'},
+                {s:'green',c:'7.2',n:'Unique Monopoly'},
+                {s:'green',c:'7.3',n:'Navigate Further'},
+                {s:'green',c:'8',n:'Basic Outdoors'},
+                {s:'green',c:'8.1',n:'Zero Trace'},
+                {s:'green',c:'8.2',n:'What to Wear'},
+                {s:'green',c:'8.3',n:'Keeping Tidy'},
+                {s:'green',c:'9',n:'Stoves'},
+                {s:'green',c:'9.1',n:'Open Fires 101'},
+                {s:'green',c:'9.2',n:'Fire Recipes'},
+                {s:'green',c:'9.3',n:'Junior Survivor'},
+                {s:'green',c:'9.4',n:'Master Chef Outdoors'},
+                {s:'green',c:'10',n:'Practice'},
+                {s:'green',c:'10.1',n:'Amazing Race Junior'},
+                {s:'green',c:'11',n:'Country Code'},
+                {s:'green',c:'11.1',n:'Country Code Guide'},
+                {s:'green',c:'11.2',n:'Environment'},
+                {s:'green',c:'12',n:'Tenting Around'},
+                {s:'green',c:'12.1',n:'Pitching Tent'},
+                {s:'green',c:'13',n:'Safe Outdoors'},
+                {s:'green',c:'13.1',n:'Stranger Danger'},
+                {s:'green',c:'14',n:'Meteorology'},
+                {s:'green',c:'14.1',n:'Weather on Water'},
+                {s:'green',c:'14.2',n:'Storm Surge'},
+                {s:'green',c:'14.3',n:'Low Visibility'},
+                {s:'green',c:'14.4',n:'Celestial Navigation'},
+                {s:'green',c:'15',n:'Wind Blowing'},
+                {s:'green',c:'16',n:'Warming Up'},
+                {s:'green',c:'16.1',n:'Warm Up Guide'},
+                {s:'green',c:'17',n:'Keep Fit'},
+                {s:'green',c:'17.1',n:'Training Games'},
+                {s:'green',c:'17.2',n:'Competitive'},
+                {s:'green',c:'17.3',n:'Happy Healthy'},
+                {s:'green',c:'17.4',n:'Eating Healthy'},
+                {s:'green',c:'17.5',n:'Games to Start'},
+                {s:'green',c:'18',n:'Bird Feeder'},
+                {s:'green',c:'18.1',n:'Bee Bombs'},
+                {s:'green',c:'18.2',n:'Seed Paper'},
+                {s:'green',c:'18.3',n:'Carbon Footprint'},
+                
+                // YELLOW Section
+                {s:'yellow',c:'1',n:'Local Heroes'},
+                {s:'yellow',c:'1.1',n:'Thank You Cards'},
+                {s:'yellow',c:'1.2',n:'Hero Portraits'},
+                {s:'yellow',c:'2',n:'D-Day'},
+                {s:'yellow',c:'2.1',n:'D-Day Art'},
+                {s:'yellow',c:'2.2',n:'D-Day Stories'},
+                {s:'yellow',c:'2.3',n:'D-Day Memory'},
+                {s:'yellow',c:'3',n:'Remembrance'},
+                {s:'yellow',c:'3.1',n:'Poppy Art'},
+                {s:'yellow',c:'3.2',n:'War Stories'},
+                {s:'yellow',c:'4',n:'Charities'},
+                {s:'yellow',c:'4.1',n:'Charity Event'},
+                {s:'yellow',c:'4.2',n:'Fundraising'},
+                {s:'yellow',c:'4.3',n:'Charity Visit'},
+                {s:'yellow',c:'5',n:'Litter Pick'},
+                {s:'yellow',c:'5.1',n:'Beach Clean'},
+                {s:'yellow',c:'5.2',n:'Recycle'},
+                {s:'yellow',c:'5.3',n:'Upcycle'},
+                {s:'yellow',c:'5.4',n:'Reduce Plastic'},
+                {s:'yellow',c:'5.5',n:'Compost'},
+                {s:'yellow',c:'5.6',n:'Energy Saving'},
+                {s:'yellow',c:'6',n:'Community Project'},
+                {s:'yellow',c:'6.1',n:'Helping Neighbours'},
+                {s:'yellow',c:'6.2',n:'Community Survey'},
+                {s:'yellow',c:'6.3',n:'Community Event'},
+                {s:'yellow',c:'7',n:'Democracy'},
+                {s:'yellow',c:'7.1',n:'Mock Election'},
+                {s:'yellow',c:'7.2',n:'Parliament'},
+                {s:'yellow',c:'7.3',n:'Local Council'},
+                {s:'yellow',c:'7.4',n:'Student Voice'},
+                {s:'yellow',c:'7.5',n:'Debate'},
+                {s:'yellow',c:'7.6',n:'Rights'},
+                {s:'yellow',c:'7.7',n:'Laws'},
+                {s:'yellow',c:'7.8',n:'Voting'},
+                {s:'yellow',c:'8',n:'British Values'},
+                {s:'yellow',c:'8.1',n:'Rule of Law'},
+                {s:'yellow',c:'8.2',n:'Democracy Value'},
+                {s:'yellow',c:'8.3',n:'Liberty'},
+                {s:'yellow',c:'8.4',n:'Respect'},
+                {s:'yellow',c:'8.5',n:'Tolerance'},
+                {s:'yellow',c:'8.6',n:'Values Project'},
+                {s:'yellow',c:'8.7',n:'Values Quiz'},
+                {s:'yellow',c:'8.8',n:'Values Discussion'},
+                {s:'yellow',c:'9',n:'Diversity'},
+                {s:'yellow',c:'9.1',n:'Different Cultures'},
+                {s:'yellow',c:'9.2',n:'World Religions'},
+                {s:'yellow',c:'9.3',n:'Celebrations'},
+                {s:'yellow',c:'10',n:'Armed Forces Day'},
+                {s:'yellow',c:'10.1',n:'Parade'},
+                {s:'yellow',c:'10.2',n:'Display'},
+                {s:'yellow',c:'11',n:'Sea Sunday'},
+                {s:'yellow',c:'11.1',n:'Church Service'},
+                {s:'yellow',c:'11.2',n:'Seafarers'},
+                {s:'yellow',c:'12',n:'Royal Events'},
+                {s:'yellow',c:'12.1',n:'Royal History'},
+                {s:'yellow',c:'12.2',n:'Royal Visit'},
+                {s:'yellow',c:'12.3',n:'Royal Celebration'},
+                {s:'yellow',c:'13',n:'Trafalgar Day'},
+                {s:'yellow',c:'13.1',n:'Nelson'},
+                {s:'yellow',c:'13.2',n:'Battle Facts'},
+                {s:'yellow',c:'13.3',n:'HMS Victory'},
+                {s:'yellow',c:'13.4',n:'Trafalgar Square'},
+                {s:'yellow',c:'13.5',n:'Naval History'},
+                {s:'yellow',c:'15',n:'Veterans'},
+                {s:'yellow',c:'15.1',n:'Meet Veteran'},
+                {s:'yellow',c:'16',n:'Cadets Worldwide'},
+                {s:'yellow',c:'17',n:'Sea Cadets History'},
+                {s:'yellow',c:'17.1',n:'Unit History'},
+                {s:'yellow',c:'17.2',n:'Old Photos'},
+                {s:'yellow',c:'18',n:'Famous Ships'},
+                {s:'yellow',c:'19',n:'Navy Careers'},
+                {s:'yellow',c:'19.1',n:'Navy Jobs'},
+                {s:'yellow',c:'19.2',n:'Navy Training'},
+                {s:'yellow',c:'19.3',n:'Navy Life'},
+                {s:'yellow',c:'19.4',n:'Navy Visit'},
+                {s:'yellow',c:'19.5',n:'Navy Talk'},
+                {s:'yellow',c:'20',n:'Future Goals'},
+                {s:'yellow',c:'20.1',n:'Career Ideas'},
+                {s:'yellow',c:'20.2',n:'Skills'},
+                {s:'yellow',c:'20.3',n:'Achievements'},
+                {s:'yellow',c:'20.4',n:'Action Plan'},
+                {s:'yellow',c:'21',n:'Online Safety'},
+                {s:'yellow',c:'22',n:'Mental Health'},
+                {s:'yellow',c:'22.1',n:'Wellbeing'},
+                {s:'yellow',c:'22.2',n:'Stress'},
+                {s:'yellow',c:'22.3',n:'Emotions'},
+                {s:'yellow',c:'22.4',n:'Support'},
+                {s:'yellow',c:'22.5',n:'Mindfulness'},
+                {s:'yellow',c:'22.6',n:'Exercise'},
+                {s:'yellow',c:'22.7',n:'Sleep'},
+                {s:'yellow',c:'22.8',n:'Nutrition'},
+                {s:'yellow',c:'22.9',n:'Friends'},
+                {s:'yellow',c:'23',n:'Personal Safety'},
+                {s:'yellow',c:'23.1',n:'Road Safety'},
+                {s:'yellow',c:'23.2',n:'Water Safety'},
+                {s:'yellow',c:'24',n:'Bullying'},
+                {s:'yellow',c:'24.1',n:'Anti-Bullying'},
+                {s:'yellow',c:'24.2',n:'Being Kind'},
+                {s:'yellow',c:'25',n:'Healthy Eating'},
+                {s:'yellow',c:'26',n:'First Aid'},
+                {s:'yellow',c:'27',n:'Music'},
+                {s:'yellow',c:'27.1',n:'Sea Songs'},
+                {s:'yellow',c:'27.2',n:'Instruments'},
+                {s:'yellow',c:'27.3',n:'Performance'},
+                {s:'yellow',c:'28',n:'Art'},
+                {s:'yellow',c:'28.1',n:'Maritime Art'},
+                {s:'yellow',c:'28.2',n:'Sculpture'},
+                {s:'yellow',c:'28.3',n:'Crafts'},
+                {s:'yellow',c:'28.4',n:'Exhibition'},
+                {s:'yellow',c:'29',n:'Drama'},
+                {s:'yellow',c:'30',n:'Dance'},
+                {s:'yellow',c:'70',n:'Platinum Jubilee'},
+                {s:'yellow',c:'70.1',n:'Jubilee Party'},
+                {s:'yellow',c:'70.2',n:'Jubilee Project'},
+                {s:'yellow',c:'71',n:'Commonwealth Games'},
+                {s:'yellow',c:'72',n:'Coronation'},
+                {s:'yellow',c:'72.1',n:'Coronation Event'},
+                {s:'yellow',c:'73',n:'Special Event'},
+                
+                // STEM Section
+                {s:'stem',c:'1',n:'Coding Basics'},
+                {s:'stem',c:'2',n:'Scratch'},
+                {s:'stem',c:'3',n:'Python'},
+                {s:'stem',c:'4',n:'Robotics'},
+                {s:'stem',c:'5',n:'Electronics'},
+                {s:'stem',c:'6',n:'Circuits'},
+                {s:'stem',c:'7',n:'LED Projects'},
+                {s:'stem',c:'8',n:'Raspberry Pi'},
+                {s:'stem',c:'9',n:'Arduino'},
+                {s:'stem',c:'10',n:'3D Printing'},
+                {s:'stem',c:'11',n:'CAD Design'},
+                {s:'stem',c:'12',n:'Engineering'},
+                {s:'stem',c:'13',n:'Bridges'},
+                {s:'stem',c:'14',n:'Structures'},
+                {s:'stem',c:'15',n:'Forces'},
+                {s:'stem',c:'16',n:'Energy'},
+                {s:'stem',c:'17',n:'Renewable Energy'},
+                {s:'stem',c:'18',n:'Solar Power'},
+                {s:'stem',c:'19',n:'Wind Power'},
+                {s:'stem',c:'20',n:'Water Power'},
+                {s:'stem',c:'21',n:'Chemistry'},
+                {s:'stem',c:'22',n:'Reactions'},
+                {s:'stem',c:'23',n:'Materials'},
+                {s:'stem',c:'24',n:'Biology'},
+                {s:'stem',c:'25',n:'Marine Life'},
+                {s:'stem',c:'26',n:'Ecosystems'},
+                {s:'stem',c:'27',n:'Physics'},
+                {s:'stem',c:'28',n:'Light'},
+                {s:'stem',c:'29',n:'Sound'},
+                {s:'stem',c:'30',n:'Space'},
+                {s:'stem',c:'31',n:'Astronomy'},
+                {s:'stem',c:'32',n:'Planets'},
+                {s:'stem',c:'33',n:'Rockets'},
+                {s:'stem',c:'34',n:'Satellites'},
+                {s:'stem',c:'35',n:'Navigation Tech'},
+                {s:'stem',c:'36',n:'GPS'},
+                {s:'stem',c:'37',n:'Radar'},
+                {s:'stem',c:'38',n:'Sonar'},
+                {s:'stem',c:'39',n:'Maths Games'},
+                {s:'stem',c:'40',n:'Data Science'},
+                {s:'stem',c:'41',n:'Statistics'},
+                {s:'stem',c:'42',n:'Problem Solving'}
+            ];
             
             const hasModule = (pNumber, section, code) => {
                 return juniorData.moduleCompletions.find(m => 
@@ -4050,6 +4028,20 @@
                 return colors[section];
             };
             
+            // Filter modules based on selected section
+            const filteredModules = selectedSection === 'all' 
+                ? allModules 
+                : allModules.filter(mod => mod.s === selectedSection);
+            
+            const sectionTabs = [
+                { id: 'all', label: 'All Sections', count: allModules.length, color: 'slate' },
+                { id: 'red', label: 'Red - Unit', count: allModules.filter(m => m.s === 'red').length, color: 'red' },
+                { id: 'blue', label: 'Blue - Waterborne', count: allModules.filter(m => m.s === 'blue').length, color: 'blue' },
+                { id: 'green', label: 'Green - Outdoor', count: allModules.filter(m => m.s === 'green').length, color: 'green' },
+                { id: 'yellow', label: 'Yellow - Community', count: allModules.filter(m => m.s === 'yellow').length, color: 'yellow' },
+                { id: 'stem', label: 'STEM', count: allModules.filter(m => m.s === 'stem').length, color: 'purple' }
+            ];
+            
             return (
                 <div className="space-y-4">
                     <div className="bg-white rounded-lg shadow p-4 border-l-4 border-purple-500">
@@ -4062,12 +4054,36 @@
                         </div>
                     </div>
                     
+                    {/* Section Filter Tabs */}
+                    <div className="bg-white rounded-lg shadow p-4">
+                        <div className="flex flex-wrap gap-2">
+                            {sectionTabs.map(tab => (
+                                <button
+                                    key={tab.id}
+                                    onClick={() => setSelectedSection(tab.id)}
+                                    className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
+                                        selectedSection === tab.id
+                                            ? tab.color === 'slate' ? 'bg-slate-700 text-white' :
+                                              tab.color === 'red' ? 'bg-red-600 text-white' :
+                                              tab.color === 'blue' ? 'bg-blue-600 text-white' :
+                                              tab.color === 'green' ? 'bg-green-600 text-white' :
+                                              tab.color === 'yellow' ? 'bg-yellow-600 text-white' :
+                                              'bg-purple-600 text-white'
+                                            : `bg-${tab.color}-50 text-${tab.color}-700 hover:bg-${tab.color}-100`
+                                    }`}
+                                >
+                                    {tab.label} <span className="opacity-75">({tab.count})</span>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                    
                     <div className="bg-white rounded-lg shadow overflow-hidden">
-                        <div className="overflow-x-auto">
+                        <div className="overflow-x-auto" style={{maxHeight: '70vh', overflowY: 'auto'}}>
                             <table className="min-w-full text-xs border-collapse">
-                                <thead className="bg-slate-100">
+                                <thead className="bg-slate-100 sticky top-0 z-20">
                                     <tr>
-                                        <th className="sticky left-0 bg-slate-100 px-2 py-2 text-left font-bold text-slate-700 uppercase z-10 border-r text-xs" style={{maxWidth: '200px', width: '200px'}}>
+                                        <th className="sticky left-0 bg-slate-100 px-2 py-2 text-left font-bold text-slate-700 uppercase z-30 border-r text-xs" style={{maxWidth: '200px', width: '200px'}}>
                                             Module / Cadet
                                         </th>
                                         {juniors.map(junior => (
@@ -4090,7 +4106,7 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {allModules.map((mod, idx) => (
+                                    {filteredModules.map((mod, idx) => (
                                         <tr key={`${mod.s}-${mod.c}`} className={getSectionBg(mod.s)}>
                                             <td className={`sticky left-0 px-2 py-1 font-semibold border-r border-b z-10 text-xs ${getSectionModuleBg(mod.s)}`} style={{maxWidth: '200px', width: '200px'}}>
                                                 <div className="overflow-hidden text-ellipsis whitespace-nowrap" title={`${mod.s.toUpperCase()} ${mod.c}: ${mod.n}`}>
@@ -4124,112 +4140,6 @@
         const DataUtilitiesView = ({ clearData, wipeAllData, setView, personnel }) => {
             const [uploadStatus, setUploadStatus] = useState('');
             const juniorData = getJuniorData();
-            
-            // Filter juniors for bulk award
-            const juniors = personnel.filter(cadet => isJunior(cadet.dob));
-            
-            // Bulk Award State
-            const [selectedCadets, setSelectedCadets] = useState(new Set());
-            const [selectedModules, setSelectedModules] = useState(new Set());
-            const [activeSection, setActiveSection] = useState('red');
-            const [bulkAwardDate, setBulkAwardDate] = useState(new Date().toISOString().split('T')[0]);
-            const [showBulkSuccess, setShowBulkSuccess] = useState(false);
-            
-            // All 336 modules for bulk award
-            
-            // Bulk Award Handlers
-            const toggleCadetSelection = (pNumber) => {
-                const newSet = new Set(selectedCadets);
-                if (newSet.has(pNumber)) {
-                    newSet.delete(pNumber);
-                } else {
-                    newSet.add(pNumber);
-                }
-                setSelectedCadets(newSet);
-            };
-            
-            const toggleAllCadets = () => {
-                if (selectedCadets.size === juniors.length) {
-                    setSelectedCadets(new Set());
-                } else {
-                    setSelectedCadets(new Set(juniors.map(j => j.pNumber)));
-                }
-            };
-            
-            const toggleModuleSelection = (moduleId) => {
-                const newSet = new Set(selectedModules);
-                if (newSet.has(moduleId)) {
-                    newSet.delete(moduleId);
-                } else {
-                    newSet.add(moduleId);
-                }
-                setSelectedModules(newSet);
-            };
-            
-            const toggleAllModules = () => {
-                const sectionModules = allModules.filter(m => m.s === activeSection);
-                const sectionIds = sectionModules.map(m => `${m.s}-${m.c}`);
-                const allSelected = sectionIds.every(id => selectedModules.has(id));
-                
-                const newSet = new Set(selectedModules);
-                if (allSelected) {
-                    sectionIds.forEach(id => newSet.delete(id));
-                } else {
-                    sectionIds.forEach(id => newSet.add(id));
-                }
-                setSelectedModules(newSet);
-            };
-            
-            const handleBulkAward = () => {
-                if (selectedCadets.size === 0) {
-                    alert("Please select at least one cadet");
-                    return;
-                }
-                if (selectedModules.size === 0) {
-                    alert("Please select at least one module");
-                    return;
-                }
-                
-                const newCompletions = [];
-                selectedCadets.forEach(pNumber => {
-                    selectedModules.forEach(moduleId => {
-                        const [section, code] = moduleId.split('-');
-                        const module = allModules.find(m => m.s === section && m.c === code);
-                        if (module) {
-                            newCompletions.push({
-                                pNumber: pNumber,
-                                section: section,
-                                moduleCode: code,
-                                moduleName: module.n,
-                                dateCompleted: bulkAwardDate,
-                                isCore: false
-                            });
-                        }
-                    });
-                });
-                
-                const currentData = getJuniorData();
-                const updatedData = {
-                    ...currentData,
-                    moduleCompletions: [...currentData.moduleCompletions, ...newCompletions]
-                };
-                
-                if (saveJuniorData(updatedData)) {
-                    setShowBulkSuccess(true);
-                    setSelectedCadets(new Set());
-                    setSelectedModules(new Set());
-                    setUploadStatus(`Successfully awarded ${newCompletions.length} modules!`);
-                    setTimeout(() => {
-                        setShowBulkSuccess(false);
-                        window.location.reload();
-                    }, 1500);
-                } else {
-                    alert("Error saving bulk awards");
-                }
-            };
-            
-            const filteredModules = allModules.filter(m => m.s === activeSection);
-            
             
             const exportJuniorData = () => {
                 const dataStr = JSON.stringify(juniorData, null, 2);
@@ -4304,154 +4214,6 @@
                         </button>
                     </div>
                     
-                    {/* Bulk Module Award Section */}
-                    {juniors.length > 0 && (
-                        <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg shadow-xl p-6 border-2 border-purple-200">
-                            <div className="flex items-center gap-3 mb-4">
-                                <Icon name="Award" className="w-6 h-6 text-purple-700" />
-                                <h2 className="text-2xl font-bold text-purple-900">Bulk Module Award</h2>
-                            </div>
-                            <p className="text-slate-700 mb-6">
-                                Award multiple modules to multiple juniors at once. Quick entry for parade nights.
-                            </p>
-                            
-                            {showBulkSuccess && (
-                                <div className="mb-4 p-3 bg-green-50 border-l-4 border-green-500 text-green-700 rounded">
-                                    ✓ {selectedCadets.size} cadet(s) × {selectedModules.size} module(s) = {selectedCadets.size * selectedModules.size} awards saved successfully!
-                                </div>
-                            )}
-                            
-                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                {/* Left: Cadet Selection */}
-                                <div>
-                                    <div className="flex justify-between items-center mb-2">
-                                        <label className="text-sm font-bold text-slate-700">Select Cadets</label>
-                                        <button
-                                            onClick={toggleAllCadets}
-                                            className="text-xs text-purple-600 hover:text-purple-800 font-semibold"
-                                        >
-                                            {selectedCadets.size === juniors.length ? 'Deselect All' : `Select All (${juniors.length})`}
-                                        </button>
-                                    </div>
-                                    <div className="bg-white rounded-lg border border-purple-200 p-3 max-h-64 overflow-y-auto">
-                                        {juniors.map(junior => (
-                                            <label key={junior.pNumber} className="flex items-center gap-2 p-2 hover:bg-purple-50 rounded cursor-pointer">
-                                                <input
-                                                    type="checkbox"
-                                                    checked={selectedCadets.has(junior.pNumber)}
-                                                    onChange={() => toggleCadetSelection(junior.pNumber)}
-                                                    className="w-4 h-4 text-purple-600 rounded"
-                                                />
-                                                <span className="text-sm flex-1">{junior.name}</span>
-                                                <span className="text-xs text-slate-500">({calculateAge(junior.dob)}) {junior.rank}</span>
-                                            </label>
-                                        ))}
-                                    </div>
-                                </div>
-                                
-                                {/* Right: Module Selection */}
-                                <div>
-                                    <label className="block text-sm font-bold text-slate-700 mb-2">Select Modules</label>
-                                    
-                                    {/* Section Tabs */}
-                                    <div className="flex gap-1 mb-3">
-                                        {[
-                                            {id: 'red', label: 'RED', bg: 'bg-red-100', active: 'bg-red-600', text: 'text-red-800'},
-                                            {id: 'blue', label: 'BLUE', bg: 'bg-blue-100', active: 'bg-blue-600', text: 'text-blue-800'},
-                                            {id: 'green', label: 'GREEN', bg: 'bg-green-100', active: 'bg-green-600', text: 'text-green-800'},
-                                            {id: 'yellow', label: 'YELLOW', bg: 'bg-yellow-100', active: 'bg-yellow-600', text: 'text-yellow-800'},
-                                            {id: 'stem', label: 'STEM', bg: 'bg-purple-100', active: 'bg-purple-600', text: 'text-purple-800'}
-                                        ].map(section => (
-                                            <button
-                                                key={section.id}
-                                                onClick={() => setActiveSection(section.id)}
-                                                className={`flex-1 py-2 px-3 rounded text-xs font-bold transition-all ${
-                                                    activeSection === section.id 
-                                                        ? `${section.active} text-white shadow-md` 
-                                                        : `${section.bg} ${section.text} hover:shadow`
-                                                }`}
-                                            >
-                                                {section.label}
-                                            </button>
-                                        ))}
-                                    </div>
-                                    
-                                    <div className="flex justify-between items-center mb-2">
-                                        <span className="text-xs text-slate-600">{filteredModules.length} modules in {activeSection.toUpperCase()} section</span>
-                                        <button
-                                            onClick={toggleAllModules}
-                                            className="text-xs text-purple-600 hover:text-purple-800 font-semibold"
-                                        >
-                                            {filteredModules.every(m => selectedModules.has(`${m.s}-${m.c}`)) ? 'Deselect All' : 'Select All'}
-                                        </button>
-                                    </div>
-                                    
-                                    <div className="bg-white rounded-lg border border-purple-200 p-3 max-h-48 overflow-y-auto">
-                                        {filteredModules.map(mod => {
-                                            const moduleId = `${mod.s}-${mod.c}`;
-                                            return (
-                                                <label key={moduleId} className="flex items-start gap-2 p-2 hover:bg-purple-50 rounded cursor-pointer">
-                                                    <input
-                                                        type="checkbox"
-                                                        checked={selectedModules.has(moduleId)}
-                                                        onChange={() => toggleModuleSelection(moduleId)}
-                                                        className="w-4 h-4 text-purple-600 rounded mt-0.5"
-                                                    />
-                                                    <span className="text-xs flex-1">
-                                                        <span className="font-bold text-purple-700">{mod.s.toUpperCase()} {mod.c}:</span> {mod.n}
-                                                    </span>
-                                                </label>
-                                            );
-                                        })}
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            {/* Bottom: Date and Award Button */}
-                            <div className="mt-6 flex flex-col md:flex-row gap-4 items-end">
-                                <div className="flex-1">
-                                    <label className="block text-sm font-bold text-slate-700 mb-2">Date Completed</label>
-                                    <input
-                                        type="date"
-                                        value={bulkAwardDate}
-                                        onChange={(e) => setBulkAwardDate(e.target.value)}
-                                        className="w-full p-2 border border-slate-300 rounded-lg"
-                                    />
-                                </div>
-                                <div className="flex-1 text-center">
-                                    <p className="text-sm text-slate-600 mb-2">
-                                        <span className="font-bold text-purple-700">{selectedCadets.size}</span> cadet(s) × 
-                                        <span className="font-bold text-purple-700"> {selectedModules.size}</span> module(s) = 
-                                        <span className="font-bold text-lg text-purple-900"> {selectedCadets.size * selectedModules.size}</span> awards
-                                    </p>
-                                </div>
-                                <div className="flex gap-2">
-                                    <button
-                                        onClick={() => {
-                                            setSelectedCadets(new Set());
-                                            setSelectedModules(new Set());
-                                        }}
-                                        className="px-4 py-2 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 font-semibold"
-                                    >
-                                        Clear Selections
-                                    </button>
-                                    <button
-                                        onClick={handleBulkAward}
-                                        disabled={selectedCadets.size === 0 || selectedModules.size === 0}
-                                        className={`px-6 py-2 rounded-lg font-bold flex items-center gap-2 ${
-                                            selectedCadets.size > 0 && selectedModules.size > 0
-                                                ? 'bg-purple-600 text-white hover:bg-purple-700 shadow-lg'
-                                                : 'bg-slate-200 text-slate-400 cursor-not-allowed'
-                                        }`}
-                                    >
-                                        <Icon name="Award" className="w-4 h-4" />
-                                        Award Modules →
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-                    
                     {/* Junior Data Management */}
                     <div className="bg-blue-50 rounded-lg shadow p-6 border-l-4 border-blue-500">
                         <h2 className="text-2xl font-bold text-blue-900 mb-4 flex items-center gap-2">
@@ -4509,21 +4271,18 @@
                             Bulk Upload Legacy Modules
                         </h2>
                         <p className="text-slate-700 mb-4">
-                            Import existing paper-based module records using an Excel-friendly grid format.
+                            Import existing paper-based module records. Download template, fill in completed modules, then upload.
                         </p>
                         
                         <div className="bg-white rounded p-4 mb-4 text-sm border border-amber-200">
                             <p className="font-semibold text-slate-700 mb-2">How it works:</p>
                             <ol className="list-decimal ml-5 space-y-1 text-slate-600">
-                                <li>Click "Download Template" - exports grid with all 336 modules and your juniors</li>
-                                <li>Open in Excel/Google Sheets - see existing completions marked with X</li>
-                                <li>Add X in cells where juniors have completed modules (visual grid format)</li>
+                                <li>Click "Download Template" - gets CSV with all your juniors</li>
+                                <li>Open in Excel/Google Sheets</li>
+                                <li>Add rows for each completed module (one row per module)</li>
                                 <li>Save as CSV</li>
-                                <li>Click "Upload Template" - imports all X marks as completions (upload date used)</li>
+                                <li>Click "Upload Template" to import all completions</li>
                             </ol>
-                            <p className="text-xs text-amber-800 mt-2">
-                                <strong>Note:</strong> Export shows existing data. Import only updates cells with X marks.
-                            </p>
                         </div>
                         
                         <div className="flex gap-3">
@@ -4535,49 +4294,27 @@
                                         return age >= 9 && age <= 11;
                                     });
                                     
-                                    if (juniors.length === 0) {
-                                        alert('No junior cadets found (ages 9-11)');
-                                        return;
+                                    let csv = "PNumber,Name,Rank,Age,Section,ModuleCode,DateCompleted\n";
+                                    csv += "# Example rows (delete these and add your completions):\n";
+                                    
+                                    if (juniors.length > 0) {
+                                        const exampleJunior = juniors[0];
+                                        csv += `${exampleJunior.pNumber},${exampleJunior.name},${exampleJunior.rank},${calculateAge(exampleJunior.dob)},red,1.1,2025-01-15\n`;
+                                        csv += `${exampleJunior.pNumber},${exampleJunior.name},${exampleJunior.rank},${calculateAge(exampleJunior.dob)},blue,2,2025-01-20\n`;
+                                        csv += "\n# Your juniors (copy these rows and add module codes):\n";
                                     }
                                     
-                                    // Get existing completions
-                                    const juniorData = getJuniorData();
-                                    
-                                    // All 336 modules in order
-                                    
-                                    // Build CSV grid
-                                    let csv = ', '; // Empty top-left corner
-                                    
-                                    // Header row: Junior names and PNumbers
-                                    juniors.forEach(j => {
-                                        const name = j.name.replace(/,/g, ''); // Remove commas from name
-                                        csv += `${name} - ${j.pNumber}, `;
-                                    });
-                                    csv = csv.slice(0, -2) + '\n'; // Remove last comma+space, add newline
-                                    
-                                    // Data rows: Module codes and X marks
-                                    allModules.forEach(mod => {
-                                        csv += `${mod.s.toUpperCase()} ${mod.c}: ${mod.n.replace(/,/g, '')}, `; // Module label
-                                        
-                                        juniors.forEach(j => {
-                                            // Check if this junior has completed this module
-                                            const hasCompleted = juniorData.moduleCompletions.some(m => 
-                                                m.pNumber === j.pNumber && 
-                                                m.section === mod.s && 
-                                                m.moduleCode === mod.c
-                                            );
-                                            csv += hasCompleted ? 'X, ' : ', ';
-                                        });
-                                        csv = csv.slice(0, -2) + '\n'; // Remove last comma+space, add newline
+                                    juniors.forEach(junior => {
+                                        csv += `${junior.pNumber},${junior.name},${junior.rank},${calculateAge(junior.dob)},,,\n`;
                                     });
                                     
                                     const blob = new Blob([csv], {type: 'text/csv'});
                                     const url = URL.createObjectURL(blob);
                                     const a = document.createElement('a');
                                     a.href = url;
-                                    a.download = `juniors_grid_template_${new Date().toISOString().split('T')[0]}.csv`;
+                                    a.download = `juniors_template_${new Date().toISOString().split('T')[0]}.csv`;
                                     a.click();
-                                    setUploadStatus('Grid template downloaded successfully!');
+                                    setUploadStatus('Template downloaded successfully!');
                                     setTimeout(() => setUploadStatus(''), 3000);
                                 }}
                                 className="bg-amber-600 text-white px-4 py-2 rounded-lg hover:bg-amber-700 font-semibold flex items-center gap-2"
@@ -4601,106 +4338,67 @@
                                         reader.onload = (event) => {
                                             try {
                                                 const text = event.target.result;
-                                                const lines = text.split('\n').filter(line => line.trim());
+                                                const lines = text.split('\n').filter(line => 
+                                                    line.trim() && !line.startsWith('#')
+                                                );
                                                 
                                                 if (lines.length < 2) {
-                                                    alert('Template appears empty.');
+                                                    alert('Template appears empty. Add module completions and try again.');
                                                     return;
                                                 }
                                                 
-                                                // Parse header row (cadet names and PNumbers)
-                                                const headerRow = lines[0].split(',');
-                                                const cadets = [];
+                                                const headers = lines[0].trim().toLowerCase().split(',');
+                                                const pnumIdx = headers.indexOf('pnumber');
+                                                const sectionIdx = headers.indexOf('section');
+                                                const moduleIdx = headers.indexOf('modulecode');
+                                                const dateIdx = headers.indexOf('datecompleted');
                                                 
-                                                for (let i = 1; i < headerRow.length; i++) {
-                                                    const cell = headerRow[i].trim();
-                                                    if (!cell) continue;
-                                                    
-                                                    // Format: "Name - PNumber"
-                                                    const match = cell.match(/(.+?)\s*-\s*(\d+)/);
-                                                    if (match) {
-                                                        cadets.push({
-                                                            name: match[1].trim(),
-                                                            pNumber: match[2].trim(),
-                                                            columnIndex: i
-                                                        });
-                                                    }
-                                                }
-                                                
-                                                if (cadets.length === 0) {
-                                                    alert('No cadets found in header row. Check format: "Name - PNumber"');
+                                                if (pnumIdx === -1 || sectionIdx === -1 || moduleIdx === -1 || dateIdx === -1) {
+                                                    alert('Invalid template format. Use downloaded template.');
                                                     return;
                                                 }
                                                 
-                                                // Parse module rows
                                                 const newCompletions = [];
-                                                const uploadDate = new Date().toISOString().split('T')[0];
+                                                let imported = 0;
                                                 
                                                 for (let i = 1; i < lines.length; i++) {
-                                                    const row = lines[i].split(',');
-                                                    const moduleLabel = row[0]?.trim();
+                                                    const row = lines[i].trim().split(',');
+                                                    if (row.length < 4) continue;
                                                     
-                                                    if (!moduleLabel) continue;
+                                                    const pnum = row[pnumIdx]?.trim();
+                                                    const section = row[sectionIdx]?.trim().toLowerCase();
+                                                    const moduleCode = row[moduleIdx]?.trim();
+                                                    const dateComp = row[dateIdx]?.trim() || new Date().toISOString().split('T')[0];
                                                     
-                                                    // Parse module: "SECTION CODE: Module Name"
-                                                    const moduleMatch = moduleLabel.match(/^(RED|BLUE|GREEN|YELLOW|STEM)\s+([\w.]+):\s*(.+)$/i);
-                                                    if (!moduleMatch) continue;
+                                                    if (!pnum || !section || !moduleCode) continue;
+                                                    if (!['red', 'blue', 'green', 'yellow', 'stem'].includes(section)) continue;
                                                     
-                                                    const section = moduleMatch[1].toLowerCase();
-                                                    const code = moduleMatch[2].toUpperCase();
-                                                    const moduleName = moduleMatch[3];
-                                                    
-                                                    // Check each cadet column for X mark
-                                                    cadets.forEach(cadet => {
-                                                        const cellValue = row[cadet.columnIndex]?.trim().toUpperCase();
-                                                        if (cellValue === 'X') {
-                                                            newCompletions.push({
-                                                                pNumber: cadet.pNumber,
-                                                                section: section,
-                                                                moduleCode: code,
-                                                                moduleName: moduleName,
-                                                                dateCompleted: uploadDate,
-                                                                isCore: false
-                                                            });
-                                                        }
+                                                    newCompletions.push({
+                                                        pNumber: pnum,
+                                                        section: section,
+                                                        moduleCode: moduleCode.toUpperCase(),
+                                                        moduleName: moduleCode,
+                                                        dateCompleted: dateComp,
+                                                        isCore: false
                                                     });
+                                                    
+                                                    imported++;
                                                 }
                                                 
-                                                if (newCompletions.length === 0) {
-                                                    alert('No module completions found (no X marks detected).');
+                                                if (imported === 0) {
+                                                    alert('No valid completions found in template.');
                                                     return;
                                                 }
                                                 
-                                                // Remove duplicates and only add NEW completions
-                                                const currentData = getJuniorData();
-                                                const existingKeys = new Set(
-                                                    currentData.moduleCompletions.map(m => 
-                                                        `${m.pNumber}-${m.section}-${m.moduleCode}`
-                                                    )
-                                                );
-                                                
-                                                const trulyNew = newCompletions.filter(nc => 
-                                                    !existingKeys.has(`${nc.pNumber}-${nc.section}-${nc.moduleCode}`)
-                                                );
-                                                
-                                                if (trulyNew.length === 0) {
-                                                    alert(`All ${newCompletions.length} completions already exist in database. No new data to import.`);
-                                                    return;
-                                                }
-                                                
-                                                const skipped = newCompletions.length - trulyNew.length;
-                                                const message = skipped > 0 
-                                                    ? `Import ${trulyNew.length} NEW completions? (${skipped} duplicates will be skipped)`
-                                                    : `Import ${trulyNew.length} module completions?`;
-                                                
-                                                if (confirm(message)) {
+                                                if (confirm(`Import ${imported} module completions? This will ADD to existing data.`)) {
+                                                    const currentData = getJuniorData();
                                                     const updatedData = {
                                                         ...currentData,
-                                                        moduleCompletions: [...currentData.moduleCompletions, ...trulyNew]
+                                                        moduleCompletions: [...currentData.moduleCompletions, ...newCompletions]
                                                     };
                                                     
                                                     if (saveJuniorData(updatedData)) {
-                                                        setUploadStatus(`Successfully imported ${trulyNew.length} completions!`);
+                                                        setUploadStatus(`Successfully imported ${imported} completions!`);
                                                         setTimeout(() => window.location.reload(), 1500);
                                                     }
                                                 }
@@ -4715,8 +4413,8 @@
                         </div>
                         
                         <div className="mt-4 p-3 bg-amber-100 rounded text-xs text-amber-900">
-                            <p className="mb-1"><strong>Grid Format:</strong> Row 1 = Cadets (Name - PNumber), Column A = Modules (SECTION CODE: Name), Cells = X for completed</p>
-                            <p><strong>Sections:</strong> RED, BLUE, GREEN, YELLOW, STEM</p>
+                            <p className="mb-1"><strong>CSV Format:</strong> PNumber, Name, Rank, Age, Section, ModuleCode, DateCompleted</p>
+                            <p><strong>Sections:</strong> red (Unit), blue (Waterborne), green (Outdoor), yellow (Community), stem (STEM)</p>
                         </div>
                     </div>
                     
@@ -4824,15 +4522,6 @@
             
             const [selectedJuniorPNum, setSelectedJuniorPNum] = useState(juniors.length > 0 ? juniors[0].pNumber : "");
             
-            // Restore selected junior after reload (if saved)
-            useEffect(() => {
-                const tempJunior = localStorage.getItem('scc_temp_junior');
-                if (tempJunior && juniors.some(j => j.pNumber === tempJunior)) {
-                    setSelectedJuniorPNum(tempJunior);
-                    localStorage.removeItem('scc_temp_junior'); // Clean up
-                }
-            }, [juniors]);
-            
             if (juniors.length === 0) {
                 return (
                     <div className="p-8">
@@ -4855,33 +4544,33 @@
             
             return (
                 <div className="space-y-6">
-                    {/* Header with dropdown */}
+                    {/* Header */}
                     <div className="bg-white rounded-lg shadow-xl p-6 border-l-4 border-purple-500">
-                        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                            <div className="flex items-center gap-4">
-                                <div className="p-3 bg-purple-100 rounded-full">
-                                    <Icon name="Users" className="w-8 h-8 text-purple-700" />
-                                </div>
-                                <div>
-                                    <h1 className="text-3xl font-extrabold text-slate-900">Junior Focus</h1>
-                                    <p className="text-slate-600">{juniors.length} junior{juniors.length !== 1 ? 's' : ''} (ages 9-11)</p>
-                                </div>
+                        <div className="flex items-center gap-4">
+                            <div className="p-3 bg-purple-100 rounded-full">
+                                <Icon name="Users" className="w-8 h-8 text-purple-700" />
                             </div>
-                            <div className="w-full md:w-64">
-                                <label className="block text-xs font-semibold text-slate-500 uppercase mb-1">Select Junior</label>
-                                <select 
-                                    value={selectedJuniorPNum}
-                                    onChange={(e) => setSelectedJuniorPNum(e.target.value)}
-                                    className="w-full p-2 border border-slate-300 rounded-md text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                                >
-                                    {juniors.map(junior => (
-                                        <option key={junior.pNumber} value={junior.pNumber}>
-                                            {junior.name}
-                                        </option>
-                                    ))}
-                                </select>
+                            <div>
+                                <h1 className="text-3xl font-extrabold text-slate-900">Junior Focus</h1>
+                                <p className="text-slate-600">{juniors.length} junior{juniors.length !== 1 ? 's' : ''} (ages 9-11)</p>
                             </div>
                         </div>
+                    </div>
+                    
+                    {/* Junior Selector */}
+                    <div className="bg-white rounded-lg shadow p-4">
+                        <label className="block text-sm font-semibold text-slate-700 mb-2">Select Junior:</label>
+                        <select 
+                            value={selectedJuniorPNum}
+                            onChange={(e) => setSelectedJuniorPNum(e.target.value)}
+                            className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                        >
+                            {juniors.map(junior => (
+                                <option key={junior.pNumber} value={junior.pNumber}>
+                                    {junior.name} - {junior.rank} (Age: {calculateAge(junior.dob)})
+                                </option>
+                            ))}
+                        </select>
                     </div>
                     
                     {/* Junior Detail */}
@@ -4904,12 +4593,11 @@
             const juniorModules = juniorData.moduleCompletions.filter(m => m.pNumber === junior.pNumber);
             
             // Get section progress
-            // Count unique modules only (duplicates count as one)
-            const redModules = new Set(juniorModules.filter(m => m.section === 'red').map(m => m.moduleCode)).size;
-            const blueModules = new Set(juniorModules.filter(m => m.section === 'blue').map(m => m.moduleCode)).size;
-            const greenModules = new Set(juniorModules.filter(m => m.section === 'green').map(m => m.moduleCode)).size;
-            const yellowModules = new Set(juniorModules.filter(m => m.section === 'yellow').map(m => m.moduleCode)).size;
-            const stemModules = new Set(juniorModules.filter(m => m.section === 'stem').map(m => m.moduleCode)).size;
+            const redModules = juniorModules.filter(m => m.section === 'red').length;
+            const blueModules = juniorModules.filter(m => m.section === 'blue').length;
+            const greenModules = juniorModules.filter(m => m.section === 'green').length;
+            const yellowModules = juniorModules.filter(m => m.section === 'yellow').length;
+            const stemModules = juniorModules.filter(m => m.section === 'stem').length;
             
             // Use rank from Westminster CSV (not calculated from modules)
             const currentRank = junior.rank || "Junior Cadet";
@@ -4976,14 +4664,14 @@
                 // BLUE Core modules
                 const blueNeed = 4 - blueCoresCompleted;
                 if (blueCoresCompleted >= 4) {
-                    requirements.push("✓ BLUE Section Core modules (4/4 completed)");
+                    requirements.push("âœ“ BLUE Section Core modules (4/4 completed)");
                 } else {
                     requirements.push(`Complete BLUE Section Core modules (${blueCoresCompleted}/4 - need ${blueNeed} more)`);
                 }
                 
                 // 12 months service
                 if (timeServed.months >= 12) {
-                    requirements.push(`✓ 12 months service (${timeServed.text})`);
+                    requirements.push(`âœ“ 12 months service (${timeServed.text})`);
                 } else {
                     const daysNeeded = (12 * 30) - timeServed.totalDays;
                     requirements.push(`12 months service (${timeServed.text} - need ${daysNeeded} more days)`);
@@ -4991,7 +4679,7 @@
                 
                 // One proficiency
                 if (proficiencies >= 1) {
-                    requirements.push(`✓ At least one proficiency (${proficiencies} completed)`);
+                    requirements.push(`âœ“ At least one proficiency (${proficiencies} completed)`);
                 } else {
                     requirements.push("Complete at least one proficiency (0 completed)");
                 }
@@ -5009,10 +4697,10 @@
                 const allSectionsComplete = sectionsComplete.every(s => s.count >= s.need);
                 
                 if (allSectionsComplete) {
-                    requirements.push("✓ All four Sections completed (RED, BLUE, GREEN, YELLOW)");
+                    requirements.push("âœ“ All four Sections completed (RED, BLUE, GREEN, YELLOW)");
                 } else {
                     const progress = sectionsComplete.map(s => {
-                        const status = s.count >= s.need ? "✓" : "✗";
+                        const status = s.count >= s.need ? "âœ“" : "âœ—";
                         return `${status} ${s.name}: ${s.count}/15`;
                     }).join(", ");
                     requirements.push(`Complete all four Sections: ${progress}`);
@@ -5020,7 +4708,7 @@
                 
                 // One additional proficiency (total 2)
                 if (proficiencies >= 2) {
-                    requirements.push(`✓ One additional proficiency (${proficiencies} total)`);
+                    requirements.push(`âœ“ One additional proficiency (${proficiencies} total)`);
                 } else {
                     const need = 2 - proficiencies;
                     requirements.push(`Complete one additional proficiency (${proficiencies}/2 - need ${need} more)`);
@@ -5028,7 +4716,7 @@
                 
                 // Age 11
                 if (age >= 11) {
-                    requirements.push(`✓ At least 11 years old (currently ${age})`);
+                    requirements.push(`âœ“ At least 11 years old (currently ${age})`);
                 } else {
                     requirements.push(`At least 11 years old (currently ${age} - ${11 - age} year${11 - age > 1 ? 's' : ''} remaining)`);
                 }
@@ -5046,113 +4734,20 @@
                 // RED Core modules
                 const redNeed = 11 - redCoresCompleted;
                 if (redCoresCompleted >= 11) {
-                    requirements.push("✓ RED Section Core modules (11/11 completed)");
+                    requirements.push("âœ“ RED Section Core modules (11/11 completed)");
                 } else {
                     requirements.push(`Complete RED Section Core modules (${redCoresCompleted}/11 - need ${redNeed} more)`);
                 }
                 
                 // 6 months service
                 if (timeServed.months >= 6) {
-                    requirements.push(`✓ 6 months service (${timeServed.text})`);
+                    requirements.push(`âœ“ 6 months service (${timeServed.text})`);
                 } else {
                     const daysNeeded = (6 * 30) - timeServed.totalDays;
                     requirements.push(`6 months service (${timeServed.text} - need ${daysNeeded} more days)`);
                 }
             }
             
-            // Get rank images (same logic as Cadet Focus)
-            const rankImages = useMemo(() => {
-                if(!junior) return null;
-                return RANK_IMG_MAP[junior.rank] || null;
-            }, [junior]);
-
-            // Get waterborne proficiencies (same logic as Cadet Focus)
-            const juniorWaterborne = useMemo(() => {
-                if (!junior) return [];
-                
-                const cadetQuals = qualifications.filter(q => q.pNumber === junior.pNumber && q.module);
-                const awardedWaterborne = [];
-                const safetyBoatHeld = cadetQuals.some(q => q.module.includes("Safety Boat"));
-
-                const swimQual = cadetQuals.find(q => {
-                    const m = q.module.toLowerCase();
-                    return m.includes("swim test") || m.includes("swimming test") || m.includes("water safety");
-                });
-
-                if (swimQual) {
-                    awardedWaterborne.push({ name: "Swim Test / Water Safety", key: "Swim Test", date: swimQual.date });
-                } else {
-                    awardedWaterborne.push({ name: "Swim Test Required", key: "No Swim Test", date: null });
-                }
-
-                // Check for STEM Award
-                const stemAward = cadetQuals.find(q => q.module.includes("JSC STEM Unit Activities Badge"));
-                if (stemAward) {
-                    awardedWaterborne.push({ name: "JSC STEM Award", key: "SCC - JSC STEM Unit Activities Badge", date: stemAward.date });
-                }
-
-                Object.entries(CADET_FOCUS_WATERBORNE_HIERARCHY).forEach(([category, levels]) => {
-                    const highestAward = levels.find(specName => {
-                        if (specName.includes("Powerboat Instructor")) {
-                            return cadetQuals.some(q => q.module.includes("Powerboat Instructor") && !q.module.includes("Pre-Entry"));
-                        }
-                        return cadetQuals.some(q => q.module.includes(specName)); 
-                    });
-
-                    if (highestAward) {
-                         let key = highestAward;
-                         // Map to Badge Keys
-                         if (highestAward.includes("Rowing Coxswain")) key = "Rowing Coxswain";
-                         else if (highestAward.includes("Rowing Supervised Coxswain")) key = "Rowing Supervised Coxswain";
-                         else if (highestAward.includes("Rowing Competent Crew")) key = "Rowing Competent Crew";
-                         else if (highestAward.includes("Rowing Instructor")) key = "Rowing Instructor";
-                         else if (highestAward.includes("Explore Award")) key = "Paddle Explore Award";
-                         else if (highestAward.includes("Discover Award")) key = "Paddle Discover Award";
-                         else if (highestAward.includes("Paddlesport Instructor")) key = "Paddlesport Instructor";
-                         else if (highestAward.includes("Dinghy Instructor")) key = "Dinghy Instructor";
-                         else if (highestAward.includes("Stage 4") && category === "Sailing") key = "Sailing Stage 4 / Level 3";
-                         else if (highestAward.includes("Stage 3") && category === "Sailing") key = "Sailing Stage 3 / Level 2";
-                         else if (highestAward.includes("Stage 2") && category === "Sailing") key = "Sailing Stage 2 / Level 1";
-                         else if (highestAward.includes("Spinnakers")) key = "Sailing with Spinnakers";
-                         else if (highestAward.includes("Seamanship Skills")) key = "Seamanship Skills";
-                         else if (highestAward.includes("Start Racing")) key = "Start Racing";
-                         else if (highestAward.includes("Performance Sailing")) key = "Performance Sailing";
-                         else if (highestAward.includes("Day Sailing")) key = "Day Sailing";
-                         else if (highestAward.includes("Start Windsurfing Instructor")) key = "Windsurfing Instructor";
-                         else if (highestAward.includes("Stage 4") && category === "Windsurfing") key = "Windsurfing Stage 4";
-                         else if (highestAward.includes("Stage 3") && category === "Windsurfing") key = "Windsurfing Stage 3";
-                         else if (highestAward.includes("Stage 2") && category === "Windsurfing") key = "Windsurfing Stage 2";
-                         else if (highestAward.includes("Stage 1") && category === "Windsurfing") key = "Windsurfing Stage 1";
-                         else if (highestAward.includes("Powerboat Instructor")) key = "Powerboat Instructor";
-                         else if (highestAward.includes("Powerboat Level 2")) key = "RYA Powerboat Level 2";
-                         else if (highestAward.includes("Powerboat Level 1")) key = "RYA Powerboat Level 1";
-                         else if (highestAward.includes("Power Watch Leader")) key = "Offshore Power Watch Leader";
-                         else if (highestAward.includes("Power Seaman")) key = "Offshore Power Seaman";
-                         else if (highestAward.includes("Power Grade 2")) key = "Offshore Power Grade 2";
-                         else if (highestAward.includes("Power Grade 1")) key = "Offshore Power Grade 1";
-                         else if (highestAward.includes("Sail Watch Leader")) key = "Offshore Sailing Watch Leader";
-                         else if (highestAward.includes("Sail Seaman")) key = "Offshore Sailing Seaman";
-                         else if (highestAward.includes("Sail Grade 2")) key = "Offshore Sailing Grade 2";
-                         else if (highestAward.includes("Sail Grade 1")) key = "Offshore Sailing Grade 1";
-                         else if (highestAward.includes("Master Coxswain")) key = "Master Coxswain";
-                         else if (highestAward === "Coxswain Award" || highestAward === "SCC Row Coxswain Module") key = "Cadet Coxswain";
-
-                        const qualRecord = cadetQuals.find(q => q.module.includes(highestAward));
-
-                        awardedWaterborne.push({ name: highestAward, key: key, date: qualRecord ? qualRecord.date : null });
-                    }
-                    
-                    if (category === "Powerboat" && safetyBoatHeld) {
-                         if (!awardedWaterborne.some(wb => wb.name.includes("Safety Boat"))) {
-                             const sbQual = cadetQuals.find(q => q.module.includes("Safety Boat"));
-                             awardedWaterborne.push({ name: "RYA Safety Boat", key: "RYA Safety Boat", date: sbQual ? sbQual.date : null });
-                         }
-                    }
-                });
-
-                return awardedWaterborne;
-            }, [qualifications, junior?.pNumber]);
-
             const handleModuleSubmit = () => {
                 if (!moduleCode.trim()) {
                     alert("Please enter a module code");
@@ -5185,9 +4780,6 @@
                 if (saveJuniorData(updatedData)) {
                     setShowSuccess(true);
                     setModuleCode('');
-                    // Save current state before reload
-                    localStorage.setItem('scc_temp_view', 'juniors');
-                    localStorage.setItem('scc_temp_junior', junior.pNumber);
                     setTimeout(() => {
                         setShowSuccess(false);
                         window.location.reload(); // Refresh to show new data
@@ -5197,82 +4789,24 @@
                 }
             };
             
-            const handleModuleDelete = (moduleToDelete) => {
-                const confirmMsg = `Delete ${moduleToDelete.section.toUpperCase()} ${moduleToDelete.moduleCode} (completed ${formatDate(moduleToDelete.dateCompleted)})?\n\nThis cannot be undone.`;
-                
-                if (!confirm(confirmMsg)) {
-                    return; // User cancelled
-                }
-                
-                // Filter out the specific module entry
-                const updatedCompletions = juniorData.moduleCompletions.filter(m => {
-                    // Match by pNumber, section, moduleCode, and date to ensure we delete the exact entry
-                    return !(
-                        m.pNumber === moduleToDelete.pNumber &&
-                        m.section === moduleToDelete.section &&
-                        m.moduleCode === moduleToDelete.moduleCode &&
-                        m.dateCompleted === moduleToDelete.dateCompleted
-                    );
-                });
-                
-                const updatedData = {
-                    ...juniorData,
-                    moduleCompletions: updatedCompletions
-                };
-                
-                if (saveJuniorData(updatedData)) {
-                    // Save current state before reload
-                    localStorage.setItem('scc_temp_view', 'juniors');
-                    localStorage.setItem('scc_temp_junior', junior.pNumber);
-                    window.location.reload(); // Refresh to show updated data
-                } else {
-                    alert("Error deleting module");
-                }
-            };
-            
             return (
                 <div className="space-y-6">
                     {/* Junior Info Card */}
                     <div className="bg-white rounded-lg shadow p-6">
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div>
-                                <p className="text-sm text-slate-600 mb-2">Name</p>
-                                <p className="font-bold text-lg mb-3">{junior.name}</p>
-                                
-                                {/* Rank Badge Display */}
-                                <div className="mt-2 pt-2 border-t border-slate-200">
-                                    <p className="text-xs text-slate-500 font-semibold mb-2">Current Rank</p>
-                                    <div className="flex items-center gap-3">
-                                        {rankImages || currentRank === "Able Junior Cadet" ? (
-                                            <>
-                                                {currentRank === "Able Junior Cadet" || rankImages?.count === 2 ? (
-                                                    <div className="flex gap-1">
-                                                        <img src="media/scc_junior_star.webp" className="h-10 w-auto object-contain shadow-sm" alt="Rank Star 1" onError={(e) => e.target.style.display = 'none'} />
-                                                        <img src="media/scc_junior_star.webp" className="h-10 w-auto object-contain shadow-sm" alt="Rank Star 2" onError={(e) => e.target.style.display = 'none'} />
-                                                    </div>
-                                                ) : (
-                                                    <>
-                                                        {rankImages?.sleeve && <img src={`media/${rankImages.sleeve}`} className="h-10 w-auto object-contain shadow-sm" alt="Sleeve Rank" title="Sleeve Badge" onError={(e) => e.target.style.display = 'none'} />}
-                                                    </>
-                                                )}
-                                            </>
-                                        ) : (
-                                            <div className="h-10 w-10 bg-slate-200 rounded-full flex items-center justify-center text-slate-400">
-                                                <Icon name="Shield" className="w-5 h-5"/>
-                                            </div>
-                                        )}
-                                        <p className="font-bold text-purple-700 leading-tight">{currentRank}</p>
-                                    </div>
-                                </div>
+                                <p className="text-sm text-slate-600">Name</p>
+                                <p className="font-bold text-lg">{junior.name}</p>
                             </div>
                             <div>
-                                <p className="text-sm text-slate-600 mb-2">Next Rank</p>
-                                <p className="text-lg font-bold text-blue-600 mb-2">{nextRank}</p>
-                                <div className="bg-slate-50 p-3 rounded border border-slate-200">
-                                    <p className="text-xs text-slate-500 font-semibold mb-2">Requirements:</p>
-                                    <ul className="text-xs text-slate-600 space-y-1">
+                                <p className="text-sm text-slate-600">Current Rank</p>
+                                <p className="font-bold text-2xl text-blue-700">{currentRank}</p>
+                                <div className="mt-2 pt-2 border-t border-slate-200">
+                                    <p className="text-xs text-slate-500 font-semibold">Next Rank</p>
+                                    <p className="text-sm font-semibold text-purple-600">{nextRank}</p>
+                                    <ul className="mt-1 text-xs text-slate-600 space-y-0.5">
                                         {requirements.map((req, idx) => (
-                                            <li key={idx}>• {req}</li>
+                                            <li key={idx}>â€¢ {req}</li>
                                         ))}
                                     </ul>
                                 </div>
@@ -5294,15 +4828,9 @@
                                 <div className="w-full bg-red-200 rounded-full h-2 mt-2">
                                     <div className="bg-red-600 h-2 rounded-full" style={{width: `${Math.min((redModules/15)*100, 100)}%`}}></div>
                                 </div>
-                                {(() => {
-                                    const redAward = qualifications?.find(q => q.pNumber === junior.pNumber && q.module.includes("JSC Red Unit Activities Badge"));
-                                    if (redAward) {
-                                        return <p className="text-xs font-bold text-green-900 mt-2 bg-green-100 py-1 px-2 rounded">Awarded on {formatDate(redAward.date)}</p>;
-                                    } else if (redModules >= 15) {
-                                        return <p className="text-xs font-bold text-red-900 mt-2 bg-red-100 py-1 px-2 rounded">AWARD DUE</p>;
-                                    }
-                                    return null;
-                                })()}
+                                {redModules >= 15 && !qualifications?.some(q => q.pNumber === junior.pNumber && q.module.includes("JSC Red Unit Activities Badge")) && (
+                                    <p className="text-xs font-bold text-red-900 mt-2 bg-red-100 py-1 px-2 rounded">AWARD DUE</p>
+                                )}
                             </div>
                             <div className="text-center p-4 bg-blue-50 rounded-lg border-2 border-blue-200">
                                 <p className="text-sm font-semibold text-blue-800">Blue - Waterborne</p>
@@ -5310,15 +4838,9 @@
                                 <div className="w-full bg-blue-200 rounded-full h-2 mt-2">
                                     <div className="bg-blue-600 h-2 rounded-full" style={{width: `${Math.min((blueModules/15)*100, 100)}%`}}></div>
                                 </div>
-                                {(() => {
-                                    const blueAward = qualifications?.find(q => q.pNumber === junior.pNumber && q.module.includes("JSC Blue Waterborne Activities Badge"));
-                                    if (blueAward) {
-                                        return <p className="text-xs font-bold text-green-900 mt-2 bg-green-100 py-1 px-2 rounded">Awarded on {formatDate(blueAward.date)}</p>;
-                                    } else if (blueModules >= 15) {
-                                        return <p className="text-xs font-bold text-blue-900 mt-2 bg-blue-100 py-1 px-2 rounded">AWARD DUE</p>;
-                                    }
-                                    return null;
-                                })()}
+                                {blueModules >= 15 && !qualifications?.some(q => q.pNumber === junior.pNumber && q.module.includes("JSC Blue Waterborne Activities Badge")) && (
+                                    <p className="text-xs font-bold text-blue-900 mt-2 bg-blue-100 py-1 px-2 rounded">AWARD DUE</p>
+                                )}
                             </div>
                             <div className="text-center p-4 bg-green-50 rounded-lg border-2 border-green-200">
                                 <p className="text-sm font-semibold text-green-800">Green - Outdoor</p>
@@ -5326,15 +4848,9 @@
                                 <div className="w-full bg-green-200 rounded-full h-2 mt-2">
                                     <div className="bg-green-600 h-2 rounded-full" style={{width: `${Math.min((greenModules/15)*100, 100)}%`}}></div>
                                 </div>
-                                {(() => {
-                                    const greenAward = qualifications?.find(q => q.pNumber === junior.pNumber && q.module.includes("JSC Green Outdoor & Recreation Activities Badge"));
-                                    if (greenAward) {
-                                        return <p className="text-xs font-bold text-green-900 mt-2 bg-green-100 py-1 px-2 rounded">Awarded on {formatDate(greenAward.date)}</p>;
-                                    } else if (greenModules >= 15) {
-                                        return <p className="text-xs font-bold text-green-900 mt-2 bg-green-100 py-1 px-2 rounded">AWARD DUE</p>;
-                                    }
-                                    return null;
-                                })()}
+                                {greenModules >= 15 && !qualifications?.some(q => q.pNumber === junior.pNumber && q.module.includes("JSC Green Outdoor & Recreation Activities Badge")) && (
+                                    <p className="text-xs font-bold text-green-900 mt-2 bg-green-100 py-1 px-2 rounded">AWARD DUE</p>
+                                )}
                             </div>
                             <div className="text-center p-4 bg-yellow-50 rounded-lg border-2 border-yellow-200">
                                 <p className="text-sm font-semibold text-yellow-800">Yellow - Community</p>
@@ -5342,15 +4858,9 @@
                                 <div className="w-full bg-yellow-200 rounded-full h-2 mt-2">
                                     <div className="bg-yellow-600 h-2 rounded-full" style={{width: `${Math.min((yellowModules/15)*100, 100)}%`}}></div>
                                 </div>
-                                {(() => {
-                                    const yellowAward = qualifications?.find(q => q.pNumber === junior.pNumber && q.module.includes("JSC Yellow Community & Citizenship Activities Badge"));
-                                    if (yellowAward) {
-                                        return <p className="text-xs font-bold text-green-900 mt-2 bg-green-100 py-1 px-2 rounded">Awarded on {formatDate(yellowAward.date)}</p>;
-                                    } else if (yellowModules >= 15) {
-                                        return <p className="text-xs font-bold text-yellow-900 mt-2 bg-yellow-100 py-1 px-2 rounded">AWARD DUE</p>;
-                                    }
-                                    return null;
-                                })()}
+                                {yellowModules >= 15 && !qualifications?.some(q => q.pNumber === junior.pNumber && q.module.includes("JSC Yellow Community & Citizenship Activities Badge")) && (
+                                    <p className="text-xs font-bold text-yellow-900 mt-2 bg-yellow-100 py-1 px-2 rounded">AWARD DUE</p>
+                                )}
                             </div>
                             <div className="text-center p-4 bg-purple-50 rounded-lg border-2 border-purple-200">
                                 <p className="text-sm font-semibold text-purple-800">STEM</p>
@@ -5358,76 +4868,31 @@
                                 <div className="w-full bg-purple-200 rounded-full h-2 mt-2">
                                     <div className="bg-purple-600 h-2 rounded-full" style={{width: `${Math.min((stemModules/15)*100, 100)}%`}}></div>
                                 </div>
-                                {(() => {
-                                    const stemAward = qualifications?.find(q => q.pNumber === junior.pNumber && q.module.includes("JSC STEM Unit Activities Badge"));
-                                    const crestAward = qualifications?.find(q => q.pNumber === junior.pNumber && q.module.includes("JSC Crest Award"));
-                                    
-                                    // STEM Badge (15+ modules)
-                                    if (stemAward && stemModules >= 15) {
-                                        return <p className="text-xs font-bold text-green-900 mt-2 bg-green-100 py-1 px-2 rounded">STEM Awarded on {formatDate(stemAward.date)}</p>;
-                                    } else if (!stemAward && stemModules >= 15) {
-                                        return <p className="text-xs font-bold text-purple-900 mt-2 bg-purple-100 py-1 px-2 rounded">STEM AWARD DUE</p>;
-                                    }
-                                    
-                                    // CREST Award (8+ modules)
-                                    if (crestAward && stemModules >= 8) {
-                                        return <p className="text-xs font-bold text-green-900 mt-2 bg-green-100 py-1 px-2 rounded">CREST Awarded on {formatDate(crestAward.date)}</p>;
-                                    } else if (!crestAward && stemModules >= 8) {
-                                        return <p className="text-xs font-bold text-purple-900 mt-2 bg-purple-100 py-1 px-2 rounded">CREST AWARD DUE</p>;
-                                    }
-                                    
-                                    return null;
-                                })()}
+                                {stemModules >= 15 && !qualifications?.some(q => q.pNumber === junior.pNumber && q.module.includes("JSC STEM Unit Activities Badge")) && (
+                                    <p className="text-xs font-bold text-purple-900 mt-2 bg-purple-100 py-1 px-2 rounded">STEM AWARD DUE</p>
+                                )}
+                                {stemModules >= 8 && stemModules < 15 && !qualifications?.some(q => q.pNumber === junior.pNumber && q.module.includes("JSC Crest Award")) && (
+                                    <p className="text-xs font-bold text-purple-900 mt-2 bg-purple-100 py-1 px-2 rounded">CREST AWARD DUE</p>
+                                )}
+                                {stemModules >= 15 && !qualifications?.some(q => q.pNumber === junior.pNumber && q.module.includes("JSC Crest Award")) && (
+                                    <p className="text-xs font-bold text-purple-900 mt-2 bg-purple-100 py-1 px-2 rounded">CREST AWARD DUE</p>
+                                )}
                             </div>
                         </div>
                         
                         {/* Commodore's Broad Pennant Alert */}
-                        {redModules >= 15 && blueModules >= 15 && greenModules >= 15 && yellowModules >= 15 && (() => {
-                            const broadPennant = qualifications?.find(q => q.pNumber === junior.pNumber && q.module.includes("JSC Commodores Broad Pennant"));
-                            if (broadPennant) {
-                                return (
-                                    <div className="mt-4 p-4 bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-300 rounded-lg">
-                                        <div className="flex items-center gap-3">
-                                            <Icon name="Award" className="w-8 h-8 text-green-600" />
-                                            <div>
-                                                <p className="font-bold text-green-900 text-lg">🎖️ COMMODORE'S BROAD PENNANT</p>
-                                                <p className="text-sm text-green-800">Awarded on {formatDate(broadPennant.date)}</p>
-                                            </div>
-                                        </div>
+                        {redModules >= 15 && blueModules >= 15 && greenModules >= 15 && yellowModules >= 15 && 
+                         !qualifications?.some(q => q.pNumber === junior.pNumber && q.module.includes("JSC Commodores Broad Pennant")) && (
+                            <div className="mt-4 p-4 bg-gradient-to-r from-amber-50 to-yellow-50 border-2 border-amber-300 rounded-lg">
+                                <div className="flex items-center gap-3">
+                                    <Icon name="Award" className="w-8 h-8 text-amber-600" />
+                                    <div>
+                                        <p className="font-bold text-amber-900 text-lg">ðŸŽ–ï¸ COMMODORE'S BROAD PENNANT DUE!</p>
+                                        <p className="text-sm text-amber-800">All four core sections completed (RED, BLUE, GREEN, YELLOW)</p>
                                     </div>
-                                );
-                            } else {
-                                return (
-                                    <div className="mt-4 p-4 bg-gradient-to-r from-amber-50 to-yellow-50 border-2 border-amber-300 rounded-lg">
-                                        <div className="flex items-center gap-3">
-                                            <Icon name="Award" className="w-8 h-8 text-amber-600" />
-                                            <div>
-                                                <p className="font-bold text-amber-900 text-lg">🎖️ COMMODORE'S BROAD PENNANT DUE!</p>
-                                                <p className="text-sm text-amber-800">All four core sections completed (RED, BLUE, GREEN, YELLOW)</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                );
-                            }
-                        })()}
-                    </div>
-                    
-                    {/* Junior Proficiencies */}
-                    <div className="bg-white rounded-lg shadow p-6">
-                        <h3 className="text-xl font-bold mb-4 flex items-center gap-2"><Icon name="Award" className="w-5 h-5 text-purple-600"/> Junior Proficiencies</h3>
-                        
-                        <div className="flex gap-4 overflow-x-auto pb-4">
-                            {juniorWaterborne.map((wb, idx) => (
-                                <div key={idx} className="flex-shrink-0 flex flex-col items-center justify-center bg-slate-50 border border-slate-200 rounded-lg p-3 min-w-[120px] text-center">
-                                    <div className="h-24 flex items-center justify-center mb-2">
-                                        <BadgeImage name={wb.key} className="h-24 w-auto object-contain" fallbackIcon="Award"/>
-                                    </div>
-                                    <p className="text-xs font-bold text-slate-700 leading-tight">{wb.name}</p>
-                                    <p className="text-[10px] text-slate-500 mt-1">{formatDate(wb.date)}</p>
                                 </div>
-                            ))}
-                            {juniorWaterborne.length === 0 && <div className="w-full text-center py-4 text-slate-400 italic bg-slate-50 rounded border border-dashed">No waterborne proficiencies found for this junior.</div>}
-                        </div>
+                            </div>
+                        )}
                     </div>
                     
                     {/* Add Module Completion */}
@@ -5478,7 +4943,7 @@
                         </div>
                         {showSuccess && (
                             <div className="mt-4 p-3 bg-green-50 border-l-4 border-green-500 text-green-700">
-                                ✓ Module added successfully!
+                                âœ“ Module added successfully!
                             </div>
                         )}
                     </div>
@@ -5491,7 +4956,7 @@
                         ) : (
                             <div className="space-y-2 max-h-96 overflow-y-auto">
                                 {juniorModules.map((mod, idx) => (
-                                    <div key={idx} className="flex justify-between items-center p-3 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors">
+                                    <div key={idx} className="flex justify-between items-center p-3 bg-slate-50 rounded-lg">
                                         <div>
                                             <span className={`inline-block px-2 py-1 rounded text-xs font-semibold mr-2 ${
                                                 mod.section === 'red' ? 'bg-red-100 text-red-800' :
@@ -5504,77 +4969,11 @@
                                             </span>
                                             <span className="text-slate-700">{mod.moduleName}</span>
                                         </div>
-                                        <div className="flex items-center gap-2">
-                                            <span className="text-sm text-slate-500">{formatDate(mod.dateCompleted)}</span>
-                                            <button
-                                                onClick={() => handleModuleDelete(mod)}
-                                                className="p-1.5 text-red-600 hover:bg-red-50 rounded transition-colors"
-                                                title="Delete this module"
-                                            >
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                                    <path d="M3 6h18"></path>
-                                                    <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
-                                                    <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
-                                                    <line x1="10" x2="10" y1="11" y2="17"></line>
-                                                    <line x1="14" x2="14" y1="11" y2="17"></line>
-                                                </svg>
-                                            </button>
-                                        </div>
+                                        <span className="text-sm text-slate-500">{formatDate(mod.dateCompleted)}</span>
                                     </div>
                                 ))}
                             </div>
                         )}
-                    </div>
-                    
-                    {/* Other Awards from CSV */}
-                    <div className="bg-white rounded-lg shadow p-6">
-                        <h3 className="text-xl font-bold mb-4 flex items-center gap-2"><Icon name="Award" className="w-5 h-5 text-amber-600"/> Other Awards</h3>
-                        {(() => {
-                            const cadetQuals = qualifications.filter(q => q.pNumber === junior.pNumber && q.module);
-                            const awards = [];
-                            
-                            // Check for section badges
-                            if (cadetQuals.some(q => q.module.includes("JSC Red Unit Activities Badge"))) {
-                                const award = cadetQuals.find(q => q.module.includes("JSC Red Unit Activities Badge"));
-                                awards.push({ name: "JSC Red - Unit Activities", key: "SCC - JSC Red Unit Activities Badge", date: award.date });
-                            }
-                            if (cadetQuals.some(q => q.module.includes("JSC Blue Waterborne Activities Badge"))) {
-                                const award = cadetQuals.find(q => q.module.includes("JSC Blue Waterborne Activities Badge"));
-                                awards.push({ name: "JSC Blue - Waterborne", key: "SCC - JSC Blue Waterborne Activities Badge", date: award.date });
-                            }
-                            if (cadetQuals.some(q => q.module.includes("JSC Green Outdoor & Recreation Activities Badge"))) {
-                                const award = cadetQuals.find(q => q.module.includes("JSC Green Outdoor"));
-                                awards.push({ name: "JSC Green - Outdoor", key: "SCC - JSC Green Outdoor & Recreation Activities Badge", date: award.date });
-                            }
-                            if (cadetQuals.some(q => q.module.includes("JSC Yellow Community & Citizenship Activities Badge"))) {
-                                const award = cadetQuals.find(q => q.module.includes("JSC Yellow Community"));
-                                awards.push({ name: "JSC Yellow - Community", key: "SCC - JSC Yellow Community & Citizenship Activities Badge", date: award.date });
-                            }
-                            if (cadetQuals.some(q => q.module.includes("JSC STEM Unit Activities Badge"))) {
-                                const award = cadetQuals.find(q => q.module.includes("JSC STEM Unit Activities Badge"));
-                                awards.push({ name: "JSC STEM Award", key: "SCC - JSC STEM Unit Activities Badge", date: award.date });
-                            }
-                            if (cadetQuals.some(q => q.module.includes("JSC Commodores Broad Pennant"))) {
-                                const award = cadetQuals.find(q => q.module.includes("JSC Commodores Broad Pennant"));
-                                awards.push({ name: "JSC Commodores Broad Pennant", key: "SCC - JSC Commodores Broad Pennant", date: award.date });
-                            }
-                            
-                            return awards.length === 0 ? (
-                                <p className="text-slate-500 italic">No awards found in qualifications CSV yet.</p>
-                            ) : (
-                                <div className="flex gap-4 overflow-x-auto pb-4">
-                                    {awards.map((award, idx) => (
-                                        <div key={idx} className="flex-shrink-0 flex flex-col items-center justify-center bg-slate-50 border border-slate-200 rounded-lg p-3 min-w-[120px] text-center">
-                                            <div className="h-24 flex items-center justify-center mb-2">
-                                                <BadgeImage name={award.key} className="h-24 w-auto object-contain" fallbackIcon="Award"/>
-                                            </div>
-                                            <p className="text-xs font-bold text-slate-700 leading-tight">{award.name}</p>
-                                            <p className="text-[10px] text-slate-500 mt-1">{formatDate(award.date)}</p>
-                                        </div>
-                                    ))}
-                                </div>
-                            );
-                        })()}
                     </div>
                     
                 </div>
@@ -5617,14 +5016,8 @@
                             
                             setPersonnelData(parsedP);
                             setQualsData(hydratedQ);
-                            // Check for saved view (from module add/delete), otherwise default to home
-                            const tempView = localStorage.getItem('scc_temp_view');
-                            if (tempView) {
-                                setView(tempView);
-                                localStorage.removeItem('scc_temp_view'); // Clean up
-                            } else {
-                                setView('home');
-                            } 
+                            // Set to 'home' view when data is loaded from storage
+                            setView('home'); 
                         } catch (e) {
                             console.error("Error rehydrating data", e);
                             localStorage.clear();
@@ -5675,28 +5068,10 @@
                  return { percentage: total === 0 ? 100 : Math.round((passed/total)*100) };
             }, [qualsData]);
 
-            // Detect unit capabilities based on personnel data
-            const unitCapabilities = useMemo(() => {
-                if (personnelData.length === 0) return { hasSCC: true, hasRMC: false, hasJSC: false };
-                
-                const hasRMC = personnelData.some(p => 
-                    RMC_RANK_ORDER.includes(p.rank) || 
-                    (p.unit && p.unit.includes('(RMCD)'))
-                );
-                
-                const hasJSC = personnelData.some(p => {
-                    if (!p.dob) return false;
-                    const age = calculateAge(p.dob);
-                    return age !== "Unknown" && age >= 9 && age < 12;
-                });
-                
-                return { hasSCC: true, hasRMC, hasJSC };
-            }, [personnelData]);
-
             const NavItem = ({ id, icon, label }) => (
-                <button onClick={() => setView(id)} className={`flex items-center gap-3 w-full p-2 rounded-lg transition-all ${view === id ? 'bg-blue-800 text-white' : 'text-blue-100 hover:bg-blue-800/50'}`}>
+                <button onClick={() => setView(id)} className={`flex items-center gap-3 w-full p-3 rounded-lg transition-all ${view === id ? 'bg-blue-800 text-white' : 'text-blue-100 hover:bg-blue-800/50'}`}>
                     <Icon name={icon} className="w-5 h-5" />
-                    {!sidebarCollapsed && <span className="text-sm">{label}</span>}
+                    {!sidebarCollapsed && <span>{label}</span>}
                 </button>
             );
 
@@ -5721,30 +5096,30 @@
                 <ErrorBoundary>
                     <div className="min-h-screen bg-slate-100 flex font-sans text-slate-900">
                         <aside className={`${sidebarCollapsed ? 'w-20' : 'w-80'} bg-blue-900 text-white flex flex-col shadow-2xl fixed h-full z-10 transition-all duration-300`}>
-                            <div className="p-4 border-b border-blue-800 flex flex-col items-center relative">
+                            <div className="p-6 border-b border-blue-800 flex flex-col items-center relative">
                                 {!sidebarCollapsed && (
-                                    <div className="flex flex-col items-center mb-1 w-full">
-                                        <img src="media/ts_dashboard.webp" alt="TS Dashboard" className="object-contain w-[300px] h-auto mb-1" />
-                                        <p className="text-xs text-blue-300 truncate font-semibold text-center w-full">{personnelData.length > 0 ? cleanUnitName(personnelData[0].unit) : 'Unit Dashboard'}</p>
+                                    <div className="flex flex-col items-center mb-2 w-full">
+                                        <img src="media/ts_dashboard.webp" alt="TS Dashboard" className="object-contain w-[300px] h-auto mb-2" />
+                                        <p className="text-xs text-blue-300 truncate font-semibold text-center w-full">{personnelData.length > 0 ? personnelData[0].unit : 'Unit Dashboard'}</p>
                                     </div>
                                 )}
                                 <button onClick={() => setSidebarCollapsed(!sidebarCollapsed)} title="Toggle Sidebar" className={`p-1 hover:bg-blue-800 rounded absolute top-4 right-4 ${sidebarCollapsed ? 'static mt-2' : ''}`}>
                                     <Icon name={sidebarCollapsed ? "ChevronRight" : "ChevronLeft"} className="w-5 h-5"/>
                                 </button>
                             </div>
-                            <nav className="flex-1 p-3 space-y-0.5 overflow-y-auto">
+                            <nav className="flex-1 p-4 space-y-1 overflow-hidden">
                                 <NavItem id="home" icon="Home" label="Home" />
-                                {unitCapabilities.hasJSC && <NavItem id="juniors" icon="Users" label="Junior Focus" />}
-                                {unitCapabilities.hasJSC && <NavItem id="junior_progress" icon="BarChart3" label="Junior Progress" />}
+                                <NavItem id="juniors" icon="Users" label="Junior Focus" />
+                                <NavItem id="junior_progress" icon="BarChart3" label="Junior Progress" />
                                 <NavItem id="cadet_focus" icon="User" label="Cadet Focus" />
-                                {unitCapabilities.hasSCC && <NavItem id="planner" icon="ShipWheel" label="SCC CTP Progress" />}
-                                {unitCapabilities.hasRMC && <NavItem id="rmc_planner" icon="Target" label="RMC CTS Progress" />}
+                                <NavItem id="planner" icon="ShipWheel" label="SCC CTP Progress" />
+                                <NavItem id="rmc_planner" icon="Target" label="RMC CTS Progress" />
                                 <NavItem id="waterborne" icon="Anchor" label="Waterborne" />
                                 <NavItem id="awards" icon="Award" label="Awards" />
                                 <NavItem id="suggestions" icon="ChartGantt" label="Training Plan" />
                                 <NavItem id="data_utilities" icon="Database" label="Data / Utilities" />
                             </nav>
-                            <div className="p-3 border-t border-blue-800">
+                            <div className="p-4 border-t border-blue-800">
                                 {!sidebarCollapsed && (
                                     <div>
                                         <p className="text-[9px] text-blue-500 text-center">v{DATA_VERSION}</p>
@@ -5774,8 +5149,8 @@
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<App />);
         
-        console.log(`RC2.37 loaded successfully! Version: ${DATA_VERSION}`);
-        console.log("RC2.28: Duplicate modules now count only once in progress calculations");
+        console.log(`RC2.7 loaded successfully! Version: ${DATA_VERSION}`);
+        console.log("RC2.7: Home â†’ Cadet Focus â†’ Juniors â†’ Junior Progress (GRID) â†’ CTP â†’ CTS â†’ Waterborne â†’ Awards â†’ Training Plan");
     </script>
 </body>
 </html>

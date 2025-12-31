@@ -100,7 +100,7 @@
         // ============================================================================
         
         // --- 1.1 VERSION ---
-        const DATA_VERSION = "1.0-RC2.45"; // RC2 Complete + UI Improvements + Junior Tracking 
+        const DATA_VERSION = "1.0-RC2.46"; // RC2 Complete + All UI Fixes Applied 
 
         // --- 1.2 BADGE & RANK IMAGE MAPS ---
         const RANK_IMG_MAP = {
@@ -4591,28 +4591,30 @@
                 <div className="space-y-6">
                     {/* Header with Junior Selector */}
                     <div className="bg-white rounded-lg shadow-xl p-6 border-l-4 border-purple-500">
-                        <div className="flex items-center gap-4 mb-4">
-                            <div className="p-3 bg-purple-100 rounded-full">
-                                <Icon name="Users" className="w-8 h-8 text-purple-700" />
+                        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                            <div className="flex items-center gap-4">
+                                <div className="p-3 bg-purple-100 rounded-full">
+                                    <Icon name="Users" className="w-8 h-8 text-purple-700" />
+                                </div>
+                                <div>
+                                    <h1 className="text-3xl font-extrabold text-slate-900">Junior Focus</h1>
+                                    <p className="text-slate-600">{juniors.length} junior{juniors.length !== 1 ? 's' : ''} (ages 9-11)</p>
+                                </div>
                             </div>
-                            <div className="flex-1">
-                                <h1 className="text-3xl font-extrabold text-slate-900">Junior Focus</h1>
-                                <p className="text-slate-600">{juniors.length} junior{juniors.length !== 1 ? 's' : ''} (ages 9-11)</p>
+                            <div className="w-full md:w-64">
+                                <label className="block text-xs font-semibold text-slate-500 uppercase mb-1">Select Junior</label>
+                                <select 
+                                    value={selectedJuniorPNum}
+                                    onChange={(e) => setSelectedJuniorPNum(e.target.value)}
+                                    className="w-full p-2 border border-slate-300 rounded-md text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                                >
+                                    {juniors.map(junior => (
+                                        <option key={junior.pNumber} value={junior.pNumber}>
+                                            {junior.name} - {junior.rank} (Age: {calculateAge(junior.dob)})
+                                        </option>
+                                    ))}
+                                </select>
                             </div>
-                        </div>
-                        <div>
-                            <label className="block text-sm font-semibold text-slate-700 mb-2">Select Junior</label>
-                            <select 
-                                value={selectedJuniorPNum}
-                                onChange={(e) => setSelectedJuniorPNum(e.target.value)}
-                                className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                            >
-                                {juniors.map(junior => (
-                                    <option key={junior.pNumber} value={junior.pNumber}>
-                                        {junior.name} - {junior.rank} (Age: {calculateAge(junior.dob)})
-                                    </option>
-                                ))}
-                            </select>
                         </div>
                     </div>
                     
@@ -4838,36 +4840,43 @@
                     <div className="bg-white rounded-lg shadow p-6">
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div>
-                                <p className="text-sm text-slate-600">Name</p>
-                                <p className="font-bold text-lg">{junior.name}</p>
-                            </div>
-                            <div>
-                                <p className="text-sm text-slate-600 mb-2">Current Rank</p>
-                                <div className="flex items-center gap-3">
-                                    {RANK_IMG_MAP[currentRank] ? (
-                                        currentRank === "Able Junior Cadet" || RANK_IMG_MAP[currentRank]?.count === 2 ? (
-                                            <div className="flex gap-1">
-                                                <img src="media/scc_junior_star.webp" className="h-12 w-auto object-contain shadow-sm" alt="Rank Star 1" onError={(e) => e.target.style.display = 'none'} />
-                                                <img src="media/scc_junior_star.webp" className="h-12 w-auto object-contain shadow-sm" alt="Rank Star 2" onError={(e) => e.target.style.display = 'none'} />
-                                            </div>
+                                <p className="text-sm text-slate-600 mb-2">Name</p>
+                                <p className="font-bold text-lg mb-3">{junior.name}</p>
+                                
+                                {/* Rank Badge Display */}
+                                <div className="mt-2 pt-2 border-t border-slate-200">
+                                    <p className="text-xs text-slate-500 font-semibold mb-2">Current Rank</p>
+                                    <div className="flex items-center gap-3">
+                                        {RANK_IMG_MAP[currentRank] || currentRank === "Able Junior Cadet" ? (
+                                            <>
+                                                {currentRank === "Able Junior Cadet" || RANK_IMG_MAP[currentRank]?.count === 2 ? (
+                                                    <div className="flex gap-1">
+                                                        <img src="media/scc_junior_star.webp" className="h-10 w-auto object-contain shadow-sm" alt="Rank Star 1" onError={(e) => e.target.style.display = 'none'} />
+                                                        <img src="media/scc_junior_star.webp" className="h-10 w-auto object-contain shadow-sm" alt="Rank Star 2" onError={(e) => e.target.style.display = 'none'} />
+                                                    </div>
+                                                ) : (
+                                                    <>
+                                                        {RANK_IMG_MAP[currentRank]?.sleeve && <img src={`media/${RANK_IMG_MAP[currentRank].sleeve}`} className="h-10 w-auto object-contain shadow-sm" alt="Sleeve Rank" title="Sleeve Badge" onError={(e) => e.target.style.display = 'none'} />}
+                                                    </>
+                                                )}
+                                            </>
                                         ) : (
-                                            RANK_IMG_MAP[currentRank]?.sleeve && <img src={`media/${RANK_IMG_MAP[currentRank].sleeve}`} className="h-12 w-auto object-contain shadow-sm" alt="Rank Badge" onError={(e) => e.target.style.display = 'none'} />
-                                        )
-                                    ) : (
-                                        <div className="h-12 w-12 bg-purple-100 rounded-full flex items-center justify-center text-purple-600">
-                                            <Icon name="Shield" className="w-6 h-6"/>
-                                        </div>
-                                    )}
-                                    <div>
-                                        <p className="font-bold text-2xl text-blue-700 leading-tight">{currentRank}</p>
+                                            <div className="h-10 w-10 bg-slate-200 rounded-full flex items-center justify-center text-slate-400">
+                                                <Icon name="Shield" className="w-5 h-5"/>
+                                            </div>
+                                        )}
+                                        <p className="font-bold text-purple-700 leading-tight">{currentRank}</p>
                                     </div>
                                 </div>
-                                <div className="mt-2 pt-2 border-t border-slate-200">
-                                    <p className="text-xs text-slate-500 font-semibold">Next Rank</p>
-                                    <p className="text-sm font-semibold text-purple-600">{nextRank}</p>
-                                    <ul className="mt-1 text-xs text-slate-600 space-y-0.5">
+                            </div>
+                            <div>
+                                <p className="text-sm text-slate-600 mb-2">Next Rank</p>
+                                <p className="text-lg font-bold text-blue-600 mb-2">{nextRank}</p>
+                                <div className="bg-slate-50 p-3 rounded border border-slate-200">
+                                    <p className="text-xs text-slate-500 font-semibold mb-2">Requirements:</p>
+                                    <ul className="text-xs text-slate-600 space-y-1">
                                         {requirements.map((req, idx) => (
-                                            <li key={idx}>â€¢ {req}</li>
+                                            <li key={idx}>• {req}</li>
                                         ))}
                                     </ul>
                                 </div>
@@ -4956,6 +4965,62 @@
                         )}
                     </div>
                     
+                    {/* Junior Proficiencies */}
+                    <div className="bg-white rounded-lg shadow p-6">
+                        <h3 className="text-xl font-bold mb-4 flex items-center gap-2"><Icon name="Award" className="w-5 h-5 text-purple-600"/> Junior Proficiencies</h3>
+                        {(() => {
+                            const cadetQuals = qualifications.filter(q => q.pNumber === junior.pNumber && q.module);
+                            const awardedWaterborne = [];
+                            
+                            const swimQual = cadetQuals.find(q => {
+                                const m = q.module.toLowerCase();
+                                return m.includes("swim test") || m.includes("swimming test") || m.includes("water safety");
+                            });
+
+                            if (swimQual) {
+                                awardedWaterborne.push({ name: "Swim Test / Water Safety", key: "Swim Test", date: swimQual.date });
+                            } else {
+                                awardedWaterborne.push({ name: "Swim Test Required", key: "No Swim Test", date: null });
+                            }
+
+                            // Check for waterborne profs
+                            const profNames = [
+                                { search: ["Rowing Coxswain", "Row 3"], key: "Rowing Coxswain" },
+                                { search: ["Paddle Explore"], key: "Paddle Explore Award" },
+                                { search: ["Paddle Discover"], key: "Paddle Discover Award" },
+                                { search: ["YSS Stage 2", "Sail - RYA YSS Stage 2"], key: "Sailing Stage 2 / Level 1" },
+                                { search: ["YSS Stage 3"], key: "Sailing Stage 3 / Level 2" },
+                                { search: ["YSS Stage 4"], key: "Sailing Stage 4 / Level 3" },
+                                { search: ["Powerboat Level 1"], key: "RYA Powerboat Level 1" },
+                                { search: ["Powerboat Level 2"], key: "RYA Powerboat Level 2" },
+                                { search: ["Go Row 2"], key: "Rowing Competent Crew" }
+                            ];
+
+                            profNames.forEach(prof => {
+                                const found = cadetQuals.find(q => prof.search.some(s => q.module.includes(s)));
+                                if (found) {
+                                    awardedWaterborne.push({ name: found.module, key: prof.key, date: found.date });
+                                }
+                            });
+
+                            return awardedWaterborne.length === 0 ? (
+                                <div className="w-full text-center py-4 text-slate-400 italic bg-slate-50 rounded border border-dashed">No waterborne proficiencies found for this junior.</div>
+                            ) : (
+                                <div className="flex gap-4 overflow-x-auto pb-4">
+                                    {awardedWaterborne.map((wb, idx) => (
+                                        <div key={idx} className="flex-shrink-0 flex flex-col items-center justify-center bg-slate-50 border border-slate-200 rounded-lg p-3 min-w-[120px] text-center">
+                                            <div className="h-24 flex items-center justify-center mb-2">
+                                                <BadgeImage name={wb.key} className="h-24 w-auto object-contain" fallbackIcon="Award"/>
+                                            </div>
+                                            <p className="text-xs font-bold text-slate-700 leading-tight">{wb.name}</p>
+                                            <p className="text-[10px] text-slate-500 mt-1">{formatDate(wb.date)}</p>
+                                        </div>
+                                    ))}
+                                </div>
+                            );
+                        })()}
+                    </div>
+                    
                     {/* Add Module Completion */}
                     <div className="bg-white rounded-lg shadow p-6">
                         <h3 className="text-xl font-bold mb-4">Add Module Completion</h3>
@@ -5035,6 +5100,57 @@
                                 ))}
                             </div>
                         )}
+                    </div>
+                    
+                    {/* Other Awards from CSV */}
+                    <div className="bg-white rounded-lg shadow p-6">
+                        <h3 className="text-xl font-bold mb-4 flex items-center gap-2"><Icon name="Award" className="w-5 h-5 text-amber-600"/> Other Awards</h3>
+                        {(() => {
+                            const cadetQuals = qualifications.filter(q => q.pNumber === junior.pNumber && q.module);
+                            const awards = [];
+                            
+                            // Check for section badges
+                            if (cadetQuals.some(q => q.module.includes("JSC Red Unit Activities Badge"))) {
+                                const award = cadetQuals.find(q => q.module.includes("JSC Red Unit Activities Badge"));
+                                awards.push({ name: "JSC Red - Unit Activities", key: "SCC - JSC Red Unit Activities Badge", date: award.date });
+                            }
+                            if (cadetQuals.some(q => q.module.includes("JSC Blue Waterborne Activities Badge"))) {
+                                const award = cadetQuals.find(q => q.module.includes("JSC Blue Waterborne Activities Badge"));
+                                awards.push({ name: "JSC Blue - Waterborne", key: "SCC - JSC Blue Waterborne Activities Badge", date: award.date });
+                            }
+                            if (cadetQuals.some(q => q.module.includes("JSC Green Outdoor & Recreation Activities Badge"))) {
+                                const award = cadetQuals.find(q => q.module.includes("JSC Green Outdoor"));
+                                awards.push({ name: "JSC Green - Outdoor", key: "SCC - JSC Green Outdoor & Recreation Activities Badge", date: award.date });
+                            }
+                            if (cadetQuals.some(q => q.module.includes("JSC Yellow Community & Citizenship Activities Badge"))) {
+                                const award = cadetQuals.find(q => q.module.includes("JSC Yellow Community"));
+                                awards.push({ name: "JSC Yellow - Community", key: "SCC - JSC Yellow Community & Citizenship Activities Badge", date: award.date });
+                            }
+                            if (cadetQuals.some(q => q.module.includes("JSC STEM Unit Activities Badge"))) {
+                                const award = cadetQuals.find(q => q.module.includes("JSC STEM Unit Activities Badge"));
+                                awards.push({ name: "JSC STEM Award", key: "SCC - JSC STEM Unit Activities Badge", date: award.date });
+                            }
+                            if (cadetQuals.some(q => q.module.includes("JSC Commodores Broad Pennant"))) {
+                                const award = cadetQuals.find(q => q.module.includes("JSC Commodores Broad Pennant"));
+                                awards.push({ name: "JSC Commodores Broad Pennant", key: "SCC - JSC Commodores Broad Pennant", date: award.date });
+                            }
+                            
+                            return awards.length === 0 ? (
+                                <p className="text-slate-500 italic">No awards found in qualifications CSV yet.</p>
+                            ) : (
+                                <div className="flex gap-4 overflow-x-auto pb-4">
+                                    {awards.map((award, idx) => (
+                                        <div key={idx} className="flex-shrink-0 flex flex-col items-center justify-center bg-slate-50 border border-slate-200 rounded-lg p-3 min-w-[120px] text-center">
+                                            <div className="h-24 flex items-center justify-center mb-2">
+                                                <BadgeImage name={award.key} className="h-24 w-auto object-contain" fallbackIcon="Award"/>
+                                            </div>
+                                            <p className="text-xs font-bold text-slate-700 leading-tight">{award.name}</p>
+                                            <p className="text-[10px] text-slate-500 mt-1">{formatDate(award.date)}</p>
+                                        </div>
+                                    ))}
+                                </div>
+                            );
+                        })()}
                     </div>
                     
                 </div>

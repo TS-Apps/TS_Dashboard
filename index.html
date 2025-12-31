@@ -100,7 +100,7 @@
         // ============================================================================
         
         // --- 1.1 VERSION ---
-        const DATA_VERSION = "1.0-RC2.35"; // Junior Proficiencies + Other Awards 
+        const DATA_VERSION = "1.0-RC2.36"; // Fixed DD/MM/YYYY date parsing 
 
         // --- 1.2 BADGE & RANK IMAGE MAPS ---
         const RANK_IMG_MAP = {
@@ -1475,9 +1475,8 @@
 
         const parseDate = (dateStr) => {
             if (!dateStr) return null;
-            let d = new Date(dateStr);
-            if (!isNaN(d.getTime())) return d;
             
+            // Parse DD/MM/YYYY or DD-MM-YYYY format (UK/International standard)
             const parts = dateStr.split(/[\/\-\s]/);
             if (parts.length === 3) {
                 const day = parseInt(parts[0]);
@@ -1490,10 +1489,17 @@
                 }
                 
                 if (!isNaN(day) && !isNaN(month) && !isNaN(year) && month >= 0) {
-                    d = new Date(year, month, day);
+                    const d = new Date(year, month, day);
                     if (!isNaN(d.getTime())) return d;
                 }
             }
+            
+            // Fallback for ISO format (YYYY-MM-DD) - used internally by the app
+            if (dateStr.includes('-') && dateStr.length === 10 && dateStr.charAt(4) === '-') {
+                const d = new Date(dateStr);
+                if (!isNaN(d.getTime())) return d;
+            }
+            
             return null;
         };
 
@@ -5738,7 +5744,7 @@
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<App />);
         
-        console.log(`RC2.35 loaded successfully! Version: ${DATA_VERSION}`);
+        console.log(`RC2.36 loaded successfully! Version: ${DATA_VERSION}`);
         console.log("RC2.28: Duplicate modules now count only once in progress calculations");
     </script>
 </body>

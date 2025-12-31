@@ -4,6 +4,10 @@
  * Used for both SCC CTP and RMC CTS progress views
  */
 
+
+// Destructure React hooks
+const { useState, useEffect, useMemo, useCallback } = React;
+
         window.TrainingPlanner = ({ personnel, getCadetProgress, qualsData, title, rankOrder, syllabus, colorTheme = "indigo", iconName, onModuleClick }) => {
             const [selectedRank, setSelectedRank] = useState(rankOrder[0]);
             const cadetsAtRank = useMemo(() => personnel.filter(p => p.rank === selectedRank), [personnel, selectedRank]);

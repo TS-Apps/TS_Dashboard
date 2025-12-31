@@ -4,6 +4,10 @@
  * Individual cadet detail view with badges and progression
  */
 
+
+// Destructure React hooks
+const { useState, useEffect, useMemo, useCallback } = React;
+
         window.CadetFocus = ({ personnel, qualsData }) => {
             // Filter out juniors (under 12) - they have their own Junior Focus page
             const seniorCadets = useMemo(() => 

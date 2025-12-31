@@ -4,6 +4,9 @@
  * Main App component with navigation, state management, and routing
  */
 
+// Destructure React hooks
+const { useState, useEffect, useMemo, useCallback } = React;
+
         window.App = () => {
             const [view, setView] = useState('upload'); 
             const [sidebarCollapsed, setSidebarCollapsed] = useState(false);

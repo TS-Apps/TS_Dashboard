@@ -4,6 +4,10 @@
  * Data management, import/export, bulk upload
  */
 
+
+// Destructure React hooks
+const { useState, useEffect, useMemo, useCallback } = React;
+
         window.DataUtilitiesView = ({ clearData, wipeAllData, setView, personnel }) => {
             const [uploadStatus, setUploadStatus] = useState('');
             const juniorData = window.getJuniorData();

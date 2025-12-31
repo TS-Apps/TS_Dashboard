@@ -4,6 +4,10 @@
  * Junior Sea Cadets views (JuniorsView, JuniorDetail, JuniorProgressView)
  */
 
+
+// Destructure React hooks
+const { useState, useEffect, useMemo, useCallback } = React;
+
         window.JuniorProgressView = ({ personnel }) => {
             const juniorData = window.getJuniorData();
             const juniors = personnel.filter(c => window.isJunior(c.dob));

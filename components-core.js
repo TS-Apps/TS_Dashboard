@@ -4,6 +4,9 @@
  * Contains: Icon, BadgeImage, ErrorBoundary, FileUploader, ModuleDrillDown
  */
 
+// Destructure React hooks
+const { useState, useEffect, Component } = React;
+
 // Icon Component
 window.Icon = ({ name, className }) => {
     return <i data-lucide={name.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase()} className={className}></i>;
@@ -11,7 +14,7 @@ window.Icon = ({ name, className }) => {
 
 // BadgeImage Component
 window.BadgeImage = ({ name, fallbackIcon, className }) => {
-    const [error, setError] = React.useState(false);
+    const [error, setError] = useState(false);
     let filename = window.BADGE_MAP[name];
     if (!filename) {
         const cleanName = name.replace(/\(.*\)/, "").trim(); 

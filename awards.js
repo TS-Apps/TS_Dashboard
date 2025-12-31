@@ -4,6 +4,10 @@
  * Includes PDF certificate generation
  */
 
+
+// Destructure React hooks
+const { useState, useEffect, useMemo, useCallback } = React;
+
         window.AwardsView = ({ personnel, quals }) => {
             const [monthOffset, setMonthOffset] = useState(0); 
             // New State for PDF Selection

@@ -4,6 +4,10 @@
  */
 
         window.TrainingSuggestions = ({ personnel, getCadetProgress, qualsData }) => {
+
+// Destructure React hooks
+const { useState, useEffect, useMemo, useCallback } = React;
+
             const [selectedRank, setSelectedRank] = useState(window.SCC_RANK_ORDER[0]);
             const ALL_RANKS = [...window.SCC_RANK_ORDER, ...window.RMC_RANK_ORDER];
             const cadetsAtRank = useMemo(() => personnel.filter(p => p.rank === selectedRank), [personnel, selectedRank]);

@@ -4,6 +4,10 @@
  */
 
         window.WaterborneView = ({ personnel, qualsData }) => {
+
+// Destructure React hooks
+const { useState, useEffect, useMemo, useCallback } = React;
+
             const [filterActivity, setFilterActivity] = useState("Swim");
             const activityOptions = ["Swim", "Paddle", "Row", "Sail", "Power", "Windsurf", "Shorebased", "Offshore"];
             const sortedCadets = useMemo(() => [...personnel].sort((a, b) => a.name.localeCompare(b.name)), [personnel]);

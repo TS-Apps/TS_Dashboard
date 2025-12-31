@@ -41,25 +41,45 @@ window.ErrorBoundary = class extends React.Component {
         super(props);
         this.state = { hasError: false, error: null };
     }
-    static getDerivedStateFromError(error) { return { hasError: true, error }; }
-    componentDidCatch(error, errorInfo) { console.error("Dashboard Error:", error, errorInfo); }
-    handleReset = () => { localStorage.clear(); window.location.reload(); }
+    static getDerivedStateFromError(error) { 
+        return { hasError: true, error }; 
+    }
+    componentDidCatch(error, errorInfo) { 
+        console.error("Dashboard Error:", error, errorInfo); 
+    }
+    handleReset = () => { 
+        localStorage.clear(); 
+        window.location.reload(); 
+    }
     render() {
         if (this.state.hasError) {
-            return (
-                <div className="min-h-screen flex items-center justify-center bg-red-50 p-8">
-                    <div className="bg-white p-8 rounded-lg shadow-xl max-w-md w-full text-center">
-                        <h2 className="text-2xl font-bold text-red-600 mb-4">Something went wrong</h2>
-                        <p className="text-slate-600 mb-6">The dashboard encountered an error processing the data.</p>
-                        <div className="bg-slate-100 p-4 rounded text-left text-xs font-mono text-red-800 mb-6 overflow-auto max-h-32">{this.state.error && this.state.error.toString()}</div>
-                        <button onClick={this.handleReset} className="w-full py-3 px-4 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg transition-colors">Clear Data & Reset</button>
-                    </div>
-                </div>
+            return React.createElement('div', 
+                { className: 'min-h-screen flex items-center justify-center bg-red-50 p-8' },
+                React.createElement('div', 
+                    { className: 'bg-white p-8 rounded-lg shadow-xl max-w-md w-full text-center' },
+                    React.createElement('h2', 
+                        { className: 'text-2xl font-bold text-red-600 mb-4' }, 
+                        'Something went wrong'),
+                    React.createElement('p', 
+                        { className: 'text-slate-600 mb-6' }, 
+                        'The dashboard encountered an error processing the data.'),
+                    React.createElement('div', 
+                        { className: 'bg-slate-100 p-4 rounded text-left text-xs font-mono text-red-800 mb-6 overflow-auto max-h-32' },
+                        this.state.error && this.state.error.toString()),
+                    React.createElement('button', 
+                        { 
+                            onClick: this.handleReset,
+                            className: 'w-full py-3 px-4 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg transition-colors'
+                        }, 
+                        'Clear Data & Reset')
+                )
             );
         }
         return this.props.children; 
     }
 };
+
+console.log("✓ Core components module loaded (Icon, BadgeImage, ErrorBoundary)");
 
 console.log("✓ Core components module loaded (Icon, BadgeImage, ErrorBoundary)");
         window.FileUploader = ({ onDataLoaded, hasData, clearData, wipeAllData }) => {

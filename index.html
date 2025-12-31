@@ -99,8 +99,15 @@
     
     <!-- 6. Initialize app -->
     <script type="text/babel">
+        // Assign window components to local variables for JSX
+        const ErrorBoundary = window.ErrorBoundary;
+        const App = window.App;
+        
+        // Render app
         const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<window.ErrorBoundary><window.App /></window.ErrorBoundary>);
+        root.render(<ErrorBoundary><App /></ErrorBoundary>);
+        
+        console.log('🚀 RC2.40 Dashboard initialized!');
     </script>
 </body>
 </html>

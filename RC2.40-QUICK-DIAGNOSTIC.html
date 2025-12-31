@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RC2.40 Diagnostic Tool</title>
+    <style>
+        body { font-family: monospace; padding: 20px; background: #1e1e1e; color: #00ff00; }
+        .pass { color: #00ff00; }
+        .fail { color: #ff0000; }
+        .warn { color: #ffaa00; }
+        pre { background: #000; padding: 10px; border-radius: 5px; }
+        button { padding: 10px 20px; font-size: 16px; margin: 10px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>RC2.40 Module Diagnostic Tool</h1>
+    <button onclick="runDiagnostics()">Run Full Diagnostics</button>
+    <button onclick="testReact()">Test React Only</button>
+    <button onclick="clearStorage()">Clear LocalStorage</button>
+    <div id="output"></div>
+
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <script>
+        const log = (msg, type = 'info') => {
+            const output = document.getElementById('output');
+            const color = type === 'pass' ? 'pass' : type === 'fail' ? 'fail' : type === 'warn' ? 'warn' : '';
+            output.innerHTML += `<div class="${color}">${msg}</div>`;
+        };
+
+        function clearStorage() {
+            localStorage.clear();
+            log('✓ LocalStorage cleared', 'pass');
+        }
+
+        function testReact() {
+            document.getElementById('output').innerHTML = '';
+            
+            log('Testing React...', 'info');
+            
+            try {
+                if (typeof React === 'undefined') {
+                    log('✗ React not loaded!', 'fail');
+                    return;
+                }
+                log('✓ React loaded: ' + React.version, 'pass');
+                
+                if (typeof ReactDOM === 'undefined') {
+                    log('✗ ReactDOM not loaded!', 'fail');
+                    return;
+                }
+                log('✓ ReactDOM loaded', 'pass');
+                
+                // Test React hooks
+                const { useState, useEffect, useMemo, useCallback } = React;
+                if (!useState) {
+                    log('✗ React.useState not found!', 'fail');
+                    return;
+                }
+                log('✓ React hooks available', 'pass');
+                
+                // Test simple component
+                const TestComponent = () => {
+                    const [count, setCount] = React.useState(0);
+                    return React.createElement('div', null, 'Test component works: ' + count);
+                };
+                
+                const testDiv = document.createElement('div');
+                testDiv.id = 'react-test';
+                document.body.appendChild(testDiv);
+                
+                const root = ReactDOM.createRoot(testDiv);
+                root.render(React.createElement(TestComponent));
+                
+                log('✓ React rendering works!', 'pass');
+                setTimeout(() => {
+                    testDiv.remove();
+                }, 2000);
+                
+            } catch (e) {
+                log('✗ React test failed: ' + e.message, 'fail');
+                log('Stack: ' + e.stack, 'fail');
+            }
+        }
+
+        async function runDiagnostics() {
+            document.getElementById('output').innerHTML = '';
+            log('=== RC2.40 DIAGNOSTIC REPORT ===', 'info');
+            log('', 'info');
+            
+            // Check React
+            testReact();
+            
+            log('', 'info');
+            log('Testing module loading...', 'info');
+            
+            const modules = [
+                'constants.js',
+                'syllabus-data.js', 
+                'helpers.js',
+                'components-core.js',
+                'home.js',
+                'waterborne.js',
+                'training-planner.js',
+                'training-plan.js',
+                'awards.js',
+                'cadet-focus.js',
+                'juniors.js',
+                'data-utilities.js',
+                'main.js'
+            ];
+            
+            for (const module of modules) {
+                try {
+                    const response = await fetch('js/' + module);
+                    if (response.ok) {
+                        log(`✓ ${module} - ${response.status}`, 'pass');
+                    } else {
+                        log(`✗ ${module} - ${response.status} ${response.statusText}`, 'fail');
+                    }
+                } catch (e) {
+                    log(`✗ ${module} - ${e.message}`, 'fail');
+                }
+            }
+            
+            log('', 'info');
+            log('Checking window objects...', 'info');
+            
+            const windowChecks = [
+                'DATA_VERSION',
+                'RANK_IMG_MAP',
+                'BADGE_MAP',
+                'Icons',
+                'SCC_SYLLABUS',
+                'RMC_SYLLABUS',
+                'parseDate',
+                'formatDate',
+                'Icon',
+                'BadgeImage',
+                'ErrorBoundary',
+                'FileUploader',
+                'HomeView',
+                'WaterborneView',
+                'TrainingPlanner',
+                'AwardsView',
+                'CadetFocus',
+                'JuniorsView',
+                'DataUtilitiesView',
+                'App'
+            ];
+            
+            for (const check of windowChecks) {
+                if (typeof window[check] !== 'undefined') {
+                    const type = typeof window[check];
+                    log(`✓ window.${check} exists (${type})`, 'pass');
+                } else {
+                    log(`✗ window.${check} missing!`, 'fail');
+                }
+            }
+            
+            log('', 'info');
+            log('=== END DIAGNOSTIC ===', 'info');
+        }
+    </script>
+</body>
+</html>

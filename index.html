@@ -100,7 +100,7 @@
         // ============================================================================
         
         // --- 1.1 VERSION ---
-        const DATA_VERSION = "1.0-RC2.36"; // Fixed DD/MM/YYYY date parsing 
+        const DATA_VERSION = "1.0-RC2.39"; // CRITICAL FIX: 2-digit year parsing 
 
         // --- 1.2 BADGE & RANK IMAGE MAPS ---
         const RANK_IMG_MAP = {
@@ -1476,16 +1476,23 @@
         const parseDate = (dateStr) => {
             if (!dateStr) return null;
             
-            // Parse DD/MM/YYYY or DD-MM-YYYY format (UK/International standard)
+            // Parse DD/MM/YYYY, DD-MM-YYYY, or DD-MMM-YY format (UK/International standard)
             const parts = dateStr.split(/[\/\-\s]/);
             if (parts.length === 3) {
                 const day = parseInt(parts[0]);
-                const year = parseInt(parts[2]);
+                let year = parseInt(parts[2]);
                 let month = parseInt(parts[1]) - 1; 
 
+                // Handle text month names (e.g., "May", "Jan")
                 if (isNaN(month)) {
                     const months = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
                     month = months.findIndex(m => parts[1].toLowerCase().startsWith(m));
+                }
+                
+                // Handle 2-digit years (e.g., "15" should be 2015, not 15 AD)
+                if (year < 100) {
+                    // Westminster uses YY format: 00-30 = 2000-2030, 31-99 = 1931-1999
+                    year = year <= 30 ? 2000 + year : 1900 + year;
                 }
                 
                 if (!isNaN(day) && !isNaN(month) && !isNaN(year) && month >= 0) {
@@ -1822,6 +1829,7 @@
                 
                 const idx = {
                     pnum: findCol("PNumber") > -1 ? findCol("PNumber") : findCol("PNo"),
+                    type: findCol("Type"),
                     rank: findCol("Rank"),
                     surname: findCol("Surname"),
                     firstname: findCol("First Name"),
@@ -1841,6 +1849,10 @@
                 for (let i = 1; i < lines.length; i++) {
                     const row = splitCSVLine(lines[i].trim());
                     if (row.length < 3) continue;
+                    
+                    // Skip adults - only import cadets
+                    if (idx.type !== -1 && row[idx.type] && row[idx.type].toLowerCase().trim() === 'adult') continue;
+                    
                     personnelData.push({
                         pNumber: sanitizeText(row[idx.pnum] || "").trim(),
                         rank: normalizeRank(sanitizeText(row[idx.rank] || "Unknown")),
@@ -5663,6 +5675,24 @@
                  return { percentage: total === 0 ? 100 : Math.round((passed/total)*100) };
             }, [qualsData]);
 
+            // Detect unit capabilities based on personnel data
+            const unitCapabilities = useMemo(() => {
+                if (personnelData.length === 0) return { hasSCC: true, hasRMC: false, hasJSC: false };
+                
+                const hasRMC = personnelData.some(p => 
+                    RMC_RANK_ORDER.includes(p.rank) || 
+                    (p.unit && p.unit.includes('(RMCD)'))
+                );
+                
+                const hasJSC = personnelData.some(p => {
+                    if (!p.dob) return false;
+                    const age = calculateAge(p.dob);
+                    return age !== "Unknown" && age >= 9 && age < 12;
+                });
+                
+                return { hasSCC: true, hasRMC, hasJSC };
+            }, [personnelData]);
+
             const NavItem = ({ id, icon, label }) => (
                 <button onClick={() => setView(id)} className={`flex items-center gap-3 w-full p-2 rounded-lg transition-all ${view === id ? 'bg-blue-800 text-white' : 'text-blue-100 hover:bg-blue-800/50'}`}>
                     <Icon name={icon} className="w-5 h-5" />
@@ -5704,11 +5734,11 @@
                             </div>
                             <nav className="flex-1 p-3 space-y-0.5 overflow-y-auto">
                                 <NavItem id="home" icon="Home" label="Home" />
-                                <NavItem id="juniors" icon="Users" label="Junior Focus" />
-                                <NavItem id="junior_progress" icon="BarChart3" label="Junior Progress" />
+                                {unitCapabilities.hasJSC && <NavItem id="juniors" icon="Users" label="Junior Focus" />}
+                                {unitCapabilities.hasJSC && <NavItem id="junior_progress" icon="BarChart3" label="Junior Progress" />}
                                 <NavItem id="cadet_focus" icon="User" label="Cadet Focus" />
-                                <NavItem id="planner" icon="ShipWheel" label="SCC CTP Progress" />
-                                <NavItem id="rmc_planner" icon="Target" label="RMC CTS Progress" />
+                                {unitCapabilities.hasSCC && <NavItem id="planner" icon="ShipWheel" label="SCC CTP Progress" />}
+                                {unitCapabilities.hasRMC && <NavItem id="rmc_planner" icon="Target" label="RMC CTS Progress" />}
                                 <NavItem id="waterborne" icon="Anchor" label="Waterborne" />
                                 <NavItem id="awards" icon="Award" label="Awards" />
                                 <NavItem id="suggestions" icon="ChartGantt" label="Training Plan" />
@@ -5744,7 +5774,7 @@
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<App />);
         
-        console.log(`RC2.36 loaded successfully! Version: ${DATA_VERSION}`);
+        console.log(`RC2.37 loaded successfully! Version: ${DATA_VERSION}`);
         console.log("RC2.28: Duplicate modules now count only once in progress calculations");
     </script>
 </body>

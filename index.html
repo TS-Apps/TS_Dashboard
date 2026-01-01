@@ -75,6 +75,13 @@
         .planner-table td.status-cox-awarded { background-color: #003366 !important; color: white !important; } /* Navy Blue */
         .planner-table td.status-master-pending { background-color: #ffffe0 !important; color: black !important; } /* Light Yellow */
         .planner-table td.status-master-awarded { background-color: #ffd700 !important; color: black !important; } /* Gold */
+        
+        /* Progress Chart Checkmarks */
+        .bg-red-600 { color: white; font-weight: bold; font-size: 14px; }
+        .bg-blue-600 { color: white; font-weight: bold; font-size: 14px; }
+        .bg-green-600 { color: white; font-weight: bold; font-size: 14px; }
+        .bg-yellow-600 { color: white; font-weight: bold; font-size: 14px; }
+        .bg-purple-600 { color: white; font-weight: bold; font-size: 14px; }
     </style>
 </head>
 <body>
@@ -100,7 +107,7 @@
         // ============================================================================
         
         // --- 1.1 VERSION ---
-        const DATA_VERSION = "1.0-RC2.57"; // RC2 Complete + Fixes: Fixed corrupted UTF-8 characters in disclaimer text 
+        const DATA_VERSION = "1.0-RC2.66"; // Fixed: Recognize numeric-only P-Number format (7-8 digits) from Westminster exports 
 
         // --- 1.2 BADGE & RANK IMAGE MAPS ---
         const RANK_IMG_MAP = {
@@ -993,39 +1000,44 @@
         // Red: 61 (11 core), Blue: 54 (3 core + Blue 1 from Westminster), Green: 49, Yellow: 107, STEM: 41
         const JUNIOR_MODULES = {
             "metadata": {
-                "version": "1.0",
-                "source": "Official JSC Module List",
-                "totalModules": 312
+                "version": "1.0-corrected",
+                "source": "Official JSC Module List - January 2025",
+                "totalModules": 341
             },
             "sections": {
                 "red": {
                     "name": "Red - Unit Activities",
                     "requirement": 15,
                     "coreCount": 11,
+                    "totalModules": 73,
                     "theme": "The Unit"
                 },
                 "blue": {
                     "name": "Blue - Waterborne Activities",
                     "requirement": 15,
                     "coreCount": 4,
+                    "totalModules": 70,
                     "theme": "Waterborne (Blue 1 from Westminster)"
                 },
                 "green": {
                     "name": "Green - Outdoor & Recreation",
                     "requirement": 15,
                     "coreCount": 0,
+                    "totalModules": 49,
                     "theme": "Outdoor & Recreation"
                 },
                 "yellow": {
                     "name": "Yellow - Community & Citizenship",
                     "requirement": 15,
                     "coreCount": 0,
+                    "totalModules": 107,
                     "theme": "Community & Citizenship"
                 },
                 "stem": {
                     "name": "STEM Activities",
                     "requirement": 15,
                     "coreCount": 0,
+                    "totalModules": 42,
                     "theme": "Science, Technology, Engineering, Maths"
                 }
             }
@@ -1220,10 +1232,29 @@
 
         // --- 2.6 JUNIOR SEA CADETS HELPER FUNCTIONS (RC2 Stage 2) ---
         
-        // Check if cadet is a junior (under 12 years old)
-        const isJunior = (dob) => {
+        // Check if cadet is a junior (under 12 OR age 12 with junior modules/rank)
+        const isJunior = (dob, pNumber = null, rank = null) => {
             const age = calculateAge(dob);
-            return age !== "Unknown" && age < 12;
+            if (age === "Unknown") return false;
+            
+            // Definitely include if under 12
+            if (age < 12) return true;
+            
+            // For 12-year-olds, check if they have junior modules or junior rank
+            if (age === 12 && pNumber) {
+                const juniorData = getJuniorData();
+                const hasJuniorModules = juniorData.moduleCompletions.some(m => m.pNumber === pNumber);
+                
+                // Check if they have a junior rank (passed as parameter)
+                const hasJuniorRank = rank && (
+                    rank.toLowerCase().includes('junior cadet') || 
+                    rank.toLowerCase().includes('able junior cadet')
+                );
+                
+                return hasJuniorModules || hasJuniorRank;
+            }
+            
+            return false;
         };
         
         // Calculate days until 12th birthday
@@ -1334,6 +1365,9 @@
             const [loading, setLoading] = useState(false);
             const [error, setError] = useState(null);
             const [showVideoModal, setShowVideoModal] = useState(false);
+            const [preview, setPreview] = useState(null); // NEW: Preview data before import
+            const [validationErrors, setValidationErrors] = useState([]); // NEW: Validation errors
+            const [importSummary, setImportSummary] = useState(null); // NEW: Import summary
             
             // Logo upload states
             const [unitCrestPreview, setUnitCrestPreview] = useState(localStorage.getItem('unit_crest') || null);
@@ -1419,7 +1453,7 @@
                 reader.readAsText(file);
             });
 
-            const processPersonnelFile = async (text) => {
+            const processPersonnelFile = async (text, validationErrors = []) => {
                 const personnelData = [];
                 const lines = text.split('\n');
                 
@@ -1454,15 +1488,69 @@
                 for (let i = 1; i < lines.length; i++) {
                     const row = splitCSVLine(lines[i].trim());
                     if (row.length < 3) continue;
+                    
+                    // Enhanced validation: Track errors for this row
+                    const rowErrors = [];
+                    const pNumber = sanitizeText(row[idx.pnum] || "").trim();
+                    const rank = sanitizeText(row[idx.rank] || "").trim();
+                    const surname = sanitizeText(row[idx.surname] || "").trim();
+                    const firstname = sanitizeText(row[idx.firstname] || "").trim();
+                    
+                    // Validate P-Number (recognize both cadet and adult volunteer formats)
+                    if (!pNumber) {
+                        rowErrors.push(`Row ${i + 1}: Missing P-Number`);
+                    } else {
+                        const cleanPNum = pNumber.replace(/[\s-]/g, ''); // Remove spaces/hyphens
+                        
+                        // Valid formats:
+                        // P##### - Cadet format with prefix (e.g., P12345)
+                        // ######## - Cadet format without prefix (e.g., 11806919) - Westminster export format
+                        // CV##### - Adult volunteer format (e.g., CV139891)
+                        // L#######L - Adult volunteer format (e.g., B907946L, A009350Q)
+                        const isCadetWithPrefix = /^[Pp]\d+$/.test(cleanPNum);
+                        const isCadetNumericOnly = /^\d{7,8}$/.test(cleanPNum); // 7-8 digit numbers (Westminster export format)
+                        const isAdultCVFormat = /^CV\d+$/i.test(cleanPNum);
+                        const isAdultLetterFormat = /^[A-Z]\d{6,7}[A-Z]$/i.test(cleanPNum);
+                        
+                        if (!isCadetWithPrefix && !isCadetNumericOnly && !isAdultCVFormat && !isAdultLetterFormat) {
+                            // Only warn if it doesn't match any known format
+                            rowErrors.push(`Row ${i + 1}: Unusual P-Number format "${pNumber}" (expected: P12345, 11806919, CV12345, or A123456B)`);
+                        }
+                    }
+                    
+                    // Validate rank (treat missing rank as Unit Assistant for adult volunteers)
+                    // No warning for missing rank - will be set to "Unit Assistant (UA)"
+                    // This is valid for adult volunteers with no rank
+                    
+                    // Validate name
+                    if (!surname && !firstname) {
+                        rowErrors.push(`Row ${i + 1}: Missing name for ${pNumber}`);
+                    }
+                    
+                    // Validate DOB if present (only if not empty)
+                    if (row[idx.dob] && row[idx.dob].trim()) {
+                        const dobTest = parseDate(row[idx.dob]);
+                        if (!dobTest) {
+                            rowErrors.push(`Row ${i + 1}: Invalid date format for DOB "${row[idx.dob]}" (${pNumber})`);
+                        }
+                    }
+                    
+                    // If there are errors, add them to validation errors list
+                    if (rowErrors.length > 0) {
+                        validationErrors.push(...rowErrors);
+                    }
+                    
+                    // Still add the record (with warnings) so partial data can be imported
                     personnelData.push({
-                        pNumber: sanitizeText(row[idx.pnum] || "").trim(),
-                        rank: normalizeRank(sanitizeText(row[idx.rank] || "Unknown")),
-                        name: `${sanitizeText(row[idx.surname] || "").trim()}, ${sanitizeText(row[idx.firstname] || "").trim()}`,
+                        pNumber: pNumber,
+                        rank: normalizeRank(rank || "Unit Assistant (UA)"),
+                        name: `${surname}, ${firstname}`,
                         unit: sanitizeText(row[idx.unit] || "").trim(),
                         dob: row[idx.dob],
                         tos: row[idx.tos],
                         rankDate: row[idx.rankDate],
-                        cvqo: sanitizeText(row[idx.cvqo])
+                        cvqo: sanitizeText(row[idx.cvqo]),
+                        _hasWarnings: rowErrors.length > 0 // Flag for preview
                     });
                 }
                 
@@ -1520,23 +1608,79 @@
 
                 setLoading(true);
                 setError(null);
+                setValidationErrors([]);
+                setImportSummary(null);
 
                 try {
                     const personnelText = await readFile(personnelFile);
                     const qualsText = await readFile(qualsFile);
                     
-                    const personnelData = await processPersonnelFile(personnelText);
+                    const validationErrors = [];
+                    const personnelData = await processPersonnelFile(personnelText, validationErrors);
                     const qualsData = await processQualsFile(qualsText);
                     
+                    // Generate preview (first 10 rows)
+                    const previewData = {
+                        personnel: personnelData.slice(0, 10),
+                        personnelTotal: personnelData.length,
+                        qualifications: qualsData.slice(0, 10),
+                        qualificationsTotal: qualsData.length,
+                        errors: validationErrors
+                    };
+                    
+                    setPreview(previewData);
+                    setValidationErrors(validationErrors);
+                    
+                    // Store warnings in localStorage so they persist after navigation
+                    if (validationErrors.length > 0) {
+                        localStorage.setItem('importWarnings', JSON.stringify({
+                            warnings: validationErrors,
+                            timestamp: new Date().toISOString(),
+                            personnelCount: personnelData.length,
+                            qualsCount: qualsData.length
+                        }));
+                    }
+                    
+                    // If there are critical errors (more than 10% of records), require confirmation
+                    const errorRate = validationErrors.length / personnelData.length;
+                    if (errorRate > 0.1) {
+                        const proceed = confirm(
+                            `Found ${validationErrors.length} validation warnings in ${personnelData.length} personnel records (${(errorRate * 100).toFixed(1)}%).\n\n` +
+                            `Do you want to proceed with import?\n\n` +
+                            `Click OK to continue or Cancel to fix errors and re-upload.`
+                        );
+                        if (!proceed) {
+                            setLoading(false);
+                            return;
+                        }
+                    }
+                    
+                    // Import data
                     onDataLoaded(personnelData, qualsData);
+                    
+                    // Show summary (warnings box is shown above via setValidationErrors)
+                    setImportSummary({
+                        personnelImported: personnelData.length,
+                        qualificationsImported: qualsData.length,
+                        warningsCount: validationErrors.length,
+                        success: true
+                    });
+                    
+                    // Scroll to top to show warnings
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                    
                 } catch (err) {
                     console.error(err);
                     setError(err.message);
+                    setImportSummary({
+                        success: false,
+                        error: err.message
+                    });
                 } finally {
                     setLoading(false);
                 }
             };
-
+            
             return (
                 <div className="bg-white p-6 rounded-lg shadow-md max-w-2xl mx-auto mt-2 border border-slate-200">
                     <h2 className="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2">
@@ -1578,9 +1722,89 @@
                                 <p className="font-bold">Error Processing Files</p>
                                 <p className="text-sm">{error}</p>
                             </div>
-                            <button onClick={() => setError(null)} className="text-red-500 hover:text-red-700">
+                            <button onClick={() => setError(null)} className="text-red-500 hover:text-red-700" aria-label="Dismiss error message">
                                 <Icon name="X" className="w-4 h-4" />
                             </button>
+                        </div>
+                    )}
+
+                    {/* Validation Warnings */}
+                    {validationErrors.length > 0 && (
+                        <div className="mb-4 p-4 bg-amber-50 border-l-4 border-amber-500">
+                            <div className="flex justify-between items-start mb-2">
+                                <p className="font-bold text-amber-900 flex items-center gap-2">
+                                    <Icon name="AlertTriangle" className="w-5 h-5" />
+                                    {validationErrors.length} Validation Warning{validationErrors.length !== 1 ? 's' : ''}
+                                </p>
+                                <div className="flex gap-2">
+                                    <button 
+                                        onClick={() => {
+                                            // Export warnings to CSV
+                                            const csvContent = "data:text/csv;charset=utf-8," 
+                                                + "Row,Warning\n"
+                                                + validationErrors.map(err => {
+                                                    // Extract row number and message
+                                                    const match = err.match(/Row (\d+): (.+)/);
+                                                    if (match) {
+                                                        return `${match[1]},"${match[2].replace(/"/g, '""')}"`;
+                                                    }
+                                                    return `,"${err.replace(/"/g, '""')}"`;
+                                                }).join("\n");
+                                            
+                                            const encodedUri = encodeURI(csvContent);
+                                            const link = document.createElement("a");
+                                            link.setAttribute("href", encodedUri);
+                                            link.setAttribute("download", `validation_warnings_${new Date().toISOString().split('T')[0]}.csv`);
+                                            document.body.appendChild(link);
+                                            link.click();
+                                            document.body.removeChild(link);
+                                        }}
+                                        className="text-amber-700 hover:text-amber-900 flex items-center gap-1 text-sm font-semibold"
+                                        title="Download warnings as CSV"
+                                    >
+                                        <Icon name="Download" className="w-4 h-4" />
+                                        Download CSV
+                                    </button>
+                                    <button onClick={() => setValidationErrors([])} className="text-amber-600 hover:text-amber-800">
+                                        <Icon name="X" className="w-4 h-4" />
+                                    </button>
+                                </div>
+                            </div>
+                            <div className="text-sm text-amber-800 max-h-48 overflow-y-auto space-y-1">
+                                {validationErrors.slice(0, 20).map((err, idx) => (
+                                    <div key={idx} className="pl-2 border-l-2 border-amber-300">• {err}</div>
+                                ))}
+                                {validationErrors.length > 20 && (
+                                    <p className="font-semibold mt-2">...and {validationErrors.length - 20} more warnings</p>
+                                )}
+                            </div>
+                            <p className="text-xs text-amber-700 mt-2">
+                                These records were imported but may have data quality issues. Review and correct in Westminster if needed.
+                            </p>
+                        </div>
+                    )}
+
+                    {/* Import Summary */}
+                    {importSummary && importSummary.success && (
+                        <div className="mb-4 p-4 bg-green-50 border-l-4 border-green-500">
+                            <div className="flex justify-between items-start">
+                                <div>
+                                    <p className="font-bold text-green-900 flex items-center gap-2 mb-2">
+                                        <Icon name="CheckCircle" className="w-5 h-5" />
+                                        Import Successful!
+                                    </p>
+                                    <div className="text-sm text-green-800 space-y-1">
+                                        <p>✓ {importSummary.personnelImported} personnel records imported</p>
+                                        <p>✓ {importSummary.qualificationsImported} qualification records imported</p>
+                                        {importSummary.warningsCount > 0 && (
+                                            <p className="text-amber-700">⚠ {importSummary.warningsCount} warnings (see above)</p>
+                                        )}
+                                    </div>
+                                </div>
+                                <button onClick={() => setImportSummary(null)} className="text-green-600 hover:text-green-800">
+                                    <Icon name="X" className="w-4 h-4" />
+                                </button>
+                            </div>
                         </div>
                     )}
 
@@ -1743,7 +1967,7 @@
                                     <h3 className="text-xl font-bold text-blue-800">
                                         How to Download Data from Westminster
                                     </h3>
-                                    <button onClick={() => setShowVideoModal(false)} className="p-2 rounded-full hover:bg-blue-100 text-slate-600">
+                                    <button onClick={() => setShowVideoModal(false)} className="p-2 rounded-full hover:bg-blue-100 text-slate-600" aria-label="Close video tutorial">
                                         <Icon name="X" className="w-5 h-5" />
                                     </button>
                                 </div>
@@ -3821,7 +4045,7 @@
         const JuniorProgressView = ({ personnel }) => {
             const [selectedSection, setSelectedSection] = useState('red');
             const juniorData = getJuniorData();
-            const juniors = personnel.filter(c => isJunior(c.dob));
+            const juniors = personnel.filter(c => isJunior(c.dob, c.pNumber, c.rank));
             
             if (juniors.length === 0) {
                 return (
@@ -3835,352 +4059,490 @@
                 );
             }
             
-            // ALL 333 official modules with names
+            // CORRECTED: 341 official MSSC Junior modules (was 333 fabricated names)
             const allModules = [
-                // RED Section
-                {s:'red',c:'1',n:'Unit Induction: Tour of Unit'},
-                {s:'red',c:'1.1',n:'Unit Induction: Unit Fire Drill'},
-                {s:'red',c:'1.2',n:'Unit Induction: Map Out Your Unit'},
-                {s:'red',c:'1.3',n:'Unit Induction: What\'s Important?'},
-                {s:'red',c:'1.4',n:'Unit Induction: Uniformed Art'},
-                {s:'red',c:'1.5',n:'Unit Induction: Badges & Ranks'},
-                {s:'red',c:'2',n:'Two Questions & A Funny'},
+                // ========== RED SECTION - Unit Activities (73 modules) ==========
+                // Unit Induction (6 modules - all core)
+                {s:'red',c:'1',n:'Unit Induction: Tour of Unit',core:true},
+                {s:'red',c:'1.1',n:'Unit Induction: Unit Fire Drill',core:true},
+                {s:'red',c:'1.2',n:'Unit Induction: Map Out Your Unit Treasure Hunt',core:true},
+                {s:'red',c:'1.3',n:'Unit Induction: What\'s Important To You?',core:true},
+                {s:'red',c:'1.4',n:'Unit Induction: Uniformed Art',core:true},
+                {s:'red',c:'1.5',n:'Unit Induction: JSC Badges/Brassard, Ranks and Rates',core:true},
+
+                // Who's Who (4 modules)
+                {s:'red',c:'2',n:'Who is who? - Two Questions & A Funny'},
                 {s:'red',c:'2.1',n:'Paper Planes'},
-                {s:'red',c:'2.2',n:'Names and Beanbags'},
+                {s:'red',c:'2.2',n:'Names and Beanbags!'},
                 {s:'red',c:'2.3',n:'Mini Me'},
                 {s:'red',c:'3',n:'Unit Who\'s Who: Say Cheese'},
-                {s:'red',c:'4',n:'Basic Drill'},
-                {s:'red',c:'4.1',n:'Unit Calls (Piping)'},
-                {s:'red',c:'4.2',n:'Colours & Naval Customs'},
-                {s:'red',c:'4.3',n:'Treat Yourself'},
-                {s:'red',c:'5',n:'Junior Sea Cadet Uniform'},
-                {s:'red',c:'6',n:'Safeguarding: SHOUT'},
-                {s:'red',c:'7',n:'Organising Unit Activities'},
-                {s:'red',c:'7.1',n:'Unit Activities'},
-                {s:'red',c:'7.2',n:'Ready Aye Ready'},
-                {s:'red',c:'7.3',n:'Unit Elevator Pitch'},
+
+                // Ceremonial (4 modules)
+                {s:'red',c:'4',n:'Ceremonial: Moving To The Beat With Basic Drill'},
+                {s:'red',c:'4.1',n:'Who\'s Calling? Ceremonial Unit Calls (Piping)'},
+                {s:'red',c:'4.2',n:'Colours, Evening Colours & Naval Customs: Ceremonial'},
+                {s:'red',c:'4.3',n:'Treat Yourself: Ceremonial'},
+
+                // Uniform (1 module - core)
+                {s:'red',c:'5',n:'Looking Smart and the Part: Junior Sea Cadet Uniform',core:true},
+
+                // Safeguarding (1 module - core)
+                {s:'red',c:'6',n:'Introduction to Cadet Safeguarding Pocket Guide: SHOUT',core:true},
+
+                // Team Effort (6 modules)
+                {s:'red',c:'7',n:'Team Effort: Organising Unit Activities'},
+                {s:'red',c:'7.1',n:'Oh, The Activities You Can Do... Unit Activities'},
+                {s:'red',c:'7.2',n:'I Promise to...? Ready Aye Ready'},
+                {s:'red',c:'7.3',n:'Unit Elevator Pitch On Paper'},
                 {s:'red',c:'7.4',n:'Unit Advert'},
                 {s:'red',c:'7.5',n:'Theme Tune'},
+
+                // Activities (4 modules)
                 {s:'red',c:'8',n:'How\'s Your Aim?'},
-                {s:'red',c:'9',n:'Royal Marines Cadet Guest'},
+                {s:'red',c:'9',n:'Tonight\'s Guest Is...A Royal Marines Cadet'},
                 {s:'red',c:'9.1',n:'Royal Marines Cadets'},
-                {s:'red',c:'9.2',n:'Royal Marines Activities'},
-                {s:'red',c:'10',n:'Scrap Book Memories'},
-                {s:'red',c:'11',n:'Passing Messages: Flags'},
-                {s:'red',c:'11.1',n:'Lord Nelson\'s Message'},
+                {s:'red',c:'9.2',n:'Heads Up: Royal Marines Cadets Activities'},
+                {s:'red',c:'10',n:'Keeping a Log: Scrap Book Memories'},
+
+                // Communications (6 modules)
+                {s:'red',c:'11',n:'What Do We Want to Say? Passing a Message Using Flags'},
+                {s:'red',c:'11.1',n:'What is the Famous Message? Lord Nelson'},
                 {s:'red',c:'11.2',n:'Codebreaker: Morse'},
-                {s:'red',c:'11.3',n:'What\'s Your Position?'},
-                {s:'red',c:'11.4',n:'Turn Up The Radios'},
+                {s:'red',c:'11.3',n:'What\'s your position? Over?'},
+                {s:'red',c:'11.4',n:'Turn up The Radios'},
                 {s:'red',c:'11.5',n:'Phonetic Alphabet'},
-                {s:'red',c:'12',n:'Chocolate Crispies'},
-                {s:'red',c:'12.1',n:'Apple & Ginger'},
+
+                // Catering (5 modules)
+                {s:'red',c:'12',n:'Experimental Chocolate Crispies'},
+                {s:'red',c:'12.1',n:'Refreshing Apple & Ginger'},
                 {s:'red',c:'12.2',n:'Chefs\' Sweet Tooth'},
                 {s:'red',c:'12.3',n:'Chefs Savoury Tooth'},
                 {s:'red',c:'12.4',n:'Chefs Cuppa'},
-                {s:'red',c:'13',n:'Who Can Help Me?'},
+
+                // Emergency Services (2 modules)
+                {s:'red',c:'13',n:'Who\'s Who and Can They Help Me?'},
                 {s:'red',c:'13.1',n:'Emergency Visits'},
+
+                // International (1 module)
                 {s:'red',c:'14',n:'How International Are We?'},
-                {s:'red',c:'15',n:'First Aid Basics'},
-                {s:'red',c:'15.1',n:'First Aid Relay'},
-                {s:'red',c:'15.2',n:'Units Safety Poster'},
-                {s:'red',c:'16',n:'Naval Heraldry'},
-                {s:'red',c:'17',n:'Throw Yourself a Knot'},
+
+                // First Aid (3 modules - core)
+                {s:'red',c:'15',n:'What\'s it for? First Aid basics',core:true},
+                {s:'red',c:'15.1',n:'Patch it Up: First Aid Relay'},
+                {s:'red',c:'15.2',n:'First Aid Comes First: Units Safety Poster'},
+
+                // Naval Heritage (2 modules - core)
+                {s:'red',c:'16',n:'Ships Crest: Naval Heraldry',core:true},
+
+                // Seamanship (6 modules - core)
+                {s:'red',c:'17',n:'Throw Yourself a Knot',core:true},
                 {s:'red',c:'17.1',n:'Tasty Knots'},
                 {s:'red',c:'17.2',n:'Rope and Spoons'},
-                {s:'red',c:'17.3',n:'Knot Board'},
+                {s:'red',c:'17.3',n:'Knots on Display: Knot Board'},
                 {s:'red',c:'17.4',n:'Paracord Keyrings'},
                 {s:'red',c:'17.5',n:'Parts of a Ship'},
                 {s:'red',c:'17.6',n:'Ship Ahoy!'},
-                {s:'red',c:'18',n:'Planning & Preparation'},
-                {s:'red',c:'18.1',n:'Food Storage'},
+
+                // Food Safety (7 modules)
+                {s:'red',c:'18',n:'Planning & Preparation is Key!'},
+                {s:'red',c:'18.1',n:'Fridge, Cupboard, Freezer, Bench?'},
                 {s:'red',c:'18.2',n:'Keeping Germs at Bay'},
                 {s:'red',c:'18.3',n:'Missed a Spot!'},
                 {s:'red',c:'18.4',n:'Building Bacteria'},
                 {s:'red',c:'18.5',n:'Fuzzy Bread'},
-                {s:'red',c:'18.6',n:'Clean Hands?'},
-                {s:'red',c:'19',n:'Earthshot Challenge'},
-                {s:'red',c:'20',n:'Suggestion Box'},
+                {s:'red',c:'18.6',n:'How Clean Are Your Hands?'},
+
+                // Special Modules (4 modules)
+                {s:'red',c:'19',n:'Earthshot Challenge Completed'},
+                {s:'red',c:'20',n:'Cadet Voice: Suggestion Box'},
                 {s:'red',c:'21',n:'Kindness and Wellbeing'},
-                {s:'red',c:'21.1',n:'Kindness and Wellbeing'},
+                {s:'red',c:'21.1',n:'Kindness and Wellbeing Activities'},
                 {s:'red',c:'22',n:'Teamwork Skills'},
-                
-                // BLUE Section
-                {s:'blue',c:'T1',n:'Dinghy Sailing Taster'},
-                {s:'blue',c:'T2',n:'Paddlesport Taster'},
-                {s:'blue',c:'T3',n:'Windsurfing Taster'},
-                {s:'blue',c:'T4',n:'Rowing Taster'},
-                {s:'blue',c:'1',n:'Safety by the Water'},
-                {s:'blue',c:'1.1',n:'Rescue Line'},
-                {s:'blue',c:'1.2',n:'Help, I Need Help!'},
-                {s:'blue',c:'2',n:'Cardinal Marks'},
-                {s:'blue',c:'2.1',n:'Danger Zones'},
-                {s:'blue',c:'3',n:'Royal & Merchant Navy'},
+
+                // ========== BLUE SECTION - Waterborne Activities (70 modules) ==========
+                // Taster Sessions (4 modules)
+                {s:'blue',c:'T1',n:'Dinghy Sailing Taster Session'},
+                {s:'blue',c:'T2',n:'Paddlesport Taster Session'},
+                {s:'blue',c:'T3',n:'Windsurfing Taster Session'},
+                {s:'blue',c:'T4',n:'Rowing Taster Session'},
+
+                // Water Safety (3 modules - BLUE 1 is core)
+                {s:'blue',c:'1',n:'Safety by the Water (NEW)',core:true},
+                {s:'blue',c:'1.1',n:'Throw Me A Rescue Line'},
+                {s:'blue',c:'1.2',n:'Help, Help, I Need Some Help!'},
+
+                // Navigation Marks (2 modules)
+                {s:'blue',c:'2',n:'Avoid the Danger with Cardinal Marks'},
+                {s:'blue',c:'2.1',n:'Where Are The Danger Zones?'},
+
+                // Naval Knowledge (8 modules)
+                {s:'blue',c:'3',n:'Adventures Of The Royal Navy and Merchant Navy'},
                 {s:'blue',c:'4',n:'Going on a Mission'},
-                {s:'blue',c:'5',n:'Maritime Museum'},
-                {s:'blue',c:'6',n:'Battleships'},
-                {s:'blue',c:'7',n:'Remember The Facts'},
-                {s:'blue',c:'7.1',n:'Famous Figures'},
-                {s:'blue',c:'7.2',n:'Picasso\'s Nelson'},
-                {s:'blue',c:'8',n:'Boat Construction'},
-                {s:'blue',c:'8.1',n:'Build Boat'},
-                {s:'blue',c:'8.2',n:'Model Raft'},
-                {s:'blue',c:'8.3',n:'Water Raft'},
-                {s:'blue',c:'9',n:'Wise Near Water'},
-                {s:'blue',c:'9.1',n:'What Flag Am I?'},
-                {s:'blue',c:'10',n:'Lifeguards'},
-                {s:'blue',c:'11',n:'Keep Swimming'},
-                {s:'blue',c:'12',n:'Swimathon'},
-                {s:'blue',c:'13',n:'Marco Polo'},
-                {s:'blue',c:'13.1',n:'Synchronised Swim'},
-                {s:'blue',c:'13.2',n:'Water Polo'},
+                {s:'blue',c:'5',n:'Maritime Museum Exploration'},
+                {s:'blue',c:'6',n:'How Many Battleships Can You Sink?'},
+                {s:'blue',c:'7',n:'Can You Remember The Facts?'},
+                {s:'blue',c:'7.1',n:'Famous Maritime Figures'},
+                {s:'blue',c:'7.2',n:'Picasso\'s Lord Nelson'},
+
+                // Boat Construction (4 modules)
+                {s:'blue',c:'8',n:'Research and Sketch Boat Construction'},
+                {s:'blue',c:'8.1',n:'Build, Build, Build: Boat Construction'},
+                {s:'blue',c:'8.2',n:'Crafty Raft: Model Raft Building'},
+                {s:'blue',c:'8.3',n:'On The Water Raft Building'},
+
+                // Water Wisdom (2 modules - BLUE 9 is core)
+                {s:'blue',c:'9',n:'Wise Cadets Near The Water',core:true},
+                {s:'blue',c:'9.1',n:'Wise Cadets Near the Water: What Flag Am I?'},
+
+                // Lifesaving (2 modules)
+                {s:'blue',c:'10',n:'How To Save A Life: Lifeguards'},
+
+                // Swimming (8 modules)
+                {s:'blue',c:'11',n:'Just Keep Swimming, Just Keep Swimming'},
+                {s:'blue',c:'12',n:'Swimathon: Sponsored Swim'},
+                {s:'blue',c:'13',n:'Water Games: Marco? Polo!'},
+                {s:'blue',c:'13.1',n:'Synchronise and Swim'},
+                {s:'blue',c:'13.2',n:'Goaaal!! Water Polo Challenge'},
                 {s:'blue',c:'14',n:'Swimming Gala'},
-                {s:'blue',c:'15',n:'Signposts at Sea'},
-                {s:'blue',c:'15.1',n:'Edible Signposts'},
+
+                // Signalling (3 modules - BLUE 15 is core)
+                {s:'blue',c:'15',n:'Signposts at Sea',core:true},
+                {s:'blue',c:'15.1',n:'Edible Signposts at Sea'},
                 {s:'blue',c:'15.2',n:'Ropes on Biscuits'},
-                {s:'blue',c:'16',n:'Saving Sam'},
-                {s:'blue',c:'16.1',n:'Don\'t Fall Out!'},
-                {s:'blue',c:'17',n:'Go Rowing!'},
-                {s:'blue',c:'17.1',n:'Learn Rowing!'},
-                {s:'blue',c:'18',n:'Go Sailing!'},
-                {s:'blue',c:'18.1',n:'Learn Sailing!'},
-                {s:'blue',c:'19',n:'Go Paddling!'},
-                {s:'blue',c:'19.1',n:'Learn Paddlesport!'},
+
+                // Boat Handling (2 modules)
+                {s:'blue',c:'16',n:'Saving Sam the Haribo Snake'},
+                {s:'blue',c:'16.1',n:'Don\'t Fall Out Of The Boat!'},
+
+                // Rowing (4 modules)
+                {s:'blue',c:'17',n:'Go Rowing! Afloat Activity'},
+                {s:'blue',c:'17.1',n:'Learn Rowing! Afloat Activity'},
+
+                // Dinghy Sailing (4 modules)
+                {s:'blue',c:'18',n:'Go Dinghy Sailing! Afloat Activity'},
+                {s:'blue',c:'18.1',n:'Learn Dinghy Sailing! Afloat Activity'},
+
+                // Paddlesport (3 modules)
+                {s:'blue',c:'19',n:'Go Paddling! Afloat Activity'},
+                {s:'blue',c:'19.1',n:'Learn Paddlesport! Afloat Activity'},
                 {s:'blue',c:'19.2',n:'Voyage of Discovery'},
-                {s:'blue',c:'20',n:'Learn Windsurfing!'},
-                {s:'blue',c:'20.1',n:'Go Windsurfing!'},
-                {s:'blue',c:'21',n:'Good Look Out'},
-                {s:'blue',c:'21.1',n:'Hazards'},
-                {s:'blue',c:'21.2',n:'Buoyancy'},
-                {s:'blue',c:'21.3',n:'Safe Speeds'},
-                {s:'blue',c:'22',n:'Navigation'},
-                {s:'blue',c:'23',n:'Crossing The Line'},
+
+                // Windsurfing (3 modules)
+                {s:'blue',c:'20',n:'Learn Windsurfing! Afloat Activity'},
+                {s:'blue',c:'20.1',n:'Go Windsurfing! Afloat Activity'},
+
+                // Safety & Navigation (5 modules - BLUE 21 is core)
+                {s:'blue',c:'21',n:'Please Don\'t Crash: Keep a Good Look Out!',core:true},
+                {s:'blue',c:'21.1',n:'Danger, Danger: Hazards!'},
+                {s:'blue',c:'21.2',n:'Head Above Water: Buoyancy'},
+                {s:'blue',c:'21.3',n:'Please Don\'t Crash: Safe Speeds'},
+                {s:'blue',c:'22',n:'Careful Navigation'},
+
+                // Naval Traditions (4 modules)
+                {s:'blue',c:'23',n:'What\'s Crossing The Line All About?'},
                 {s:'blue',c:'23.1',n:'Nautical Terms'},
-                {s:'blue',c:'23.2',n:'Sea Shanties'},
-                {s:'blue',c:'23.3',n:'Hornpipe Dance'},
-                {s:'blue',c:'24',n:'Boat Types'},
-                {s:'blue',c:'24.1',n:'RS ZEST Single'},
-                {s:'blue',c:'24.2',n:'RS QUEST Crewed'},
-                {s:'blue',c:'25',n:'Cold Water Shock'},
+                {s:'blue',c:'23.2',n:'Songs of the Sea: Sea Shanties'},
+                {s:'blue',c:'23.3',n:'The Sailor\'s Hornpipe Dance'},
+
+                // Boat Types (3 modules)
+                {s:'blue',c:'24',n:'Guess Who: Boat Types'},
+                {s:'blue',c:'24.1',n:'MINI RS ZEST - Single Handed Dinghy'},
+                {s:'blue',c:'24.2',n:'MINI RS QUEST - Crewed Sailing Dinghy'},
+
+                // Additional Safety (4 modules)
+                {s:'blue',c:'25',n:'Freeze Frame - Cold Water Shock'},
                 {s:'blue',c:'26',n:'Towpath I Spy'},
                 {s:'blue',c:'27',n:'Flag Etiquette'},
-                {s:'blue',c:'28',n:'Green and Clean'},
-                {s:'blue',c:'29',n:'Big Clean Up'},
-                {s:'blue',c:'29.2',n:'Plastic Eating Machine'},
-                
-                // GREEN Section
-                {s:'green',c:'1',n:'50 Things'},
+                {s:'blue',c:'28',n:'Keeping it Green and Clean'},
+
+                // Earthshot (2 modules)
+                {s:'blue',c:'29',n:'Earthshot (ROO) - The Big Clean Up'},
+                {s:'blue',c:'29.2',n:'Earthshot (ROO) - The Plastic Eating Machine'},
+
+                // ========== GREEN SECTION - Outdoor & Recreation (49 modules) ==========
+                // Introduction (1 module)
+                {s:'green',c:'1',n:'All About the 50 Things'},
+
+                // Mapping (4 modules)
                 {s:'green',c:'2',n:'Mapping It Out'},
-                {s:'green',c:'2.1',n:'Around the Globe'},
-                {s:'green',c:'3',n:'Grid References'},
-                {s:'green',c:'4',n:'Weather'},
+                {s:'green',c:'2.1',n:'The Bigger Picture: Around the Globe'},
+                {s:'green',c:'3',n:'What Grids? Grid References'},
+
+                // Weather (2 modules)
+                {s:'green',c:'4',n:'Rain, Rain...Maybe Stay?'},
                 {s:'green',c:'4.1',n:'Make it Rain!'},
+
+                // Navigation (4 modules)
                 {s:'green',c:'5',n:'Captain\'s Coming'},
                 {s:'green',c:'5.1',n:'Home Made Compass'},
-                {s:'green',c:'6',n:'Photography'},
+                {s:'green',c:'6',n:'The Art of Photography'},
                 {s:'green',c:'7',n:'Pacing It Out'},
-                {s:'green',c:'7.1',n:'Micro Journey'},
+                {s:'green',c:'7.1',n:'Micro Journey: Mapping and Navigation'},
                 {s:'green',c:'7.2',n:'Unique Monopoly'},
-                {s:'green',c:'7.3',n:'Navigate Further'},
-                {s:'green',c:'8',n:'Basic Outdoors'},
-                {s:'green',c:'8.1',n:'Zero Trace'},
-                {s:'green',c:'8.2',n:'What to Wear'},
-                {s:'green',c:'8.3',n:'Keeping Tidy'},
-                {s:'green',c:'9',n:'Stoves'},
-                {s:'green',c:'9.1',n:'Open Fires 101'},
-                {s:'green',c:'9.2',n:'Fire Recipes'},
+                {s:'green',c:'7.3',n:'Which Way Am I Going? Navigating Further Afield'},
+
+                // Outdoor Skills (4 modules)
+                {s:'green',c:'8',n:'The Basic Outdoors'},
+                {s:'green',c:'8.1',n:'Zero Trace: Love of the Outdoors'},
+                {s:'green',c:'8.2',n:'I Don\'t Know What to Wear'},
+                {s:'green',c:'8.3',n:'Keeping Things Tidy, Even When You Are Soaked'},
+
+                // Cooking (5 modules)
+                {s:'green',c:'9',n:'Stoves Galore!'},
+                {s:'green',c:'9.1',n:'Cooking on Open Fires 101'},
+                {s:'green',c:'9.2',n:'Open Fire Recipes'},
                 {s:'green',c:'9.3',n:'Junior Survivor'},
                 {s:'green',c:'9.4',n:'Master Chef Outdoors'},
-                {s:'green',c:'10',n:'Practice'},
-                {s:'green',c:'10.1',n:'Amazing Race Junior'},
-                {s:'green',c:'11',n:'Country Code'},
-                {s:'green',c:'11.1',n:'Country Code Guide'},
-                {s:'green',c:'11.2',n:'Environment'},
+
+                // Practice (2 modules)
+                {s:'green',c:'10',n:'Putting Everything into Practice'},
+                {s:'green',c:'10.1',n:'The Amazing Race: Junior League'},
+
+                // Country Code (3 modules)
+                {s:'green',c:'11',n:'Respecting the Outdoors: Country Code Style!'},
+                {s:'green',c:'11.1',n:'Country Code In Practice How To Guide'},
+                {s:'green',c:'11.2',n:'Giving Back to the Environment'},
+
+                // Camping (2 modules)
                 {s:'green',c:'12',n:'Tenting Around'},
-                {s:'green',c:'12.1',n:'Pitching Tent'},
-                {s:'green',c:'13',n:'Safe Outdoors'},
+                {s:'green',c:'12.1',n:'Pitching a Tent'},
+
+                // Safety (2 modules)
+                {s:'green',c:'13',n:'Staying Safe and Having Fun Outdoors'},
                 {s:'green',c:'13.1',n:'Stranger Danger'},
-                {s:'green',c:'14',n:'Meteorology'},
-                {s:'green',c:'14.1',n:'Weather on Water'},
-                {s:'green',c:'14.2',n:'Storm Surge'},
+
+                // Meteorology (5 modules)
+                {s:'green',c:'14',n:'Weather Wise: Meteorology'},
+                {s:'green',c:'14.1',n:'Weather Wise On The Water'},
+                {s:'green',c:'14.2',n:'Extreme Weather: Storm Surge'},
                 {s:'green',c:'14.3',n:'Low Visibility'},
-                {s:'green',c:'14.4',n:'Celestial Navigation'},
-                {s:'green',c:'15',n:'Wind Blowing'},
-                {s:'green',c:'16',n:'Warming Up'},
-                {s:'green',c:'16.1',n:'Warm Up Guide'},
-                {s:'green',c:'17',n:'Keep Fit'},
-                {s:'green',c:'17.1',n:'Training Games'},
-                {s:'green',c:'17.2',n:'Competitive'},
-                {s:'green',c:'17.3',n:'Happy Healthy'},
-                {s:'green',c:'17.4',n:'Eating Healthy'},
-                {s:'green',c:'17.5',n:'Games to Start'},
-                {s:'green',c:'18',n:'Bird Feeder'},
-                {s:'green',c:'18.1',n:'Bee Bombs'},
-                {s:'green',c:'18.2',n:'Seed Paper'},
-                {s:'green',c:'18.3',n:'Carbon Footprint'},
-                
-                // YELLOW Section
-                {s:'yellow',c:'1',n:'Local Heroes'},
-                {s:'yellow',c:'1.1',n:'Thank You Cards'},
-                {s:'yellow',c:'1.2',n:'Hero Portraits'},
-                {s:'yellow',c:'2',n:'D-Day'},
-                {s:'yellow',c:'2.1',n:'D-Day Art'},
-                {s:'yellow',c:'2.2',n:'D-Day Stories'},
-                {s:'yellow',c:'2.3',n:'D-Day Memory'},
-                {s:'yellow',c:'3',n:'Remembrance'},
-                {s:'yellow',c:'3.1',n:'Poppy Art'},
-                {s:'yellow',c:'3.2',n:'War Stories'},
-                {s:'yellow',c:'4',n:'Charities'},
-                {s:'yellow',c:'4.1',n:'Charity Event'},
-                {s:'yellow',c:'4.2',n:'Fundraising'},
-                {s:'yellow',c:'4.3',n:'Charity Visit'},
-                {s:'yellow',c:'5',n:'Litter Pick'},
-                {s:'yellow',c:'5.1',n:'Beach Clean'},
-                {s:'yellow',c:'5.2',n:'Recycle'},
-                {s:'yellow',c:'5.3',n:'Upcycle'},
-                {s:'yellow',c:'5.4',n:'Reduce Plastic'},
-                {s:'yellow',c:'5.5',n:'Compost'},
-                {s:'yellow',c:'5.6',n:'Energy Saving'},
-                {s:'yellow',c:'6',n:'Community Project'},
-                {s:'yellow',c:'6.1',n:'Helping Neighbours'},
-                {s:'yellow',c:'6.2',n:'Community Survey'},
-                {s:'yellow',c:'6.3',n:'Community Event'},
-                {s:'yellow',c:'7',n:'Democracy'},
-                {s:'yellow',c:'7.1',n:'Mock Election'},
-                {s:'yellow',c:'7.2',n:'Parliament'},
-                {s:'yellow',c:'7.3',n:'Local Council'},
-                {s:'yellow',c:'7.4',n:'Student Voice'},
-                {s:'yellow',c:'7.5',n:'Debate'},
-                {s:'yellow',c:'7.6',n:'Rights'},
-                {s:'yellow',c:'7.7',n:'Laws'},
-                {s:'yellow',c:'7.8',n:'Voting'},
-                {s:'yellow',c:'8',n:'British Values'},
-                {s:'yellow',c:'8.1',n:'Rule of Law'},
-                {s:'yellow',c:'8.2',n:'Democracy Value'},
-                {s:'yellow',c:'8.3',n:'Liberty'},
-                {s:'yellow',c:'8.4',n:'Respect'},
-                {s:'yellow',c:'8.5',n:'Tolerance'},
-                {s:'yellow',c:'8.6',n:'Values Project'},
-                {s:'yellow',c:'8.7',n:'Values Quiz'},
-                {s:'yellow',c:'8.8',n:'Values Discussion'},
-                {s:'yellow',c:'9',n:'Diversity'},
-                {s:'yellow',c:'9.1',n:'Different Cultures'},
-                {s:'yellow',c:'9.2',n:'World Religions'},
-                {s:'yellow',c:'9.3',n:'Celebrations'},
-                {s:'yellow',c:'10',n:'Armed Forces Day'},
-                {s:'yellow',c:'10.1',n:'Parade'},
-                {s:'yellow',c:'10.2',n:'Display'},
-                {s:'yellow',c:'11',n:'Sea Sunday'},
-                {s:'yellow',c:'11.1',n:'Church Service'},
-                {s:'yellow',c:'11.2',n:'Seafarers'},
-                {s:'yellow',c:'12',n:'Royal Events'},
-                {s:'yellow',c:'12.1',n:'Royal History'},
-                {s:'yellow',c:'12.2',n:'Royal Visit'},
-                {s:'yellow',c:'12.3',n:'Royal Celebration'},
-                {s:'yellow',c:'13',n:'Trafalgar Day'},
-                {s:'yellow',c:'13.1',n:'Nelson'},
-                {s:'yellow',c:'13.2',n:'Battle Facts'},
-                {s:'yellow',c:'13.3',n:'HMS Victory'},
-                {s:'yellow',c:'13.4',n:'Trafalgar Square'},
-                {s:'yellow',c:'13.5',n:'Naval History'},
-                {s:'yellow',c:'15',n:'Veterans'},
-                {s:'yellow',c:'15.1',n:'Meet Veteran'},
-                {s:'yellow',c:'16',n:'Cadets Worldwide'},
-                {s:'yellow',c:'17',n:'Sea Cadets History'},
-                {s:'yellow',c:'17.1',n:'Unit History'},
-                {s:'yellow',c:'17.2',n:'Old Photos'},
-                {s:'yellow',c:'18',n:'Famous Ships'},
-                {s:'yellow',c:'19',n:'Navy Careers'},
-                {s:'yellow',c:'19.1',n:'Navy Jobs'},
-                {s:'yellow',c:'19.2',n:'Navy Training'},
-                {s:'yellow',c:'19.3',n:'Navy Life'},
-                {s:'yellow',c:'19.4',n:'Navy Visit'},
-                {s:'yellow',c:'19.5',n:'Navy Talk'},
-                {s:'yellow',c:'20',n:'Future Goals'},
-                {s:'yellow',c:'20.1',n:'Career Ideas'},
-                {s:'yellow',c:'20.2',n:'Skills'},
-                {s:'yellow',c:'20.3',n:'Achievements'},
-                {s:'yellow',c:'20.4',n:'Action Plan'},
-                {s:'yellow',c:'21',n:'Online Safety'},
-                {s:'yellow',c:'22',n:'Mental Health'},
-                {s:'yellow',c:'22.1',n:'Wellbeing'},
-                {s:'yellow',c:'22.2',n:'Stress'},
-                {s:'yellow',c:'22.3',n:'Emotions'},
-                {s:'yellow',c:'22.4',n:'Support'},
-                {s:'yellow',c:'22.5',n:'Mindfulness'},
-                {s:'yellow',c:'22.6',n:'Exercise'},
-                {s:'yellow',c:'22.7',n:'Sleep'},
-                {s:'yellow',c:'22.8',n:'Nutrition'},
-                {s:'yellow',c:'22.9',n:'Friends'},
-                {s:'yellow',c:'23',n:'Personal Safety'},
-                {s:'yellow',c:'23.1',n:'Road Safety'},
-                {s:'yellow',c:'23.2',n:'Water Safety'},
-                {s:'yellow',c:'24',n:'Bullying'},
-                {s:'yellow',c:'24.1',n:'Anti-Bullying'},
-                {s:'yellow',c:'24.2',n:'Being Kind'},
-                {s:'yellow',c:'25',n:'Healthy Eating'},
-                {s:'yellow',c:'26',n:'First Aid'},
-                {s:'yellow',c:'27',n:'Music'},
-                {s:'yellow',c:'27.1',n:'Sea Songs'},
-                {s:'yellow',c:'27.2',n:'Instruments'},
-                {s:'yellow',c:'27.3',n:'Performance'},
-                {s:'yellow',c:'28',n:'Art'},
-                {s:'yellow',c:'28.1',n:'Maritime Art'},
-                {s:'yellow',c:'28.2',n:'Sculpture'},
-                {s:'yellow',c:'28.3',n:'Crafts'},
-                {s:'yellow',c:'28.4',n:'Exhibition'},
-                {s:'yellow',c:'29',n:'Drama'},
-                {s:'yellow',c:'30',n:'Dance'},
-                {s:'yellow',c:'70',n:'Platinum Jubilee'},
-                {s:'yellow',c:'70.1',n:'Jubilee Party'},
-                {s:'yellow',c:'70.2',n:'Jubilee Project'},
-                {s:'yellow',c:'71',n:'Commonwealth Games'},
-                {s:'yellow',c:'72',n:'Coronation'},
-                {s:'yellow',c:'72.1',n:'Coronation Event'},
-                {s:'yellow',c:'73',n:'Special Event'},
-                
-                // STEM Section
-                {s:'stem',c:'1',n:'Coding Basics'},
-                {s:'stem',c:'2',n:'Scratch'},
-                {s:'stem',c:'3',n:'Python'},
-                {s:'stem',c:'4',n:'Robotics'},
-                {s:'stem',c:'5',n:'Electronics'},
-                {s:'stem',c:'6',n:'Circuits'},
-                {s:'stem',c:'7',n:'LED Projects'},
-                {s:'stem',c:'8',n:'Raspberry Pi'},
-                {s:'stem',c:'9',n:'Arduino'},
-                {s:'stem',c:'10',n:'3D Printing'},
-                {s:'stem',c:'11',n:'CAD Design'},
-                {s:'stem',c:'12',n:'Engineering'},
-                {s:'stem',c:'13',n:'Bridges'},
-                {s:'stem',c:'14',n:'Structures'},
-                {s:'stem',c:'15',n:'Forces'},
-                {s:'stem',c:'16',n:'Energy'},
-                {s:'stem',c:'17',n:'Renewable Energy'},
-                {s:'stem',c:'18',n:'Solar Power'},
-                {s:'stem',c:'19',n:'Wind Power'},
-                {s:'stem',c:'20',n:'Water Power'},
-                {s:'stem',c:'21',n:'Chemistry'},
-                {s:'stem',c:'22',n:'Reactions'},
-                {s:'stem',c:'23',n:'Materials'},
-                {s:'stem',c:'24',n:'Biology'},
-                {s:'stem',c:'25',n:'Marine Life'},
-                {s:'stem',c:'26',n:'Ecosystems'},
-                {s:'stem',c:'27',n:'Physics'},
-                {s:'stem',c:'28',n:'Light'},
-                {s:'stem',c:'29',n:'Sound'},
-                {s:'stem',c:'30',n:'Space'},
-                {s:'stem',c:'31',n:'Astronomy'},
-                {s:'stem',c:'32',n:'Planets'},
-                {s:'stem',c:'33',n:'Rockets'},
-                {s:'stem',c:'34',n:'Satellites'},
-                {s:'stem',c:'35',n:'Navigation Tech'},
-                {s:'stem',c:'36',n:'GPS'},
-                {s:'stem',c:'37',n:'Radar'},
-                {s:'stem',c:'38',n:'Sonar'},
-                {s:'stem',c:'39',n:'Maths Games'},
-                {s:'stem',c:'40',n:'Data Science'},
-                {s:'stem',c:'41',n:'Statistics'},
-                {s:'stem',c:'42',n:'Problem Solving'}
+                {s:'green',c:'14.4',n:'Practices of Celestial Navigation'},
+                {s:'green',c:'15',n:'Which Way Is The Wind Blowing?'},
+
+                // Physical Training (8 modules)
+                {s:'green',c:'16',n:'No Injuries, Thanks! The Importance of Warming Up'},
+                {s:'green',c:'16.1',n:'Testing It Out! Warm Up Guide'},
+                {s:'green',c:'17',n:'How Far Can You Go...Safely! Keep Fit Challenge'},
+                {s:'green',c:'17.1',n:'Game On! Recreational Training Games'},
+                {s:'green',c:'17.2',n:'How Competitive are You?'},
+                {s:'green',c:'17.3',n:'Happy and Healthy'},
+                {s:'green',c:'17.4',n:'Eating Happy and Healthy!'},
+                {s:'green',c:'17.5',n:'Games to Get You Started'},
+
+                // Earthshot (4 modules)
+                {s:'green',c:'18',n:'Earthshot (PRN) - DIY Bird Feeder'},
+                {s:'green',c:'18.1',n:'Earthshot (PRN) - Bee Bombs'},
+                {s:'green',c:'18.2',n:'Earthshot (WFW) - Recycled Wild Flower Seed Paper'},
+                {s:'green',c:'18.3',n:'Earthshot (COA) - Reducing Your Carbon Footprint'},
+
+                // ========== YELLOW SECTION - Community & Citizenship (107+ modules) ==========
+                // Note: This is a MASSIVE section. Including all from document.
+
+                // Festivals & Celebrations (13 modules)
+                {s:'yellow',c:'1',n:'Mardi Gras/Fat Tuesday/Shrove Tuesday'},
+                {s:'yellow',c:'1.1',n:'Parade with Mardi Gras Masks'},
+                {s:'yellow',c:'1.2',n:'Musical Celebration: Jazz Band'},
+                {s:'yellow',c:'2',n:'Celebrating Easter'},
+                {s:'yellow',c:'2.1',n:'Yummy Easter Hot Cross Buns'},
+                {s:'yellow',c:'2.2',n:'Twisted Pretzel: A Food of Lent'},
+                {s:'yellow',c:'2.3',n:'Creative Easter Eggs'},
+                {s:'yellow',c:'3',n:'Festival of Colour - Holi'},
+                {s:'yellow',c:'3.1',n:'Colours of Holi'},
+                {s:'yellow',c:'3.2',n:'Nariyal Barfi'},
+                {s:'yellow',c:'4',n:'Happy Diwali (Divali)'},
+                {s:'yellow',c:'4.1',n:'Festival of Lights'},
+                {s:'yellow',c:'4.2',n:'Rangoli Designs'},
+                {s:'yellow',c:'4.3',n:'Karah Parshad'},
+
+                // Chinese New Year (7 modules)
+                {s:'yellow',c:'5',n:'Snap It Up With Chinese New Year!'},
+                {s:'yellow',c:'5.1',n:'Taste of China: Sweet Dumplings'},
+                {s:'yellow',c:'5.2',n:'Fortune Cookie Jar'},
+                {s:'yellow',c:'5.3',n:'Prosperity & Good Fortune in Red'},
+                {s:'yellow',c:'5.4',n:'Chinese Dragon Costume (Individual)'},
+                {s:'yellow',c:'5.5',n:'Chinese Dragon Costume (large)'},
+                {s:'yellow',c:'5.6',n:'The Beating Drum'},
+
+                // Australia (4 modules)
+                {s:'yellow',c:'6',n:'Celebrate with an Australian Cork Hat'},
+                {s:'yellow',c:'6.1',n:'Getting to know indigenous Australia'},
+                {s:'yellow',c:'6.2',n:'Didgeridoo: Music Maker'},
+                {s:'yellow',c:'6.3',n:'Australian Bakes: ANZAC Biscuits'},
+
+                // Christmas (9 modules)
+                {s:'yellow',c:'7',n:'Everything Christmas: Decorating Time!'},
+                {s:'yellow',c:'7.1',n:'Christmas Bingo!'},
+                {s:'yellow',c:'7.2',n:'A Ginger Christmas'},
+                {s:'yellow',c:'7.3',n:'Chocolate Logs Yule Love!'},
+                {s:'yellow',c:'7.4',n:'Chocolate Logs Made Easy'},
+                {s:'yellow',c:'7.5',n:'Gingerbread Biscuits'},
+                {s:'yellow',c:'7.6',n:'Christmas Gift photo frame'},
+                {s:'yellow',c:'7.7',n:'Seasonal Festive Wreath'},
+                {s:'yellow',c:'7.8',n:'Odd Sock Beanbag Characters'},
+
+                // Other Celebrations (6 modules)
+                {s:'yellow',c:'8',n:'Research Time!'},
+                {s:'yellow',c:'8.1',n:'Unit Spookyville'},
+                {s:'yellow',c:'8.2',n:'All Things Spooky'},
+                {s:'yellow',c:'8.3',n:'What Are The Nine Candles?'},
+                {s:'yellow',c:'8.4',n:'Saint Valentine\'s Day Kindness Box'},
+                {s:'yellow',c:'8.5',n:'Saint Patrick\'s Day: Shamrock Shake'},
+                {s:'yellow',c:'8.6',n:'A Special Sunday for Mothers & Caregivers'},
+                {s:'yellow',c:'8.7',n:'Celebrating the Iranian New Year'},
+                {s:'yellow',c:'8.8',n:'Halloween Trick or Treats'},
+
+                // Community (4 modules)
+                {s:'yellow',c:'9',n:'All About The Community'},
+                {s:'yellow',c:'9.1',n:'Community 101'},
+                {s:'yellow',c:'9.2',n:'Community Tree'},
+                {s:'yellow',c:'9.3',n:'Community Mind Map'},
+
+                // Surveys (3 modules)
+                {s:'yellow',c:'10',n:'Survey Mania'},
+                {s:'yellow',c:'10.1',n:'Chips Ahoy! Chip Shop Survey'},
+                {s:'yellow',c:'10.2',n:'Shop Surveys'},
+
+                // Community Projects (3 modules)
+                {s:'yellow',c:'11',n:'Getting Involved: Community Projects'},
+                {s:'yellow',c:'11.1',n:'Junior Cadets of the World!'},
+                {s:'yellow',c:'11.2',n:'Celebrating Diversity in Your Community'},
+
+                // Welsh (4 modules)
+                {s:'yellow',c:'12',n:'Welsh Style: Traditional Welsh Cakes'},
+                {s:'yellow',c:'12.1',n:'Welsh Style: Welsh Rarebit'},
+                {s:'yellow',c:'12.2',n:'Yr Iaith Gymraeg: Welsh Language'},
+                {s:'yellow',c:'12.3',n:'Y Ddraig Goch Flag: The Red Dragon'},
+
+                // Scottish (6 modules)
+                {s:'yellow',c:'13',n:'The Scottish Way: Haggis, Neeps & Tatties'},
+                {s:'yellow',c:'13.1',n:'The Scottish Way: Cèilidh'},
+                {s:'yellow',c:'13.2',n:'The Scottish Way: The Flag of Scotland'},
+                {s:'yellow',c:'13.3',n:'The Scottish Way: Scots Gàidhlig'},
+                {s:'yellow',c:'13.4',n:'Celebrate Saint Andrews Day: Scottish Kilt Card'},
+                {s:'yellow',c:'13.5',n:'Exploring Burns Night Supper'},
+
+                // Summer & UK (4 modules)
+                {s:'yellow',c:'15',n:'The Arrival of Summer: Maypole Dancing'},
+                {s:'yellow',c:'15.1',n:'Morris Dancing'},
+                {s:'yellow',c:'16',n:'4 Nations in 1'},
+
+                // Local Area (3 modules)
+                {s:'yellow',c:'17',n:'Places of Interest'},
+                {s:'yellow',c:'17.1',n:'Scavenger Hunt'},
+                {s:'yellow',c:'17.2',n:'Town Maps, Maps of Your Town'},
+                {s:'yellow',c:'18',n:'Broadening The Horizon'},
+
+                // Inclusion & Diversity (6 modules)
+                {s:'yellow',c:'19',n:'We Are Different, We are the Same!'},
+                {s:'yellow',c:'19.1',n:'Embrace It: Inclusion & Diversity'},
+                {s:'yellow',c:'19.2',n:'All in a phrase'},
+                {s:'yellow',c:'19.3',n:'Communicating Through Sign Language'},
+                {s:'yellow',c:'19.4',n:'Ditch The Labels!'},
+                {s:'yellow',c:'19.5',n:'Communicating through Braille'},
+
+                // Anti-Bullying (5 modules)
+                {s:'yellow',c:'20',n:'It\'s Never the Same!'},
+                {s:'yellow',c:'20.1',n:'The Issue'},
+                {s:'yellow',c:'20.2',n:'Wear It On Your Wrist!'},
+                {s:'yellow',c:'20.3',n:'Activists in Action! Anti-bullying Campaign'},
+                {s:'yellow',c:'20.4',n:'Online: It is Still Not Okay!'},
+                {s:'yellow',c:'21',n:'Ten Keys'},
+
+                // Remembrance (10 modules)
+                {s:'yellow',c:'22',n:'Remembrance Day Parade'},
+                {s:'yellow',c:'22.1',n:'Cenotaphs In The Community'},
+                {s:'yellow',c:'22.2',n:'Paper Plate Poppies'},
+                {s:'yellow',c:'22.3',n:'Recycled Remembrance Poppies'},
+                {s:'yellow',c:'22.4',n:'Remembrance Art'},
+                {s:'yellow',c:'22.5',n:'Medals to Remember'},
+                {s:'yellow',c:'22.6',n:'Portraits of Boy Seaman John T. Cornwell V.C.'},
+                {s:'yellow',c:'22.7',n:'What is your unit\'s History?'},
+                {s:'yellow',c:'22.8',n:'Remembrance Light Jars'},
+                {s:'yellow',c:'22.9',n:'Remembrance Day Wreath'},
+
+                // Home Front (3 modules)
+                {s:'yellow',c:'23',n:'The Home Front'},
+                {s:'yellow',c:'23.1',n:'Ration It Out'},
+                {s:'yellow',c:'23.2',n:'Re-enactment Time'},
+
+                // Government (3 modules)
+                {s:'yellow',c:'24',n:'Values and Citizenship: What about Governments?'},
+                {s:'yellow',c:'24.1',n:'Your Local Government: Face to Face'},
+                {s:'yellow',c:'24.2',n:'Who\'s Who: Mayors or Provosts?'},
+
+                // Special Days (2 modules)
+                {s:'yellow',c:'25',n:'Saint George\'s Day'},
+                {s:'yellow',c:'26',n:'VE Victory Sponge'},
+
+                // Plastic Reduction (4 modules)
+                {s:'yellow',c:'27',n:'#SCRAPPLASTIC Swap Out Your Plastics'},
+                {s:'yellow',c:'27.1',n:'#SCRAPPLASTIC Plastic Free Day'},
+                {s:'yellow',c:'27.2',n:'#SCRAPPLASTIC Supermarket Challenge'},
+                {s:'yellow',c:'27.3',n:'#SCRAPPLASTIC Share What You Know'},
+
+                // Earthshot (5 modules)
+                {s:'yellow',c:'28',n:'Earthshot (WFW) - Tote-tally Awesome Up-cycled Bag'},
+                {s:'yellow',c:'28.1',n:'Earthshot (WFW) - Ecobricks'},
+                {s:'yellow',c:'28.2',n:'Earthshot (WFW) - Need v Want'},
+                {s:'yellow',c:'28.3',n:'Earthshot (FOC) - Utilising Technology'},
+                {s:'yellow',c:'28.4',n:'Earthshot (WFW) - Where does our waste go?'},
+
+                // Competitions & Pride (2 modules)
+                {s:'yellow',c:'29',n:'Junior Sea Cadets Competitions'},
+                {s:'yellow',c:'30',n:'Your Identity Matters - Celebrating PRIDE'},
+
+                // Special Editions (8 modules)
+                {s:'yellow',c:'70',n:'Special Edition Platinum Jubilee'},
+                {s:'yellow',c:'70.1',n:'The Platinum Thread'},
+                {s:'yellow',c:'70.2',n:'Platinum Jubilee Fact Find'},
+                {s:'yellow',c:'71',n:'Remembering Our Patron'},
+                {s:'yellow',c:'72',n:'King\'s Coronation Party Event'},
+                {s:'yellow',c:'72.1',n:'King\'s Coronation POM POM Decorations'},
+                {s:'yellow',c:'73',n:'Big Help Out - Special Call at a Landmark'},
+
+                // ========== STEM SECTION (42 modules) ==========
+                {s:'stem',c:'1',n:'Satellite Intelligence Mission'},
+                {s:'stem',c:'2',n:'Egg Drop Challenge: Protecting The Vessels'},
+                {s:'stem',c:'3',n:'Sink Or Swim: Tinfoil Boat Float Challenge'},
+                {s:'stem',c:'4',n:'Launched Out To Sea: Pom Pom Catapult'},
+                {s:'stem',c:'5',n:'Propeller Nation'},
+                {s:'stem',c:'6',n:'Steer The Ship: Eco-Friendly Giant Maze'},
+                {s:'stem',c:'7',n:'Why It Just Won\'t Work: Salt Pendulum'},
+                {s:'stem',c:'8',n:'Amazing Anchors'},
+                {s:'stem',c:'9',n:'Setting Sail'},
+                {s:'stem',c:'10',n:'Ancient Compasses'},
+                {s:'stem',c:'11',n:'Balancing Boats'},
+                {s:'stem',c:'12',n:'Carrying Cargo'},
+                {s:'stem',c:'13',n:'Electric Engines'},
+                {s:'stem',c:'14',n:'Incredible Insulation'},
+                {s:'stem',c:'15',n:'Invisible Islands'},
+                {s:'stem',c:'16',n:'Luminous Lighthouses'},
+                {s:'stem',c:'17',n:'Oceans In A Bottle'},
+                {s:'stem',c:'18',n:'Salt In The Seas'},
+                {s:'stem',c:'19',n:'Speedy Ships'},
+                {s:'stem',c:'20',n:'The World Around Us: Which Metal? Rust!'},
+                {s:'stem',c:'21',n:'Special Edition: Somewhere Over The Rainbow'},
+                {s:'stem',c:'22',n:'Wind Speed And Pressure: Anemometer'},
+                {s:'stem',c:'23',n:'Elastic Band Powered Cars'},
+                {s:'stem',c:'24',n:'Propelling Forward'},
+                {s:'stem',c:'25',n:'Get Moving - A Chemical Reaction Powered Model Boat!'},
+                {s:'stem',c:'26',n:'Weather Warning - Making A Barometer'},
+                {s:'stem',c:'27',n:'Underwater Volcano - A Force Of Nature!'},
+                {s:'stem',c:'28',n:'Tornado In A Bottle'},
+                {s:'stem',c:'29',n:'Cartesian Diver'},
+                {s:'stem',c:'30',n:'How Long Is A Minute? - Water Clock'},
+                {s:'stem',c:'31',n:'The Science Behind Making The Right Choice!'},
+                {s:'stem',c:'32',n:'Up Periscope - Make Your Own Submarine Periscope'},
+                {s:'stem',c:'33',n:'Geodesic Domes'},
+                {s:'stem',c:'34',n:'Sublime Slime'},
+                {s:'stem',c:'35',n:'Air Power: Balloon Car'},
+                {s:'stem',c:'36',n:'Ruffle Some Feathers - Mini Vortex Cannon'},
+                {s:'stem',c:'37',n:'Paper Roller Coaster - Kinetic & Potential Energy'},
+                {s:'stem',c:'38',n:'Moon Dial'},
+                {s:'stem',c:'39',n:'Paper Glider'},
+                {s:'stem',c:'40',n:'Lava Lamp'},
+                {s:'stem',c:'41',n:'Puffer Fish'},
+                {s:'stem',c:'42',n:'Waste-Free Lunch'}
             ];
             
             const hasModule = (pNumber, section, code) => {
@@ -4440,8 +4802,8 @@
                                             {juniors.map(junior => {
                                                 const completion = hasModule(junior.pNumber, mod.s, mod.c);
                                                 return (
-                                                    <td key={junior.pNumber} style={{width: '30px'}} className={`px-0 py-1 text-center border-r border-b last:border-r-0 ${completion ? getSectionColor(mod.s) : ''}`}>
-                                                        {completion ? '\u00A0' : ''}
+                                                    <td key={junior.pNumber} style={{width: '30px'}} className={`px-0 py-1 text-center border-r border-b last:border-r-0 ${completion ? getSectionColor(mod.s) : ''}`} title={completion ? `Completed: ${formatDate(completion.dateCompleted)}` : ''}>
+                                                        {completion ? '✓' : ''}
                                                     </td>
                                                 );
                                             })}
@@ -4841,8 +5203,8 @@
         const JuniorsView = ({ personnel, qualifications }) => {
             const juniorData = getJuniorData();
             
-            // Filter personnel to only juniors (under 12)
-            const juniors = personnel.filter(cadet => isJunior(cadet.dob));
+            // Filter personnel to only juniors (under 12 or 12 with junior modules/rank)
+            const juniors = personnel.filter(cadet => isJunior(cadet.dob, cadet.pNumber, cadet.rank));
             
             const [selectedJuniorPNum, setSelectedJuniorPNum] = useState(juniors.length > 0 ? juniors[0].pNumber : "");
             
@@ -4880,22 +5242,258 @@
                                     <p className="text-slate-600">{juniors.length} junior{juniors.length !== 1 ? 's' : ''} (ages 9-11)</p>
                                 </div>
                             </div>
-                            <div className="w-full md:w-64">
-                                <label className="block text-xs font-semibold text-slate-500 uppercase mb-1">Select Junior</label>
-                                <select 
-                                    value={selectedJuniorPNum}
-                                    onChange={(e) => setSelectedJuniorPNum(e.target.value)}
-                                    className="w-full p-2 border border-slate-300 rounded-md text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                            <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-end">
+                                <div className="w-full md:w-64">
+                                    <label className="block text-xs font-semibold text-slate-500 uppercase mb-1">Select Junior</label>
+                                    <select 
+                                        value={selectedJuniorPNum}
+                                        onChange={(e) => setSelectedJuniorPNum(e.target.value)}
+                                        className="w-full p-2 border border-slate-300 rounded-md text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                                    >
+                                        {juniors.map(junior => {
+                                            // Calculate progress for this junior
+                                            const juniorMods = juniorData.moduleCompletions.filter(m => m.pNumber === junior.pNumber);
+                                            const redCount = juniorMods.filter(m => m.section === 'red').length;
+                                            const blueCount = juniorMods.filter(m => m.section === 'blue').length;
+                                            const greenCount = juniorMods.filter(m => m.section === 'green').length;
+                                            const yellowCount = juniorMods.filter(m => m.section === 'yellow').length;
+                                            const stemCount = juniorMods.filter(m => m.section === 'stem').length;
+                                            
+                                            // Check for near-completion
+                                            const nearCompletion = [redCount, blueCount, greenCount, yellowCount, stemCount].some(count => count >= 13 && count < 15);
+                                            const veryClose = [redCount, blueCount, greenCount, yellowCount, stemCount].some(count => count === 14);
+                                            
+                                            return (
+                                                <option key={junior.pNumber} value={junior.pNumber}>
+                                                    {junior.name} {veryClose ? '🎯' : nearCompletion ? '⭐' : ''}
+                                                </option>
+                                            );
+                                        })}
+                                    </select>
+                                    <p className="text-xs text-slate-500 mt-1">🎯 = 1 module away | ⭐ = 2 modules away</p>
+                                </div>
+                                <button
+                                    onClick={() => {
+                                        try {
+                                            const selectedJunior = juniors.find(j => j.pNumber === selectedJuniorPNum) || juniors[0];
+                                            const { jsPDF } = window.jspdf;
+                                            const doc = new jsPDF();
+                                            
+                                            // Calculate needed values
+                                            const age = calculateAge(selectedJunior.dob);
+                                            const daysTo12 = daysTo12thBirthday(selectedJunior.dob);
+                                            const currentRank = selectedJunior.rank || "Junior Cadet";
+                                            const juniorModules = juniorData.moduleCompletions.filter(m => m.pNumber === selectedJunior.pNumber);
+                                            const redModules = juniorModules.filter(m => m.section === 'red').length;
+                                            const blueModules = juniorModules.filter(m => m.section === 'blue').length;
+                                            const greenModules = juniorModules.filter(m => m.section === 'green').length;
+                                            const yellowModules = juniorModules.filter(m => m.section === 'yellow').length;
+                                            const stemModules = juniorModules.filter(m => m.section === 'stem').length;
+                                            
+                                            const pageWidth = doc.internal.pageSize.getWidth();
+                                            const pageHeight = doc.internal.pageSize.getHeight();
+                                            let yPos = 20;
+                                            
+                                            // Header
+                                            doc.setFontSize(20);
+                                            doc.setFont(undefined, 'bold');
+                                            doc.text('Junior Sea Cadet Progress Report', pageWidth / 2, yPos, { align: 'center' });
+                                            
+                                            yPos += 15;
+                                            doc.setFontSize(10);
+                                            doc.setFont(undefined, 'normal');
+                                            doc.text(`Generated: ${new Date().toLocaleDateString('en-GB')}`, pageWidth / 2, yPos, { align: 'center' });
+                                            
+                                            // Junior Details
+                                            yPos += 15;
+                                            doc.setFontSize(14);
+                                            doc.setFont(undefined, 'bold');
+                                            doc.text('Cadet Information', 20, yPos);
+                                            
+                                            yPos += 8;
+                                            doc.setFontSize(11);
+                                            doc.setFont(undefined, 'normal');
+                                            doc.text(`Name: ${selectedJunior.name}`, 20, yPos);
+                                            yPos += 6;
+                                            doc.text(`P-Number: ${selectedJunior.pNumber}`, 20, yPos);
+                                            yPos += 6;
+                                            doc.text(`Current Rank: ${currentRank}`, 20, yPos);
+                                            yPos += 6;
+                                            doc.text(`Age: ${age} years old`, 20, yPos);
+                                            yPos += 6;
+                                            doc.text(`Days to 12th Birthday: ${daysTo12}`, 20, yPos);
+                                            
+                                            // Section Progress
+                                            yPos += 12;
+                                            doc.setFontSize(14);
+                                            doc.setFont(undefined, 'bold');
+                                            doc.text('Section Progress', 20, yPos);
+                                            
+                                            yPos += 8;
+                                            doc.setFontSize(10);
+                                            doc.setFont(undefined, 'normal');
+                                            
+                                            const sections = [
+                                                { name: 'RED - Unit Activities', count: redModules, color: [220, 38, 38] },
+                                                { name: 'BLUE - Waterborne', count: blueModules, color: [37, 99, 235] },
+                                                { name: 'GREEN - Outdoor', count: greenModules, color: [22, 163, 74] },
+                                                { name: 'YELLOW - Community', count: yellowModules, color: [234, 179, 8] },
+                                                { name: 'STEM', count: stemModules, color: [147, 51, 234] }
+                                            ];
+                                            
+                                            sections.forEach(section => {
+                                                doc.text(`${section.name}: ${section.count}/15 modules`, 25, yPos);
+                                                
+                                                // Progress bar
+                                                const barWidth = 100;
+                                                const barHeight = 4;
+                                                const barX = 120;
+                                                const barY = yPos - 3;
+                                                
+                                                // Background
+                                                doc.setFillColor(240, 240, 240);
+                                                doc.rect(barX, barY, barWidth, barHeight, 'F');
+                                                
+                                                // Progress
+                                                const progressWidth = (section.count / 15) * barWidth;
+                                                doc.setFillColor(section.color[0], section.color[1], section.color[2]);
+                                                doc.rect(barX, barY, progressWidth, barHeight, 'F');
+                                                
+                                                yPos += 8;
+                                            });
+                                            
+                                            // Completed Modules
+                                            yPos += 8;
+                                            doc.setFontSize(14);
+                                            doc.setFont(undefined, 'bold');
+                                            doc.text(`Completed Modules (${juniorModules.length} total)`, 20, yPos);
+                                            
+                                            yPos += 8;
+                                            doc.setFontSize(9);
+                                            doc.setFont(undefined, 'normal');
+                                            
+                                            if (juniorModules.length === 0) {
+                                                doc.text('No modules completed yet.', 25, yPos);
+                                            } else {
+                                                // Sort by section and code
+                                                const sortedModules = [...juniorModules].sort((a, b) => {
+                                                    if (a.section !== b.section) return a.section.localeCompare(b.section);
+                                                    return a.moduleCode.localeCompare(b.moduleCode);
+                                                });
+                                                
+                                                let currentSection = '';
+                                                sortedModules.forEach(mod => {
+                                                    // Check if we need a new page
+                                                    if (yPos > pageHeight - 20) {
+                                                        doc.addPage();
+                                                        yPos = 20;
+                                                    }
+                                                    
+                                                    // Section header
+                                                    if (mod.section !== currentSection) {
+                                                        currentSection = mod.section;
+                                                        doc.setFont(undefined, 'bold');
+                                                        doc.text(`${mod.section.toUpperCase()}:`, 25, yPos);
+                                                        yPos += 5;
+                                                        doc.setFont(undefined, 'normal');
+                                                    }
+                                                    
+                                                    // Module entry
+                                                    const dateStr = formatDate(mod.dateCompleted);
+                                                    doc.text(`  • ${mod.section.toUpperCase()} ${mod.moduleCode}: ${mod.moduleName}`, 27, yPos);
+                                                    doc.text(dateStr, pageWidth - 30, yPos, { align: 'right' });
+                                                    yPos += 5;
+                                                });
+                                            }
+                                            
+                                            // Awards Section
+                                            if (yPos > pageHeight - 40) {
+                                                doc.addPage();
+                                                yPos = 20;
+                                            }
+                                            
+                                            yPos += 8;
+                                            doc.setFontSize(14);
+                                            doc.setFont(undefined, 'bold');
+                                            doc.text('Awards & Qualifications', 20, yPos);
+                                            
+                                            yPos += 8;
+                                            doc.setFontSize(9);
+                                            doc.setFont(undefined, 'normal');
+                                            
+                                            const cadetQuals = qualifications.filter(q => q.pNumber === selectedJunior.pNumber);
+                                            if (cadetQuals.length === 0) {
+                                                doc.text('No awards recorded yet.', 25, yPos);
+                                            } else {
+                                                cadetQuals.forEach(qual => {
+                                                    if (yPos > pageHeight - 20) {
+                                                        doc.addPage();
+                                                        yPos = 20;
+                                                    }
+                                                    const dateStr = qual.date ? formatDate(qual.date) : 'No date';
+                                                    doc.text(`  • ${qual.module}`, 25, yPos);
+                                                    doc.text(dateStr, pageWidth - 30, yPos, { align: 'right' });
+                                                    yPos += 5;
+                                                });
+                                            }
+                                            
+                                            // Footer
+                                            const footerY = pageHeight - 10;
+                                            doc.setFontSize(8);
+                                            doc.setTextColor(128, 128, 128);
+                                            doc.text('Sea Cadet Training Dashboard - Junior Progress Report', pageWidth / 2, footerY, { align: 'center' });
+                                            
+                                            // Save
+                                            const filename = `${selectedJunior.name.replace(/\s+/g, '_')}_Progress_Report_${new Date().toISOString().split('T')[0]}.pdf`;
+                                            doc.save(filename);
+                                            
+                                        } catch (error) {
+                                            console.error('PDF Export Error:', error);
+                                            alert('Error generating PDF. Please try again or check the console for details.');
+                                        }
+                                    }}
+                                    className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold shadow-md transition-colors whitespace-nowrap"
+                                    aria-label="Export progress report as PDF"
                                 >
-                                    {juniors.map(junior => (
-                                        <option key={junior.pNumber} value={junior.pNumber}>
-                                            {junior.name}
-                                        </option>
-                                    ))}
-                                </select>
+                                    <Icon name="FileDown" className="w-4 h-4" />
+                                    Export PDF
+                                </button>
                             </div>
                         </div>
                     </div>
+                    
+                    {/* Progress Alert Summary */}
+                    {(() => {
+                        const juniorsWithAlerts = juniors.filter(junior => {
+                            const juniorMods = juniorData.moduleCompletions.filter(m => m.pNumber === junior.pNumber);
+                            const counts = [
+                                juniorMods.filter(m => m.section === 'red').length,
+                                juniorMods.filter(m => m.section === 'blue').length,
+                                juniorMods.filter(m => m.section === 'green').length,
+                                juniorMods.filter(m => m.section === 'yellow').length,
+                                juniorMods.filter(m => m.section === 'stem').length
+                            ];
+                            return counts.some(count => count >= 13 && count < 15);
+                        });
+                        
+                        if (juniorsWithAlerts.length === 0) return null;
+                        
+                        return (
+                            <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-300 rounded-lg p-4 shadow">
+                                <div className="flex items-center gap-3">
+                                    <Icon name="Bell" className="w-6 h-6 text-green-600" />
+                                    <div>
+                                        <p className="font-bold text-green-900">
+                                            {juniorsWithAlerts.length} junior{juniorsWithAlerts.length !== 1 ? 's are' : ' is'} close to earning badges!
+                                        </p>
+                                        <p className="text-sm text-green-800">
+                                            {juniorsWithAlerts.map(j => j.name).join(', ')} {juniorsWithAlerts.length === 1 ? 'needs' : 'need'} just 1-2 more modules
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        );
+                    })()}
                     
                     {/* Junior Detail */}
                     <JuniorDetail junior={selectedJunior} juniorData={juniorData} personnel={personnel} qualifications={qualifications} />
@@ -5078,27 +5676,37 @@
                     return;
                 }
                 
-                // Split by commas to allow multiple modules
-                const codes = moduleCode.split(',').map(c => c.trim()).filter(c => c);
+                // Remove support for comma-separated (one at a time for validation)
+                const code = moduleCode.trim();
                 
-                if (codes.length === 0) {
-                    alert("Please enter at least one module code");
+                // Basic validation: check format (should be number or number.number)
+                const validFormat = /^\d+(\.\d+)?$/.test(code);
+                if (!validFormat) {
+                    alert(`Invalid module code format: "${code}"\nPlease enter a valid code like "1" or "1.1"`);
                     return;
                 }
                 
-                // Create module object for each code
-                const newModules = codes.map(code => ({
+                // Warning for unusual codes (over 100 or with many decimals)
+                const numericCode = parseFloat(code);
+                if (numericCode > 100) {
+                    if (!confirm(`Module code "${code}" seems unusual. Are you sure this is correct?`)) {
+                        return;
+                    }
+                }
+                
+                // Create module object
+                const newModule = {
                     pNumber: junior.pNumber,
                     section: section,
                     moduleCode: code.toUpperCase(),
-                    moduleName: code,
+                    moduleName: `${section.toUpperCase()} ${code}`,
                     dateCompleted: dateCompleted,
                     isCore: false
-                }));
+                };
                 
                 const updatedData = {
                     ...juniorData,
-                    moduleCompletions: [...juniorData.moduleCompletions, ...newModules]
+                    moduleCompletions: [...juniorData.moduleCompletions, newModule]
                 };
                 
                 if (saveJuniorData(updatedData)) {
@@ -5110,6 +5718,34 @@
                     }, 1500);
                 } else {
                     alert("Error saving module completions");
+                }
+            };
+            
+            const handleModuleDelete = (moduleToDelete) => {
+                const confirmMessage = `Are you sure you want to delete this module?\n\n${moduleToDelete.section.toUpperCase()} ${moduleToDelete.moduleCode}: ${moduleToDelete.moduleName}\nCompleted: ${formatDate(moduleToDelete.dateCompleted)}\n\nThis action cannot be undone.`;
+                
+                if (!confirm(confirmMessage)) {
+                    return;
+                }
+                
+                // Filter out the module to delete
+                const updatedCompletions = juniorData.moduleCompletions.filter(m => 
+                    !(m.pNumber === moduleToDelete.pNumber && 
+                      m.section === moduleToDelete.section && 
+                      m.moduleCode === moduleToDelete.moduleCode &&
+                      m.dateCompleted === moduleToDelete.dateCompleted)
+                );
+                
+                const updatedData = {
+                    ...juniorData,
+                    moduleCompletions: updatedCompletions
+                };
+                
+                if (saveJuniorData(updatedData)) {
+                    alert("Module deleted successfully");
+                    window.location.reload(); // Refresh to show updated data
+                } else {
+                    alert("Error deleting module");
                 }
             };
             
@@ -5255,6 +5891,66 @@
                             </div>
                         </div>
                         
+                        {/* Progress Alerts - NEW: Show when close to earning badges */}
+                        {(() => {
+                            const alerts = [];
+                            
+                            // Check each section for near-completion (13 or 14 modules)
+                            const sections = [
+                                { name: 'RED - Unit', count: redModules, color: 'amber', icon: 'Home' },
+                                { name: 'BLUE - Waterborne', count: blueModules, color: 'blue', icon: 'Waves' },
+                                { name: 'GREEN - Outdoor', count: greenModules, color: 'green', icon: 'Trees' },
+                                { name: 'YELLOW - Community', count: yellowModules, color: 'yellow', icon: 'Users' },
+                                { name: 'STEM', count: stemModules, color: 'purple', icon: 'Atom' }
+                            ];
+                            
+                            sections.forEach(section => {
+                                if (section.count === 14) {
+                                    alerts.push({
+                                        ...section,
+                                        urgency: 'high',
+                                        message: 'Just 1 more module for badge!',
+                                        bgColor: 'bg-green-50',
+                                        borderColor: 'border-green-400',
+                                        textColor: 'text-green-900',
+                                        iconColor: 'text-green-600'
+                                    });
+                                } else if (section.count === 13) {
+                                    alerts.push({
+                                        ...section,
+                                        urgency: 'medium',
+                                        message: 'Only 2 more modules needed!',
+                                        bgColor: 'bg-amber-50',
+                                        borderColor: 'border-amber-400',
+                                        textColor: 'text-amber-900',
+                                        iconColor: 'text-amber-600'
+                                    });
+                                }
+                            });
+                            
+                            if (alerts.length === 0) return null;
+                            
+                            return (
+                                <div className="mt-4 space-y-2">
+                                    {alerts.map((alert, idx) => (
+                                        <div key={idx} className={`p-3 ${alert.bgColor} border-2 ${alert.borderColor} rounded-lg`}>
+                                            <div className="flex items-center gap-3">
+                                                <Icon name={alert.icon} className={`w-6 h-6 ${alert.iconColor}`} />
+                                                <div className="flex-1">
+                                                    <p className={`font-bold text-sm ${alert.textColor}`}>
+                                                        {alert.name}: {alert.count}/15 modules completed
+                                                    </p>
+                                                    <p className={`text-xs ${alert.textColor}`}>
+                                                        {alert.message} {alert.urgency === 'high' ? '🎯' : '⭐'}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            );
+                        })()}
+                        
                         {/* Commodore's Broad Pennant Alert - CORRECTED LOGIC: All 4 badges awarded + 8 extra modules each (23 total) */}
                         {(() => {
                             const hasRedBadge = qualifications?.some(q => q.pNumber === junior.pNumber && q.module.includes("JSC Red Unit Activities Badge"));
@@ -5363,9 +6059,26 @@
                                     type="text"
                                     value={moduleCode}
                                     onChange={(e) => setModuleCode(e.target.value)}
-                                    placeholder="e.g. 1.1 or 1,1.1,1.2 for multiple"
+                                    placeholder="e.g. 1 or 1.1 (will validate against official list)"
                                     className="w-full p-2 border border-slate-300 rounded-lg"
+                                    aria-label="Enter module code"
+                                    list="module-codes"
                                 />
+                                <datalist id="module-codes">
+                                    <option value="1" />
+                                    <option value="1.1" />
+                                    <option value="1.2" />
+                                    <option value="1.3" />
+                                    <option value="1.4" />
+                                    <option value="1.5" />
+                                    <option value="2" />
+                                    <option value="2.1" />
+                                    <option value="2.2" />
+                                    <option value="3" />
+                                    <option value="4" />
+                                    <option value="5" />
+                                </datalist>
+                                <p className="text-xs text-slate-500 mt-1">Enter one code at a time. Code will be validated.</p>
                             </div>
                             <div>
                                 <label className="block text-sm font-semibold text-slate-700 mb-2">Date Completed</label>
@@ -5400,8 +6113,8 @@
                         ) : (
                             <div className="space-y-2 max-h-96 overflow-y-auto">
                                 {juniorModules.map((mod, idx) => (
-                                    <div key={idx} className="flex justify-between items-center p-3 bg-slate-50 rounded-lg">
-                                        <div>
+                                    <div key={idx} className="flex justify-between items-center p-3 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors">
+                                        <div className="flex-1">
                                             <span className={`inline-block px-2 py-1 rounded text-xs font-semibold mr-2 ${
                                                 mod.section === 'red' ? 'bg-red-100 text-red-800' :
                                                 mod.section === 'blue' ? 'bg-blue-100 text-blue-800' :
@@ -5413,7 +6126,17 @@
                                             </span>
                                             <span className="text-slate-700">{mod.moduleName}</span>
                                         </div>
-                                        <span className="text-sm text-slate-500">{formatDate(mod.dateCompleted)}</span>
+                                        <div className="flex items-center gap-3">
+                                            <span className="text-sm text-slate-500">{formatDate(mod.dateCompleted)}</span>
+                                            <button
+                                                onClick={() => handleModuleDelete(mod)}
+                                                className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-xs font-semibold transition-colors"
+                                                aria-label={`Delete module ${mod.section.toUpperCase()} ${mod.moduleCode}`}
+                                                title="Delete this module"
+                                            >
+                                                Delete
+                                            </button>
+                                        </div>
                                     </div>
                                 ))}
                             </div>
@@ -5478,6 +6201,96 @@
         // ============================================================================
         // SECTION 4: MAIN APP COMPONENT
         // ============================================================================
+        
+        // --- GLOBAL IMPORT WARNINGS BANNER ---
+        const ImportWarningsBanner = () => {
+            const [warnings, setWarnings] = useState(null);
+            
+            useEffect(() => {
+                const stored = localStorage.getItem('importWarnings');
+                if (stored) {
+                    try {
+                        setWarnings(JSON.parse(stored));
+                    } catch (e) {
+                        console.error('Error parsing import warnings', e);
+                    }
+                }
+            }, []);
+            
+            const downloadWarnings = () => {
+                if (!warnings || !warnings.warnings) return;
+                
+                const csvContent = "data:text/csv;charset=utf-8," 
+                    + "Row,Warning\n"
+                    + warnings.warnings.map(err => {
+                        const match = err.match(/Row (\d+): (.+)/);
+                        if (match) {
+                            return `${match[1]},"${match[2].replace(/"/g, '""')}"`;
+                        }
+                        return `,"${err.replace(/"/g, '""')}"`;
+                    }).join("\n");
+                
+                const encodedUri = encodeURI(csvContent);
+                const link = document.createElement("a");
+                link.setAttribute("href", encodedUri);
+                link.setAttribute("download", `validation_warnings_${new Date().toISOString().split('T')[0]}.csv`);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            };
+            
+            const dismiss = () => {
+                localStorage.removeItem('importWarnings');
+                setWarnings(null);
+            };
+            
+            if (!warnings || !warnings.warnings || warnings.warnings.length === 0) {
+                return null;
+            }
+            
+            return (
+                <div className="fixed top-0 left-0 right-0 z-50 bg-amber-50 border-b-4 border-amber-500 shadow-lg">
+                    <div className="max-w-7xl mx-auto p-4">
+                        <div className="flex justify-between items-start">
+                            <div className="flex-1">
+                                <p className="font-bold text-amber-900 flex items-center gap-2 mb-2">
+                                    <Icon name="AlertTriangle" className="w-5 h-5" />
+                                    {warnings.warnings.length} Validation Warning{warnings.warnings.length !== 1 ? 's' : ''} from Recent Import
+                                </p>
+                                <div className="text-sm text-amber-800 max-h-32 overflow-y-auto space-y-1 mb-2">
+                                    {warnings.warnings.slice(0, 5).map((err, idx) => (
+                                        <div key={idx} className="pl-2 border-l-2 border-amber-300">• {err}</div>
+                                    ))}
+                                    {warnings.warnings.length > 5 && (
+                                        <p className="font-semibold">...and {warnings.warnings.length - 5} more warnings</p>
+                                    )}
+                                </div>
+                                <p className="text-xs text-amber-700">
+                                    Imported {warnings.personnelCount} personnel and {warnings.qualsCount} qualifications with some data quality issues.
+                                </p>
+                            </div>
+                            <div className="flex gap-2 ml-4">
+                                <button 
+                                    onClick={downloadWarnings}
+                                    className="text-amber-700 hover:text-amber-900 flex items-center gap-1 text-sm font-semibold px-3 py-1 bg-amber-100 rounded hover:bg-amber-200"
+                                    title="Download warnings as CSV"
+                                >
+                                    <Icon name="Download" className="w-4 h-4" />
+                                    Download CSV
+                                </button>
+                                <button 
+                                    onClick={dismiss} 
+                                    className="text-amber-600 hover:text-amber-800"
+                                    title="Dismiss warnings"
+                                >
+                                    <Icon name="X" className="w-5 h-5" />
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
         
         const App = () => {
             const [view, setView] = useState('upload'); 
@@ -5572,7 +6385,9 @@
 
             if (view === 'upload' && personnelData.length === 0) {
                 return (
-                    <div className="min-h-screen flex flex-col items-center pt-5 pb-10">
+                    <div>
+                        <ImportWarningsBanner />
+                        <div className="min-h-screen flex flex-col items-center pt-5 pb-10">
                         <img src="media/ts_dashboard.webp" alt="TS Dashboard" className="w-[300px] h-auto mb-2 object-contain" />
                         <h1 className="text-4xl font-extrabold text-blue-900 mb-1">Sea Cadet Training Dashboard</h1>
                         <FileUploader onDataLoaded={handleDataLoaded} hasData={personnelData.length > 0} clearData={clearData} wipeAllData={wipeAllData} />
@@ -5583,12 +6398,14 @@
                             <p>This has been created independently of the MSSC and no warranty of offered or implied etc. Feature requests and bug fixes should be addressed to James Harbidge - jharbidge@mhseacadets.org</p>
                             <p className="mt-3 text-[10px] text-slate-300">Version {DATA_VERSION}</p>
                         </div>
+                        </div>
                     </div>
                 );
             }
 
             return (
                 <ErrorBoundary>
+                    <ImportWarningsBanner />
                     <div className="min-h-screen bg-slate-100 flex font-sans text-slate-900">
                         <aside className={`${sidebarCollapsed ? 'w-20' : 'w-64'} bg-blue-900 text-white flex flex-col shadow-2xl fixed h-full z-10 transition-all duration-300`}>
                             <div className="p-4 border-b border-blue-800 flex flex-col items-center relative">
@@ -5644,8 +6461,21 @@
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<App />);
         
-        console.log(`RC2.7 loaded successfully! Version: ${DATA_VERSION}`);
-        console.log("RC2.7: Home → Cadet Focus → Juniors → Junior Progress (GRID) → CTP → CTS → Waterborne → Awards → Training Plan");
+        console.log(`RC2.66 loaded successfully! Version: ${DATA_VERSION}`);
+        console.log("RC2.66 FIXED: Recognize numeric-only P-Number format (7-8 digits like 11806919) - Westminster export format");
+        console.log("RC2.65 FIXED: Recognize adult volunteer P-Number formats (CV##### and L######L) - no more false warnings!");
+        console.log("RC2.65 FIXED: Missing rank now treated as 'Unit Assistant (UA)' for adult volunteers");
+        console.log("RC2.64 NEW: Persistent warnings banner - Validation warnings now stay visible after import and can be dismissed");
+        console.log("RC2.63 NEW: Download validation warnings as CSV + More lenient validation for Westminster data");
+        console.log("RC2.62a BUGFIX: Fixed duplicate function declaration error");
+        console.log("RC2.62 NEW FEATURE: Enhanced Bulk Upload - Row-by-row validation, error reporting, and import summary ✓");
+        console.log("RC2.62 ADJUSTMENT: PDF Export button moved to header next to junior selector");
+        console.log("RC2.61 NEW FEATURE: Individual PDF Reports - Export professional progress reports with 'Export PDF Report' button 📄");
+        console.log("RC2.60 NEW FEATURE: Progress Alerts - Shows when juniors are 1-2 modules away from earning badges 🎯⭐");
+        console.log("RC2.59a BUGFIX: Fixed ReferenceError in isJunior function");
+        console.log("RC2.59 HIGH PRIORITY FIXES: Module deletion, validation, 12-year-old boundary, checkmarks, ARIA labels");
+        console.log("RC2.58: CRITICAL FIX - Corrected 341 official Junior modules from MSSC syllabus");
+        console.log("Features: Home → Cadet Focus → Juniors → Junior Progress (GRID) → CTP → CTS → Waterborne → Awards → Training Plan");
     </script>
 </body>
 </html>

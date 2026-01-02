@@ -107,7 +107,7 @@
         // ============================================================================
         
         // --- 1.1 VERSION ---
-        const DATA_VERSION = "1.0-RC2.68c"; // IMPROVED: Alert colours match sections, Pennant moved below Section Progress 
+        const DATA_VERSION = "1.0-RC2.68d"; // IMPROVED: Proficiencies and Pennant side-by-side to save vertical space 
 
         // --- 1.2 BADGE & RANK IMAGE MAPS ---
         const RANK_IMG_MAP = {
@@ -6075,132 +6075,135 @@
                             return null;
                         })()}
                     </div>
-                    {/* Commodore's Broad Pennant Progress */}
-                    <div className="bg-white rounded-lg shadow p-6 mt-6">
-                        <div className="flex items-center gap-3 mb-4">
-                            <h3 className="text-xl font-bold text-purple-900">Commodore's Broad Pennant</h3>
-                            <span className="text-sm text-purple-600 font-semibold">Highest Junior Achievement</span>
-                        </div>
-                        {(() => {
-                            // Check if awarded
-                            const hasPennant = qualifications?.find(q => 
-                                q.pNumber === junior.pNumber && 
-                                (q.module.includes("Commodore") || q.module.includes("Pennant"))
-                            );
-                            
-                            if (hasPennant) {
-                                return (
-                                    <div className="bg-purple-50 p-6 rounded-lg border-2 border-purple-300 text-center">
-                                        <img 
-                                            src="scc_award_commodores_pennant.webp" 
-                                            alt="Commodore's Broad Pennant"
-                                            className="w-32 h-32 mx-auto mb-3"
-                                            onError={(e) => {
-                                                e.target.style.display = 'none';
-                                                e.target.nextSibling.style.display = 'block';
-                                            }}
-                                        />
-                                        <div style={{display: 'none'}} className="text-5xl mb-3">🏆</div>
-                                        <p className="text-lg font-bold text-purple-900 mb-1">AWARDED</p>
-                                        {hasPennant.date && <p className="text-sm text-purple-700">on {formatDate(hasPennant.date)}</p>}
-                                    </div>
-                                );
-                            }
-                            
-                            // Calculate what's still needed
-                            const remaining = [];
-                            
-                            // Check badges (15+ modules needed)
-                            if (redModules < 15) remaining.push(`${15 - redModules} more RED module${15 - redModules > 1 ? 's' : ''} for badge (currently ${redModules}/15)`);
-                            if (blueModules < 15) remaining.push(`${15 - blueModules} more BLUE module${15 - blueModules > 1 ? 's' : ''} for badge (currently ${blueModules}/15)`);
-                            if (greenModules < 15) remaining.push(`${15 - greenModules} more GREEN module${15 - greenModules > 1 ? 's' : ''} for badge (currently ${greenModules}/15)`);
-                            if (yellowModules < 15) remaining.push(`${15 - yellowModules} more YELLOW module${15 - yellowModules > 1 ? 's' : ''} for badge (currently ${yellowModules}/15)`);
-                            
-                            // Check extra modules (23+ total needed)
-                            if (redModules >= 15 && redModules < 23) remaining.push(`${23 - redModules} more RED module${23 - redModules > 1 ? 's' : ''} for 8 extra (currently ${redModules}/23)`);
-                            if (blueModules >= 15 && blueModules < 23) remaining.push(`${23 - blueModules} more BLUE module${23 - blueModules > 1 ? 's' : ''} for 8 extra (currently ${blueModules}/23)`);
-                            if (greenModules >= 15 && greenModules < 23) remaining.push(`${23 - greenModules} more GREEN module${23 - greenModules > 1 ? 's' : ''} for 8 extra (currently ${greenModules}/23)`);
-                            if (yellowModules >= 15 && yellowModules < 23) remaining.push(`${23 - yellowModules} more YELLOW module${23 - yellowModules > 1 ? 's' : ''} for 8 extra (currently ${yellowModules}/23)`);
-                            
-                            if (remaining.length === 0) {
-                                return (
-                                    <div className="bg-green-50 p-6 rounded-lg border-2 border-green-300 text-center">
-                                        <p className="text-lg font-bold text-green-900 mb-2">✓ ALL REQUIREMENTS MET</p>
-                                        <p className="text-sm text-green-700">Ready to be awarded the Commodore's Broad Pennant!</p>
-                                    </div>
-                                );
-                            }
-                            
-                            return (
-                                <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
-                                    <p className="text-sm font-semibold text-purple-700 mb-3">Still needed:</p>
-                                    <ul className="text-sm text-slate-700 space-y-2">
-                                        {remaining.map((req, idx) => (
-                                            <li key={idx} className="flex items-start gap-2">
-                                                <span className="text-purple-600 font-bold">•</span>
-                                                <span>{req}</span>
-                                            </li>
-                                        ))}
-                                    </ul>
-                                </div>
-                            );
-                        })()}
-                    </div>
-                    
-                    {/* Junior Proficiencies */}
-                    <div className="bg-white rounded-lg shadow p-6">
-                        <h3 className="text-xl font-bold mb-4 flex items-center gap-2"><Icon name="Award" className="w-5 h-5 text-purple-600"/> Junior Proficiencies</h3>
-                        {(() => {
-                            const cadetQuals = qualifications.filter(q => q.pNumber === junior.pNumber && q.module);
-                            const awardedWaterborne = [];
-                            
-                            const swimQual = cadetQuals.find(q => {
-                                const m = q.module.toLowerCase();
-                                return m.includes("swim test") || m.includes("swimming test") || m.includes("water safety");
-                            });
+                    {/* Junior Proficiencies and Commodore's Pennant - Side by Side */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+                        {/* Junior Proficiencies - LEFT */}
+                        <div className="bg-white rounded-lg shadow p-6">
+                            <h3 className="text-xl font-bold mb-4 flex items-center gap-2"><Icon name="Award" className="w-5 h-5 text-purple-600"/> Junior Proficiencies</h3>
+                            {(() => {
+                                const cadetQuals = qualifications.filter(q => q.pNumber === junior.pNumber && q.module);
+                                const awardedWaterborne = [];
+                                
+                                const swimQual = cadetQuals.find(q => {
+                                    const m = q.module.toLowerCase();
+                                    return m.includes("swim test") || m.includes("swimming test") || m.includes("water safety");
+                                });
 
-                            if (swimQual) {
-                                awardedWaterborne.push({ name: "Swim Test / Water Safety", key: "Swim Test", date: swimQual.date });
-                            } else {
-                                awardedWaterborne.push({ name: "Swim Test Required", key: "No Swim Test", date: null });
-                            }
-
-                            // Check for waterborne profs
-                            const profNames = [
-                                { search: ["Rowing Coxswain", "Row 3"], key: "Rowing Coxswain" },
-                                { search: ["Paddle Explore"], key: "Paddle Explore Award" },
-                                { search: ["Paddle Discover"], key: "Paddle Discover Award" },
-                                { search: ["YSS Stage 2", "Sail - RYA YSS Stage 2"], key: "Sailing Stage 2 / Level 1" },
-                                { search: ["YSS Stage 3"], key: "Sailing Stage 3 / Level 2" },
-                                { search: ["YSS Stage 4"], key: "Sailing Stage 4 / Level 3" },
-                                { search: ["Powerboat Level 1"], key: "RYA Powerboat Level 1" },
-                                { search: ["Powerboat Level 2"], key: "RYA Powerboat Level 2" },
-                                { search: ["Go Row 2"], key: "Rowing Competent Crew" }
-                            ];
-
-                            profNames.forEach(prof => {
-                                const found = cadetQuals.find(q => prof.search.some(s => q.module.includes(s)));
-                                if (found) {
-                                    awardedWaterborne.push({ name: found.module, key: prof.key, date: found.date });
+                                if (swimQual) {
+                                    awardedWaterborne.push({ name: "Swim Test / Water Safety", key: "Swim Test", date: swimQual.date });
+                                } else {
+                                    awardedWaterborne.push({ name: "Swim Test Required", key: "No Swim Test", date: null });
                                 }
-                            });
 
-                            return awardedWaterborne.length === 0 ? (
-                                <div className="w-full text-center py-4 text-slate-400 italic bg-slate-50 rounded border border-dashed">No waterborne proficiencies found for this junior.</div>
-                            ) : (
-                                <div className="flex gap-4 overflow-x-auto pb-4">
-                                    {awardedWaterborne.map((wb, idx) => (
-                                        <div key={idx} className="flex-shrink-0 flex flex-col items-center justify-center bg-slate-50 border border-slate-200 rounded-lg p-3 min-w-[120px] text-center">
-                                            <div className="h-24 flex items-center justify-center mb-2">
-                                                <BadgeImage name={wb.key} className="h-24 w-auto object-contain" fallbackIcon="Award"/>
+                                // Check for waterborne profs
+                                const profNames = [
+                                    { search: ["Rowing Coxswain", "Row 3"], key: "Rowing Coxswain" },
+                                    { search: ["Paddle Explore"], key: "Paddle Explore Award" },
+                                    { search: ["Paddle Discover"], key: "Paddle Discover Award" },
+                                    { search: ["YSS Stage 2", "Sail - RYA YSS Stage 2"], key: "Sailing Stage 2 / Level 1" },
+                                    { search: ["YSS Stage 3"], key: "Sailing Stage 3 / Level 2" },
+                                    { search: ["YSS Stage 4"], key: "Sailing Stage 4 / Level 3" },
+                                    { search: ["Powerboat Level 1"], key: "RYA Powerboat Level 1" },
+                                    { search: ["Powerboat Level 2"], key: "RYA Powerboat Level 2" },
+                                    { search: ["Go Row 2"], key: "Rowing Competent Crew" }
+                                ];
+
+                                profNames.forEach(prof => {
+                                    const found = cadetQuals.find(q => prof.search.some(s => q.module.includes(s)));
+                                    if (found) {
+                                        awardedWaterborne.push({ name: found.module, key: prof.key, date: found.date });
+                                    }
+                                });
+
+                                return awardedWaterborne.length === 0 ? (
+                                    <div className="w-full text-center py-4 text-slate-400 italic bg-slate-50 rounded border border-dashed">No waterborne proficiencies found for this junior.</div>
+                                ) : (
+                                    <div className="flex gap-4 overflow-x-auto pb-4">
+                                        {awardedWaterborne.map((wb, idx) => (
+                                            <div key={idx} className="flex-shrink-0 flex flex-col items-center justify-center bg-slate-50 border border-slate-200 rounded-lg p-3 min-w-[120px] text-center">
+                                                <div className="h-24 flex items-center justify-center mb-2">
+                                                    <BadgeImage name={wb.key} className="h-24 w-auto object-contain" fallbackIcon="Award"/>
+                                                </div>
+                                                <p className="text-xs font-bold text-slate-700 leading-tight">{wb.name}</p>
+                                                <p className="text-[10px] text-slate-500 mt-1">{formatDate(wb.date)}</p>
                                             </div>
-                                            <p className="text-xs font-bold text-slate-700 leading-tight">{wb.name}</p>
-                                            <p className="text-[10px] text-slate-500 mt-1">{formatDate(wb.date)}</p>
+                                        ))}
+                                    </div>
+                                );
+                            })()}
+                        </div>
+                        
+                        {/* Commodore's Broad Pennant - RIGHT */}
+                        <div className="bg-white rounded-lg shadow p-6">
+                            <div className="flex items-center gap-3 mb-4">
+                                <h3 className="text-xl font-bold text-purple-900">Commodore's Broad Pennant</h3>
+                                <span className="text-sm text-purple-600 font-semibold">Highest Junior Achievement</span>
+                            </div>
+                            {(() => {
+                                // Check if awarded
+                                const hasPennant = qualifications?.find(q => 
+                                    q.pNumber === junior.pNumber && 
+                                    (q.module.includes("Commodore") || q.module.includes("Pennant"))
+                                );
+                                
+                                if (hasPennant) {
+                                    return (
+                                        <div className="bg-purple-50 p-6 rounded-lg border-2 border-purple-300 text-center">
+                                            <img 
+                                                src="scc_award_commodores_pennant.webp" 
+                                                alt="Commodore's Broad Pennant"
+                                                className="w-32 h-32 mx-auto mb-3"
+                                                onError={(e) => {
+                                                    e.target.style.display = 'none';
+                                                    e.target.nextSibling.style.display = 'block';
+                                                }}
+                                            />
+                                            <div style={{display: 'none'}} className="text-5xl mb-3">🏆</div>
+                                            <p className="text-lg font-bold text-purple-900 mb-1">AWARDED</p>
+                                            {hasPennant.date && <p className="text-sm text-purple-700">on {formatDate(hasPennant.date)}</p>}
                                         </div>
-                                    ))}
-                                </div>
-                            );
-                        })()}
+                                    );
+                                }
+                                
+                                // Calculate what's still needed
+                                const remaining = [];
+                                
+                                // Check badges (15+ modules needed)
+                                if (redModules < 15) remaining.push(`${15 - redModules} more RED module${15 - redModules > 1 ? 's' : ''} for badge (currently ${redModules}/15)`);
+                                if (blueModules < 15) remaining.push(`${15 - blueModules} more BLUE module${15 - blueModules > 1 ? 's' : ''} for badge (currently ${blueModules}/15)`);
+                                if (greenModules < 15) remaining.push(`${15 - greenModules} more GREEN module${15 - greenModules > 1 ? 's' : ''} for badge (currently ${greenModules}/15)`);
+                                if (yellowModules < 15) remaining.push(`${15 - yellowModules} more YELLOW module${15 - yellowModules > 1 ? 's' : ''} for badge (currently ${yellowModules}/15)`);
+                                
+                                // Check extra modules (23+ total needed)
+                                if (redModules >= 15 && redModules < 23) remaining.push(`${23 - redModules} more RED module${23 - redModules > 1 ? 's' : ''} for 8 extra (currently ${redModules}/23)`);
+                                if (blueModules >= 15 && blueModules < 23) remaining.push(`${23 - blueModules} more BLUE module${23 - blueModules > 1 ? 's' : ''} for 8 extra (currently ${blueModules}/23)`);
+                                if (greenModules >= 15 && greenModules < 23) remaining.push(`${23 - greenModules} more GREEN module${23 - greenModules > 1 ? 's' : ''} for 8 extra (currently ${greenModules}/23)`);
+                                if (yellowModules >= 15 && yellowModules < 23) remaining.push(`${23 - yellowModules} more YELLOW module${23 - yellowModules > 1 ? 's' : ''} for 8 extra (currently ${yellowModules}/23)`);
+                                
+                                if (remaining.length === 0) {
+                                    return (
+                                        <div className="bg-green-50 p-6 rounded-lg border-2 border-green-300 text-center">
+                                            <p className="text-lg font-bold text-green-900 mb-2">✓ ALL REQUIREMENTS MET</p>
+                                            <p className="text-sm text-green-700">Ready to be awarded the Commodore's Broad Pennant!</p>
+                                        </div>
+                                    );
+                                }
+                                
+                                return (
+                                    <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
+                                        <p className="text-sm font-semibold text-purple-700 mb-3">Still needed:</p>
+                                        <ul className="text-sm text-slate-700 space-y-2">
+                                            {remaining.map((req, idx) => (
+                                                <li key={idx} className="flex items-start gap-2">
+                                                    <span className="text-purple-600 font-bold">•</span>
+                                                    <span>{req}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                );
+                            })()}
+                        </div>
                     </div>
                     
                     {/* Add Module Completion */}
@@ -6629,9 +6632,9 @@
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<App />);
         
-        console.log(`RC2.68c loaded successfully! Version: ${DATA_VERSION}`);
-        console.log("RC2.68c IMPROVED: Alert boxes now match section colours (red/blue/green/yellow/purple) 🎨");
-        console.log("RC2.68c IMPROVED: Commodore's Pennant moved below Section Progress 🏆");
+        console.log(`RC2.68d loaded successfully! Version: ${DATA_VERSION}`);
+        console.log("RC2.68d IMPROVED: Junior Proficiencies and Commodore's Pennant side-by-side (saves vertical space) 📐");
+        console.log("RC2.68c IMPROVED: Alert boxes match section colours, Pennant moved below Section Progress");
         console.log("RC2.68b IMPROVED: Pennant box moved below age section, shows only remaining requirements");
         console.log("RC2.68a CORRECTED: Commodore's Broad Pennant requirements - 4 coloured badges + 8 extra modules each");
         console.log("RC2.68 NEW FEATURE: Commodore's Pennant requirements display on Junior Focus view");

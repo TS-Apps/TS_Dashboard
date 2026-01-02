@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sea Cadet Training Dashboard - RC2</title>
+    <title>Sea Cadet Training Dashboard - RC3</title>
     
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -88,28 +88,18 @@
     <div id="root"></div>
 
     <script type="text/babel">
-        // ============================================================================
-        // RC2 STAGE 1 - MODULAR STRUCTURE
-        // ============================================================================
-        // This file is organized into clear sections for easy navigation and future extraction
-        // Sections:
-        //   1. CONSTANTS & DATA (lines ~90-960)
-        //   2. HELPER FUNCTIONS (lines ~965-1140)
-        //   3. COMPONENTS (lines ~1150-3350)
-        //   4. MAIN APP (lines ~3350-3520)
-        // ============================================================================
+        // Market Harborough Sea Cadets Training Dashboard
+        // Version 3.0.0
         
-        // Ensure React is available globally
         const { useState, useEffect, useMemo, useCallback, Component } = React;
         
-        // ============================================================================
-        // SECTION 1: CONSTANTS & DATA
-        // ============================================================================
+        // ═══════════════════════════════════════════════════════════════════════════
+        // CONSTANTS & DATA
+        // ═══════════════════════════════════════════════════════════════════════════
         
-        // --- 1.1 VERSION ---
-        const DATA_VERSION = "1.0-RC2.69"; // FEATURE: 60-day certificate report (split into 0-30 and 31-60 days) 
-
-        // --- 1.2 BADGE & RANK IMAGE MAPS ---
+        const DATA_VERSION = "3.1.2"; // CORRECTED: Awards now includes all cadets (JSC, SCC, RMC) not just juniors
+ 
+        // Badge & Rank Image Maps
         const RANK_IMG_MAP = {
             "Petty Officer Cadet": { sleeve: "scc_cadet_sleeve_petty_officer.webp", slide: "scc_cadet_shoulder_petty_officer.webp" },
             "Leading Cadet": { sleeve: "scc_cadet_sleeve_leading_cadet.webp", slide: "scc_cadet_shoulder_leading_cadet.webp" },
@@ -293,9 +283,11 @@
             Home: lucide.icons.Home
         };
 
-        // ============================================================================
-        // --- 1.3 SYLLABUS DATA (SCC CTP & RMC CTS) ---
-        // ============================================================================
+
+        // ═══════════════════════════════════════════════════════════════════════════
+        // SYLLABUS DATA (SCC CTP & RMC CTS)
+        // ═══════════════════════════════════════════════════════════════════════════
+
 
         const SCC_SYLLABUS = {
             "New Entry Cadet": { 
@@ -989,15 +981,14 @@
         };
 
 
-        // --- 1.4 RANK ORDERS ---
+        // Rank Orders
         const SCC_RANK_ORDER = ["New Entry Cadet", "Cadet", "Cadet 1st Class", "Ordinary Cadet", "Able Cadet", "Leading Cadet", "Petty Officer Cadet"];
         const RMC_RANK_ORDER = ["Recruit", "Marine Cadet", "Cadet Lance Corporal", "Cadet Corporal", "Cadet Sergeant"];
 
-        // --- 1.5 JUNIOR SEA CADETS DATA (RC2 Stage 2) ---
+        // Junior Sea Cadets Data
         const JUNIOR_RANK_ORDER = ["Junior Cadet", "Junior Cadet 1st Class", "Able Junior Cadet", "Leading Junior Cadet"];
         
-        // Junior modules database - 312 modules across 5 sections
-        // Red: 61 (11 core), Blue: 54 (3 core + Blue 1 from Westminster), Green: 49, Yellow: 107, STEM: 41
+        // Junior Sea Cadets Modules Database (341 modules across 5 sections)
         const JUNIOR_MODULES = {
             "metadata": {
                 "version": "1.0-corrected",
@@ -1043,13 +1034,13 @@
             }
         };
         
-        console.log("Junior Sea Cadets data loaded - Stage 2 active");
+        console.log("Junior Sea Cadets data loaded");
 
-        // ============================================================================
-        // SECTION 2: HELPER FUNCTIONS
-        // ============================================================================
+        // ═══════════════════════════════════════════════════════════════════════════
+        // HELPER FUNCTIONS
+        // ═══════════════════════════════════════════════════════════════════════════
         
-        // --- 2.1 CSV PARSING ---
+        // CSV Parsing
         const splitCSVLine = (str) => {
             const arr = [];
             let quote = false;
@@ -1230,7 +1221,52 @@
         };
 
 
-        // --- 2.6 JUNIOR SEA CADETS HELPER FUNCTIONS (RC2 Stage 2) ---
+        // Junior Sea Cadets Helper Functions
+        
+        // Check if person is a cadet (JSC, SCC, or RMC) - excludes adults/staff
+        const isCadet = (person) => {
+            if (!person) return false;
+            
+            // Check age first (if available)
+            if (person.dob) {
+                const age = calculateAge(person.dob);
+                if (age !== "Unknown") {
+                    // Anyone over 18 is definitely not a cadet
+                    if (age > 18) return false;
+                    // Anyone under 18 is likely a cadet
+                    if (age < 18) return true;
+                }
+            }
+            
+            // Check P-Number format for adult volunteers
+            if (person.pNumber) {
+                const pNum = person.pNumber.toUpperCase();
+                // Adult volunteer patterns: CV##### or L######L
+                if (pNum.startsWith('CV') || (pNum.startsWith('L') && pNum.endsWith('L') && pNum.length > 2)) {
+                    return false;
+                }
+            }
+            
+            // Check rank for adult staff indicators
+            if (person.rank) {
+                const rankLower = person.rank.toLowerCase();
+                // Adult staff ranks
+                if (rankLower.includes('unit assistant') || rankLower.includes('ua') ||
+                    rankLower.includes('staff') || rankLower.includes('officer') ||
+                    rankLower.includes('instructor') || rankLower.includes('civilian')) {
+                    return false;
+                }
+                
+                // Cadet ranks (JSC, SCC, RMC) - these ARE cadets
+                if (rankLower.includes('cadet') || rankLower.includes('recruit') ||
+                    rankLower.includes('marine')) {
+                    return true;
+                }
+            }
+            
+            // If we can't determine, default to true (include rather than exclude)
+            return true;
+        };
         
         // Check if cadet is a junior (under 12 OR age 12 with junior modules/rank)
         const isJunior = (dob, pNumber = null, rank = null) => {
@@ -1257,8 +1293,8 @@
             return false;
         };
         
-        // Calculate days until 12th birthday
-        const daysTo12thBirthday = (dob) => {
+        // Calculate time until 12th birthday (returns formatted string like "18 months 4 days")
+        const timeTo12thBirthday = (dob) => {
             if (!dob) return null;
             const birthDate = parseDate(dob);
             if (!birthDate) return null;
@@ -1266,11 +1302,33 @@
             const today = new Date();
             const twelfthBirthday = new Date(birthDate.getFullYear() + 12, birthDate.getMonth(), birthDate.getDate());
             
-            if (today >= twelfthBirthday) return 0; // Already 12 or older
+            if (today >= twelfthBirthday) return "0 days"; // Already 12 or older
             
-            const diffTime = twelfthBirthday - today;
-            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-            return diffDays;
+            // Calculate months and days
+            let months = 0;
+            let days = 0;
+            
+            let current = new Date(today);
+            
+            // Count full months
+            while (true) {
+                const nextMonth = new Date(current.getFullYear(), current.getMonth() + 1, current.getDate());
+                if (nextMonth > twelfthBirthday) break;
+                months++;
+                current = nextMonth;
+            }
+            
+            // Count remaining days
+            days = Math.ceil((twelfthBirthday - current) / (1000 * 60 * 60 * 24));
+            
+            // Format output
+            if (months === 0) {
+                return `${days} day${days === 1 ? '' : 's'}`;
+            } else if (days === 0) {
+                return `${months} month${months === 1 ? '' : 's'}`;
+            } else {
+                return `${months} month${months === 1 ? '' : 's'} ${days} day${days === 1 ? '' : 's'}`;
+            }
         };
         
         // Get junior data from localStorage
@@ -1300,11 +1358,11 @@
         };
 
         
-        // ============================================================================
-        // SECTION 3: UI COMPONENTS
-        // ============================================================================
+        // ═══════════════════════════════════════════════════════════════════════════
+        // UI COMPONENTS
+        // ═══════════════════════════════════════════════════════════════════════════
         
-        // --- 3.1 UTILITY COMPONENTS (Icon, BadgeImage, ErrorBoundary) ---
+        // Utility Components
 
         const Icon = ({ name, className }) => {
             return <i data-lucide={name.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase()} className={className}></i>;
@@ -1358,7 +1416,7 @@
             }
         }
 
-        // --- 3.2 FILE UPLOADER COMPONENT ---
+        // File Uploader Component
         const FileUploader = ({ onDataLoaded, hasData, clearData, wipeAllData }) => {
             const [personnelFile, setPersonnelFile] = useState(null);
             const [qualsFile, setQualsFile] = useState(null);
@@ -1989,7 +2047,7 @@
             );
         };
 
-        // --- NEW COMPONENT: ModuleDrillDown ---
+        // Module Drill-Down Component
         const ModuleDrillDown = ({ info, onClose }) => {
             if (!info) return null;
 
@@ -2031,7 +2089,7 @@
             );
         };
 
-        // --- 3.3 HOME VIEW COMPONENT ---
+        // Home View Component
         const HomeView = ({ personnel }) => {
             const unitName = personnel.length > 0 ? (personnel[0].unit || "Your Unit") : "Sea Cadets";
 
@@ -2083,7 +2141,7 @@
             );
         };
 
-        // --- 3.4 AWARDS VIEW COMPONENT (with PDF generation) ---
+        // Awards View Component
         const AwardsView = ({ personnel, quals }) => {
             const [monthOffset, setMonthOffset] = useState(0); 
             // New State for PDF Selection
@@ -2122,6 +2180,12 @@
             };
 
             const { pastAwards, upcomingAwards } = useMemo(() => {
+                // Filter to include all cadets (JSC, SCC, RMC) but exclude staff/adults
+                const cadets = personnel.filter(p => isCadet(p));
+                
+                // Get P-Numbers of cadets for filtering qualifications
+                const cadetPNumbers = new Set(cadets.map(p => p.pNumber));
+                
                 let endDate, startDate, nextStart, nextEnd;
 
                 if (monthOffset === 0) {
@@ -2143,6 +2207,9 @@
 
                 let past = quals.filter(q => {
                     if (!q.date) return false;
+                    // Only include qualifications for cadets
+                    if (!cadetPNumbers.has(q.pNumber)) return false;
+                    
                     // Ensure q.date is handled correctly even if it's a string from legacy state
                     const d = new Date(q.date);
                     if(isNaN(d.getTime())) return false;
@@ -2166,7 +2233,8 @@
                     return { ...q, uniqueId, cadetName: cadet ? cadet.name : "Unknown", type: type, date: d };
                 });
 
-                personnel.forEach(p => {
+                // Only add promotions for cadets
+                cadets.forEach(p => {
                     if (p.rankDate) {
                         const rDate = parseDate(p.rankDate);
                         if (rDate && rDate >= startDate && rDate <= endDate) {
@@ -2184,8 +2252,8 @@
                 });
 
                 const upcoming = [];
-                personnel.forEach(p => {
-                    // --- GCB Logic ---
+                cadets.forEach(p => {
+                    // Good Conduct Badge Logic
                     if (p.tos && p.dob) {
                         const tos = parseDate(p.tos);
                         const dob = parseDate(p.dob);
@@ -2214,7 +2282,7 @@
                         }
                     }
 
-                    // --- Waterborne Award Logic (Due/Pending) ---
+                    // Waterborne Award Logic
                     const cadetQuals = quals.filter(q => q.pNumber === p.pNumber);
                     const hasQual = (str) => cadetQuals.some(q => q.module && q.module.toLowerCase().includes(str.toLowerCase()));
                     
@@ -2274,14 +2342,10 @@
                     }
                 });
 
-                // --- Junior Awards Logic ---
-                const juniors = personnel.filter(c => {
-                    if (!c.dob) return false;
-                    const age = calculateAge(c.dob);
-                    return age >= 9 && age <= 11;
-                });
+                // Junior Awards Logic
+                // Use cadets already filtered above
                 
-                juniors.forEach(junior => {
+                cadets.forEach(junior => {
                     const juniorData = getJuniorData();
                     const juniorModules = juniorData.moduleCompletions.filter(m => m.pNumber === junior.pNumber);
                     
@@ -2392,7 +2456,7 @@
                 };
             }, [personnel, quals, monthOffset, targetDate]);
 
-            // --- PDF GENERATION LOGIC ---
+            // PDF Generation Functions
             const toggleAwardSelection = (id) => {
                 const newSet = new Set(selectedAwardKeys);
                 if (newSet.has(id)) newSet.delete(id);
@@ -2541,7 +2605,7 @@
                 doc.save(`SCC_Certificates_${monthName}.pdf`);
             };
 
-            // --- UPCOMING AWARDS REPORT GENERATION ---
+            // Upcoming Awards Report Function
             const generateUpcomingReport = () => {
                 if (upcomingAwards.length === 0) {
                     console.log("No upcoming awards to report.");
@@ -2608,10 +2672,16 @@
                 doc.save(`SCC_Upcoming_Report_${monthName}.pdf`);
             };
 
-            // --- CERTIFICATE REPORT (LAST 60 DAYS) ---
+            // Certificate Report Function
             const generateCertificateReport = () => {
                 const { jsPDF } = window.jspdf;
                 const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+                
+                // Filter to include all cadets (JSC, SCC, RMC)
+                const cadets = personnel.filter(p => isCadet(p));
+                
+                // Get P-Numbers of cadets for filtering qualifications
+                const cadetPNumbers = new Set(cadets.map(p => p.pNumber));
                 
                 // Clean unit name
                 let unitName = personnel.length > 0 ? personnel[0].unit : "";
@@ -2627,9 +2697,12 @@
                 const sixtyDaysAgo = new Date();
                 sixtyDaysAgo.setDate(today.getDate() - 60);
                 
-                // Filter awards for last 30 days (0-30 days ago)
+                // Filter awards for last 30 days (0-30 days ago) - all cadets
                 const last30Days = quals.filter(q => {
                     if (!q.date) return false;
+                    // Only include qualifications for cadets
+                    if (!cadetPNumbers.has(q.pNumber)) return false;
+                    
                     const d = new Date(q.date);
                     if(isNaN(d.getTime())) return false;
                     
@@ -2647,8 +2720,8 @@
                     return { ...q, cadetName: cadet ? cadet.name : "Unknown", type: type, date: new Date(q.date) };
                 });
                 
-                // Add promotions for last 30 days
-                personnel.forEach(p => {
+                // Add promotions for last 30 days - all cadets
+                cadets.forEach(p => {
                     if (p.rankDate) {
                         const rDate = parseDate(p.rankDate);
                         if (rDate && rDate >= thirtyDaysAgo && rDate <= today) {
@@ -2663,9 +2736,12 @@
                     }
                 });
                 
-                // Filter awards for 31-60 days ago
+                // Filter awards for 31-60 days ago - all cadets
                 const days31to60 = quals.filter(q => {
                     if (!q.date) return false;
+                    // Only include qualifications for cadets
+                    if (!cadetPNumbers.has(q.pNumber)) return false;
+                    
                     const d = new Date(q.date);
                     if(isNaN(d.getTime())) return false;
                     
@@ -2683,8 +2759,8 @@
                     return { ...q, cadetName: cadet ? cadet.name : "Unknown", type: type, date: new Date(q.date) };
                 });
                 
-                // Add promotions for 31-60 days ago
-                personnel.forEach(p => {
+                // Add promotions for 31-60 days ago - all cadets
+                cadets.forEach(p => {
                     if (p.rankDate) {
                         const rDate = parseDate(p.rankDate);
                         if (rDate && rDate >= sixtyDaysAgo && rDate < thirtyDaysAgo) {
@@ -3041,7 +3117,7 @@
             );
         };
 
-        // --- 3.5 WATERBORNE VIEW COMPONENT ---
+        // Waterborne View Component
         const WaterborneView = ({ personnel, qualsData }) => {
             const [filterActivity, setFilterActivity] = useState("Swim");
             const activityOptions = ["Swim", "Paddle", "Row", "Sail", "Power", "Windsurf", "Shorebased", "Offshore"];
@@ -3174,7 +3250,7 @@
             );
         };
         
-        // --- 3.6 CADET FOCUS COMPONENT ---
+        // Cadet Focus Component
         const CadetFocus = ({ personnel, qualsData }) => {
             // Filter to only show cadets aged 12-17 (not juniors under 12, not adults 18+)
             const cadets = useMemo(() => personnel.filter(c => {
@@ -3994,7 +4070,7 @@
             );
         };
 
-        // --- 3.7 TRAINING PLANNER COMPONENT (SCC CTP / RMC CTS) ---
+        // Training Planner Component
         const TrainingPlanner = ({ personnel, getCadetProgress, qualsData, title, rankOrder, syllabus, colorTheme = "indigo", iconName, onModuleClick }) => {
             const [selectedRank, setSelectedRank] = useState(rankOrder[0]);
             const cadetsAtRank = useMemo(() => personnel.filter(p => p.rank === selectedRank), [personnel, selectedRank]);
@@ -4267,7 +4343,7 @@
             );
         };
 
-        // --- 3.8 TRAINING SUGGESTIONS COMPONENT ---
+        // Training Suggestions Component
         const TrainingSuggestions = ({ personnel, getCadetProgress, qualsData }) => {
             const [selectedRank, setSelectedRank] = useState(SCC_RANK_ORDER[0]);
             const ALL_RANKS = [...SCC_RANK_ORDER, ...RMC_RANK_ORDER];
@@ -5108,7 +5184,7 @@
         };
 
 
-        // --- 3.9 JUNIORS VIEW COMPONENT (RC2 Stage 2) ---
+        // Juniors View Component
         // ============================================================================
         // DATA / UTILITIES VIEW COMPONENT
         // ============================================================================
@@ -5627,7 +5703,7 @@
                                             
                                             // Calculate needed values
                                             const age = calculateAge(selectedJunior.dob);
-                                            const daysTo12 = daysTo12thBirthday(selectedJunior.dob);
+                                            const timeTo12 = timeTo12thBirthday(selectedJunior.dob);
                                             const currentRank = selectedJunior.rank || "Junior Cadet";
                                             const juniorModules = juniorData.moduleCompletions.filter(m => m.pNumber === selectedJunior.pNumber);
                                             const redModules = juniorModules.filter(m => m.section === 'red').length;
@@ -5667,7 +5743,7 @@
                                             yPos += 6;
                                             doc.text(`Age: ${age} years old`, 20, yPos);
                                             yPos += 6;
-                                            doc.text(`Days to 12th Birthday: ${daysTo12}`, 20, yPos);
+                                            doc.text(`Time to 12th Birthday: ${timeTo12}`, 20, yPos);
                                             
                                             // Section Progress
                                             yPos += 12;
@@ -5847,7 +5923,7 @@
             );
         };
         
-        // --- 3.10 JUNIOR DETAIL COMPONENT ---
+        // Junior Detail Component
         const JuniorDetail = ({ junior, juniorData, personnel, qualifications }) => {
             const [section, setSection] = useState('red');
             const [moduleCode, setModuleCode] = useState('');
@@ -5855,7 +5931,7 @@
             const [showSuccess, setShowSuccess] = useState(false);
             
             const age = calculateAge(junior.dob);
-            const daysTo12 = daysTo12thBirthday(junior.dob);
+            const timeTo12 = timeTo12thBirthday(junior.dob);
             
             // Get this junior's completed modules
             const juniorModules = juniorData.moduleCompletions.filter(m => m.pNumber === junior.pNumber);
@@ -5993,7 +6069,7 @@
                 
             } else if (rankLower.includes("leading junior") || rankLower.includes("ljc")) {
                 nextRank = "Top Rank (promote to Sea Cadet at 12)";
-                requirements.push(`Continue activities until 12th birthday (${daysTo12} days remaining)`);
+                requirements.push(`Continue activities until 12th birthday (${timeTo12} remaining)`);
                 
             } else {
                 // Default: Junior Cadet
@@ -6143,8 +6219,8 @@
                                 </div>
                             </div>
                             <div>
-                                <p className="text-sm text-slate-600">Age / Days to 12th Birthday</p>
-                                <p className="font-bold text-lg">{age} years old / {daysTo12} days</p>
+                                <p className="text-sm text-slate-600">Age / Time to 12th Birthday</p>
+                                <p className="font-bold text-lg">{age} years old / {timeTo12}</p>
                             </div>
                         </div>
                     </div>
@@ -6837,7 +6913,7 @@
             }, [qualsData]);
 
             const NavItem = ({ id, icon, label }) => (
-                <button onClick={() => setView(id)} className={`flex items-center gap-2 w-full p-2 rounded-lg transition-all text-sm ${view === id ? 'bg-blue-800 text-white' : 'text-blue-100 hover:bg-blue-800/50'}`}>
+                <button onClick={() => { setView(id); window.scrollTo(0, 0); }} className={`flex items-center gap-2 w-full p-2 rounded-lg transition-all text-sm ${view === id ? 'bg-blue-800 text-white' : 'text-blue-100 hover:bg-blue-800/50'}`}>
                     <Icon name={icon} className="w-4 h-4" />
                     {!sidebarCollapsed && <span className="text-sm">{label}</span>}
                 </button>
@@ -6921,36 +6997,19 @@
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<App />);
         
-        console.log(`RC2.69 loaded successfully! Version: ${DATA_VERSION}`);
-        console.log("RC2.69 FEATURE: 60-day certificate report in Awards view (0-30 days + 31-60 days sections) 📊");
-        console.log("RC2.68e FEATURE: JSC STEM Award displayed in Junior Proficiencies box 🔬");
-        console.log("RC2.68d IMPROVED: Junior Proficiencies and Commodore's Pennant side-by-side (saves vertical space)");
-        console.log("RC2.68c IMPROVED: Alert boxes match section colours, Pennant moved below Section Progress");
-        console.log("RC2.68b IMPROVED: Pennant box moved below age section, shows only remaining requirements");
-        console.log("RC2.68a CORRECTED: Commodore's Broad Pennant requirements - 4 coloured badges + 8 extra modules each");
-        console.log("RC2.68 NEW FEATURE: Commodore's Pennant requirements display on Junior Focus view");
-        console.log("RC2.67d FEATURE: Template now pre-filled with existing completions (X marks) ✓");
-        console.log("RC2.67c BUGFIX: Fixed CSV header format - names properly formatted ✓");
-        console.log("RC2.67b BUGFIX: Fixed template download with all 335 official junior modules ✓");
-        console.log("RC2.67a BUGFIX: Fixed template download button (corrected constant name)");
-        console.log("RC2.67 BUG FIXES:");
-        console.log("  - Waterborne page now shows cadets only (adults excluded)");
-        console.log("  - Text updated: 'Bulk Upload Junior Modules from Legacy System'");
-        console.log("  - Template format: Grid with X marks (modules down, cadets across)");
-        console.log("RC2.66 FIXED: Recognize numeric-only P-Number format (7-8 digits like 11806919)");
-        console.log("RC2.65 FIXED: Recognize adult volunteer P-Number formats (CV##### and L######L) - no more false warnings!");
-        console.log("RC2.65 FIXED: Missing rank now treated as 'Unit Assistant (UA)' for adult volunteers");
-        console.log("RC2.64 NEW: Persistent warnings banner - Validation warnings now stay visible after import and can be dismissed");
-        console.log("RC2.63 NEW: Download validation warnings as CSV + More lenient validation for Westminster data");
-        console.log("RC2.62a BUGFIX: Fixed duplicate function declaration error");
-        console.log("RC2.62 NEW FEATURE: Enhanced Bulk Upload - Row-by-row validation, error reporting, and import summary ✓");
-        console.log("RC2.62 ADJUSTMENT: PDF Export button moved to header next to junior selector");
-        console.log("RC2.61 NEW FEATURE: Individual PDF Reports - Export professional progress reports with 'Export PDF Report' button 📄");
-        console.log("RC2.60 NEW FEATURE: Progress Alerts - Shows when juniors are 1-2 modules away from earning badges 🎯⭐");
-        console.log("RC2.59a BUGFIX: Fixed ReferenceError in isJunior function");
-        console.log("RC2.59 HIGH PRIORITY FIXES: Module deletion, validation, 12-year-old boundary, checkmarks, ARIA labels");
-        console.log("RC2.58: CRITICAL FIX - Corrected 341 official Junior modules from MSSC syllabus");
-        console.log("Features: Home → Cadet Focus → Juniors → Junior Progress (GRID) → CTP → CTS → Waterborne → Awards → Training Plan");
+        console.log(`===========================================`);
+        console.log(`Market Harborough Sea Cadets Training Dashboard`);
+        console.log(`Version ${DATA_VERSION}`);
+        console.log(`===========================================`);
+        console.log(`Key Features:`);
+        console.log(`✓ Junior Sea Cadets module tracking (341 modules)`);
+        console.log(`✓ SCC/RMC training progression`);
+        console.log(`✓ Bulk upload with validation`);
+        console.log(`✓ Individual PDF reports`);
+        console.log(`✓ Certificate printing`);
+        console.log(`✓ 60-day certificate reports`);
+        console.log(`✓ Awards tracking & planning`);
+        console.log(`===========================================`);
     </script>
 </body>
 </html>

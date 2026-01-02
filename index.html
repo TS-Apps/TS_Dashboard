@@ -107,7 +107,7 @@
         // ============================================================================
         
         // --- 1.1 VERSION ---
-        const DATA_VERSION = "1.0-RC2.66"; // Fixed: Recognize numeric-only P-Number format (7-8 digits) from Westminster exports 
+        const DATA_VERSION = "1.0-RC2.68c"; // IMPROVED: Alert colours match sections, Pennant moved below Section Progress 
 
         // --- 1.2 BADGE & RANK IMAGE MAPS ---
         const RANK_IMG_MAP = {
@@ -2766,7 +2766,18 @@
         const WaterborneView = ({ personnel, qualsData }) => {
             const [filterActivity, setFilterActivity] = useState("Swim");
             const activityOptions = ["Swim", "Paddle", "Row", "Sail", "Power", "Windsurf", "Shorebased", "Offshore"];
-            const sortedCadets = useMemo(() => [...personnel].sort((a, b) => a.name.localeCompare(b.name)), [personnel]);
+            
+            // Filter to cadets only (exclude adult volunteers with CV or letter-number-letter P-Numbers)
+            const cadetsOnly = personnel.filter(p => {
+                const pNum = p.pNumber || "";
+                const cleanPNum = pNum.replace(/[\s-]/g, '');
+                // Exclude adult volunteer formats: CV##### or L######L
+                const isAdultCVFormat = /^CV\d+$/i.test(cleanPNum);
+                const isAdultLetterFormat = /^[A-Z]\d{6,7}[A-Z]$/i.test(cleanPNum);
+                return !isAdultCVFormat && !isAdultLetterFormat;
+            });
+            
+            const sortedCadets = useMemo(() => [...cadetsOnly].sort((a, b) => a.name.localeCompare(b.name)), [cadetsOnly]);
             
             // Modified to retrieve the full record, not just check existence
             const getWaterborneRecord = (cadet, mod) => {
@@ -4954,7 +4965,7 @@
                     <div className="bg-amber-50 rounded-lg shadow p-6 border-l-4 border-amber-500">
                         <h2 className="text-2xl font-bold text-amber-900 mb-4 flex items-center gap-2">
                             <Icon name="Upload" className="w-6 h-6 text-amber-600" />
-                            Bulk Upload Legacy Modules
+                            Bulk Upload Junior Modules from Legacy System
                         </h2>
                         <p className="text-slate-700 mb-4">
                             Import existing paper-based module records. Download template, fill in completed modules, then upload.
@@ -4963,9 +4974,9 @@
                         <div className="bg-white rounded p-4 mb-4 text-sm border border-amber-200">
                             <p className="font-semibold text-slate-700 mb-2">How it works:</p>
                             <ol className="list-decimal ml-5 space-y-1 text-slate-600">
-                                <li>Click "Download Template" - gets CSV with all your juniors</li>
+                                <li>Click "Download Template" - gets CSV grid with all modules and your juniors</li>
                                 <li>Open in Excel/Google Sheets</li>
-                                <li>Add rows for each completed module (one row per module)</li>
+                                <li>Add an "X" in cells where a junior has completed that module</li>
                                 <li>Save as CSV</li>
                                 <li>Click "Upload Template" to import all completions</li>
                             </ol>
@@ -4980,25 +4991,58 @@
                                         return age >= 9 && age <= 11;
                                     });
                                     
-                                    let csv = "PNumber,Name,Rank,Age,Section,ModuleCode,DateCompleted\n";
-                                    csv += "# Example rows (delete these and add your completions):\n";
-                                    
-                                    if (juniors.length > 0) {
-                                        const exampleJunior = juniors[0];
-                                        csv += `${exampleJunior.pNumber},${exampleJunior.name},${exampleJunior.rank},${calculateAge(exampleJunior.dob)},red,1.1,2025-01-15\n`;
-                                        csv += `${exampleJunior.pNumber},${exampleJunior.name},${exampleJunior.rank},${calculateAge(exampleJunior.dob)},blue,2,2025-01-20\n`;
-                                        csv += "\n# Your juniors (copy these rows and add module codes):\n";
+                                    if (juniors.length === 0) {
+                                        setUploadStatus('No juniors found to generate template');
+                                        setTimeout(() => setUploadStatus(''), 3000);
+                                        return;
                                     }
                                     
-                                    juniors.forEach(junior => {
-                                        csv += `${junior.pNumber},${junior.name},${junior.rank},${calculateAge(junior.dob)},,,\n`;
+                                    // Header row: blank cell + junior names with P-Numbers
+                                    // Convert "ADKINS, Millie" to "ADKINS Millie" format
+                                    let csv = ", " + juniors.map(j => {
+                                        const name = j.name.replace(',', '');  // Remove comma from "ADKINS, Millie"
+                                        return `${name} - ${j.pNumber}`;
+                                    }).join(", ") + "\n";
+                                    
+                                    // All 335 official junior modules from MSSC syllabus
+                                    const allModuleNames = [
+                                        "RED 1: Unit Induction: Tour of Unit","RED 1.1: Unit Induction: Unit Fire Drill","RED 1.2: Unit Induction: Map Out Your Unit","RED 1.3: Unit Induction: What's Important?","RED 1.4: Unit Induction: Uniformed Art","RED 1.5: Unit Induction: Badges & Ranks","RED 2: Two Questions & A Funny","RED 2.1: Paper Planes","RED 2.2: Names and Beanbags","RED 2.3: Mini Me","RED 3: Unit Who's Who: Say Cheese","RED 4: Basic Drill","RED 4.1: Unit Calls (Piping)","RED 4.2: Colours & Naval Customs","RED 4.3: Treat Yourself","RED 5: Junior Sea Cadet Uniform","RED 6: Safeguarding: SHOUT","RED 7: Organising Unit Activities","RED 7.1: Unit Activities","RED 7.2: Ready Aye Ready","RED 7.3: Unit Elevator Pitch","RED 7.4: Unit Advert","RED 7.5: Theme Tune","RED 8: How's Your Aim?","RED 9: Royal Marines Cadet Guest","RED 9.1: Royal Marines Cadets","RED 9.2: Royal Marines Activities","RED 10: Scrap Book Memories","RED 11: Passing Messages: Flags","RED 11.1: Lord Nelson's Message","RED 11.2: Codebreaker: Morse","RED 11.3: What's Your Position?","RED 11.4: Turn Up The Radios","RED 11.5: Phonetic Alphabet","RED 12: Chocolate Crispies","RED 12.1: Apple & Ginger","RED 12.2: Chefs' Sweet Tooth","RED 12.3: Chefs Savoury Tooth","RED 12.4: Chefs Cuppa","RED 13: Who Can Help Me?","RED 13.1: Emergency Visits","RED 14: How International Are We?","RED 15: First Aid Basics","RED 15.1: First Aid Relay","RED 15.2: Units Safety Poster","RED 16: Naval Heraldry","RED 17: Throw Yourself a Knot","RED 17.1: Tasty Knots","RED 17.2: Rope and Spoons","RED 17.3: Knot Board","RED 17.4: Paracord Keyrings","RED 17.5: Parts of a Ship","RED 17.6: Ship Ahoy!","RED 18: Planning & Preparation","RED 18.1: Food Storage","RED 18.2: Keeping Germs at Bay","RED 18.3: Missed a Spot!","RED 18.4: Building Bacteria","RED 18.5: Fuzzy Bread","RED 18.6: Clean Hands?","RED 19: Earthshot Challenge","RED 20: Suggestion Box","RED 21: Kindness and Wellbeing","RED 21.1: Kindness and Wellbeing","RED 22: Teamwork Skills","BLUE T1: Dinghy Sailing Taster","BLUE T2: Paddlesport Taster","BLUE T3: Windsurfing Taster","BLUE T4: Rowing Taster","BLUE 1: Safety by the Water","BLUE 1.1: Rescue Line","BLUE 1.2: Help I Need Help!","BLUE 2: Cardinal Marks","BLUE 2.1: Danger Zones","BLUE 3: Royal & Merchant Navy","BLUE 4: Going on a Mission","BLUE 5: Maritime Museum","BLUE 6: Battleships","BLUE 7: Remember The Facts","BLUE 7.1: Famous Figures","BLUE 7.2: Picasso's Nelson","BLUE 8: Boat Construction","BLUE 8.1: Build Boat","BLUE 8.2: Model Raft","BLUE 8.3: Water Raft","BLUE 9: Wise Near Water","BLUE 9.1: What Flag Am I?","BLUE 10: Lifeguards","BLUE 11: Keep Swimming","BLUE 12: Swimathon","BLUE 13: Marco Polo","BLUE 13.1: Synchronised Swim","BLUE 13.2: Water Polo","BLUE 14: Swimming Gala","BLUE 15: Signposts at Sea","BLUE 15.1: Edible Signposts","BLUE 15.2: Ropes on Biscuits","BLUE 16: Saving Sam","BLUE 16.1: Don't Fall Out!","BLUE 17: Go Rowing!","BLUE 17.1: Learn Rowing!","BLUE 18: Go Sailing!","BLUE 18.1: Learn Sailing!","BLUE 19: Go Paddling!","BLUE 19.1: Learn Paddlesport!","BLUE 19.2: Voyage of Discovery","BLUE 20: Learn Windsurfing!","BLUE 20.1: Go Windsurfing!","BLUE 21: Good Look Out","BLUE 21.1: Hazards","BLUE 21.2: Buoyancy","BLUE 21.3: Safe Speeds","BLUE 22: Navigation","BLUE 23: Crossing The Line","BLUE 23.1: Nautical Terms","BLUE 23.2: Sea Shanties","BLUE 23.3: Hornpipe Dance","BLUE 24: Boat Types","BLUE 24.1: RS ZEST Single","BLUE 24.2: RS QUEST Crewed","BLUE 25: Cold Water Shock","BLUE 26: Towpath I Spy","BLUE 27: Flag Etiquette","BLUE 28: Green and Clean","BLUE 29: Big Clean Up","BLUE 29.2: Plastic Eating Machine","GREEN 1: 50 Things","GREEN 2: Mapping It Out","GREEN 2.1: Around the Globe","GREEN 3: Grid References","GREEN 4: Weather","GREEN 4.1: Make it Rain!","GREEN 5: Captain's Coming","GREEN 5.1: Home Made Compass","GREEN 6: Photography","GREEN 7: Pacing It Out","GREEN 7.1: Micro Journey","GREEN 7.2: Unique Monopoly","GREEN 7.3: Navigate Further","GREEN 8: Basic Outdoors","GREEN 8.1: Zero Trace","GREEN 8.2: What to Wear","GREEN 8.3: Keeping Tidy","GREEN 9: Stoves","GREEN 9.1: Open Fires 101","GREEN 9.2: Fire Recipes","GREEN 9.3: Junior Survivor","GREEN 9.4: Master Chef Outdoors","GREEN 10: Practice","GREEN 10.1: Amazing Race Junior","GREEN 11: Country Code","GREEN 11.1: Country Code Guide","GREEN 11.2: Environment","GREEN 12: Tenting Around","GREEN 12.1: Pitching Tent","GREEN 13: Safe Outdoors","GREEN 13.1: Stranger Danger","GREEN 14: Meteorology","GREEN 14.1: Weather on Water","GREEN 14.2: Storm Surge","GREEN 14.3: Low Visibility","GREEN 14.4: Celestial Navigation","GREEN 15: Wind Blowing","GREEN 16: Warming Up","GREEN 16.1: Warm Up Guide","GREEN 17: Keep Fit","GREEN 17.1: Training Games","GREEN 17.2: Competitive","GREEN 17.3: Happy Healthy","GREEN 17.4: Eating Healthy","GREEN 17.5: Games to Start","GREEN 18: Bird Feeder","GREEN 18.1: Bee Bombs","GREEN 18.2: Seed Paper","GREEN 18.3: Carbon Footprint","YELLOW 1: Mardi Gras/Fat Tuesday/Shrove Tuesday","YELLOW 1.1: Parade with Mardi Gras Masks","YELLOW 1.2: Musical Celebration: Jazz Band","YELLOW 2: Celebrating Easter","YELLOW 2.1: Yummy Easter Hot Cross Buns","YELLOW 2.2: Twisted Pretzel: A Food of Lent","YELLOW 2.3: Creative Easter Eggs","YELLOW 3: Festival of Colour Holi","YELLOW 3.1: Colours of Holi","YELLOW 3.2: Nariyal Barfi","YELLOW 4: Happy Diwali (Divali)","YELLOW 4.1: Festival of Lights","YELLOW 4.2: Rangoli Designs","YELLOW 4.3: Karah Parshad","YELLOW 5: Snap It Up With Chinese New Year!","YELLOW 5.1: Taste of China: Sweet Dumplings","YELLOW 5.2: Fortune Cookie Jar","YELLOW 5.3: Prosperity & Good Fortune in Red","YELLOW 5.4: Chinese Dragon Costume (Individual)","YELLOW 5.5: Chinese Dragon Costume (large)","YELLOW 5.6: The Beating Drum","YELLOW 6: Celebrate with an Australian Cork Hat","YELLOW 6.1: Getting to know indigenous Australia","YELLOW 6.2: Didgeridoo: Music Maker","YELLOW 6.3: Australian Bakes: ANZAC Biscuits","YELLOW 7: Everything Christmas: Decorating Time!","YELLOW 7.1: Christmas Bingo!","YELLOW 7.2: A Ginger Christmas","YELLOW 7.3: Chocolate Logs Yule Love!","YELLOW 7.4: Chocolate Logs Made Easy","YELLOW 7.5: Gingerbread Biscuits","YELLOW 7.6: Christmas Gift photo frame","YELLOW 7.7: Seasonal Festive Wreath","YELLOW 7.8: Odd Sock Beanbag Characters","YELLOW 8: Research Time!","YELLOW 8.1: Unit Spookyville","YELLOW 8.2: All Things Spooky","YELLOW 8.3: What Are The Nine Candles?","YELLOW 8.4: Saint Valentine's Day Kindness Box","YELLOW 8.5: Saint Patrick's Day: Shamrock Shake","YELLOW 8.6: A Special Sunday for Mothers & Caregivers","YELLOW 8.7: Celebrating the Iranian New Year","YELLOW 8.8: Halloween Trick or Treats","YELLOW 9: All About The Community","YELLOW 9.1: Community 101","YELLOW 9.2: Community Tree","YELLOW 9.3: Community Mind Map","YELLOW 10: Survey Mania","YELLOW 10.1: Chips Ahoy! Chip Ship Survey","YELLOW 10.2: Shop Surveys","YELLOW 11: Getting Involved: Community Projects","YELLOW 11.1: Junior Cadets of the World!","YELLOW 11.2: Celebrating Diversity in Your Community","YELLOW 12: Welsh Style: Traditional Welsh Cakes","YELLOW 12.1: Welsh Style: Welsh Rarebit","YELLOW 12.2: Yr laith Gymraeg: Welsh Language","YELLOW 12.3: Y Ddraig Goch Flag: The Red Dragon","YELLOW 13: The Scottish Way: Haggis Neeps & Tatties","YELLOW 13.1: The Scottish Way: Cèilidh","YELLOW 13.2: The Scottish Way: The Flag of Scotland","YELLOW 13.3: The Scottish Way: Scots Gàidhlig","YELLOW 13.4: Celebrate Saint Andrews Day: Scottish Kilt Card","YELLOW 13.5: Exploring Burns Night Supper","YELLOW 15: The Arrival of Summer: Maypole Dancing","YELLOW 15.1: Morris Dancing","YELLOW 16: 4 Nations in 1","YELLOW 17: Places of Interest","YELLOW 17.1: Scavenger Hunt","YELLOW 17.2: Town Maps Maps of Your Town","YELLOW 18: Broadening The Horizon","YELLOW 19: We Are Different We are the Same!","YELLOW 19.1: Embrace It: Inclusion & Diversity","YELLOW 19.2: All in a phrase","YELLOW 19.3: Communicating Through Sign Language","YELLOW 19.4: Ditch The Labels!","YELLOW 19.5: Communicating through Braille","YELLOW 20: It's Never the Same!","YELLOW 20.1: The Issue","YELLOW 20.2: Wear It On Your Wrist!","YELLOW 20.3: Activists in Action! Anti-bullying Campaign","YELLOW 20.4: Online: It is Still Not Okay!","YELLOW 21: Ten Keys","YELLOW 22: Remembrance Day Parade","YELLOW 22.1: Cenotaphs In The Community","YELLOW 22.2: Paper Plate Poppies","YELLOW 22.3: Recycled Remembrance Poppies","YELLOW 22.4: Remembrance Art","YELLOW 22.5: Medals to Remember","YELLOW 22.6: Portraits of Boy Seaman John T. Cornwell V.C.","YELLOW 22.7: What is your unit's History?","YELLOW 22.8: Remembrance Light Jars","YELLOW 22.9: Remembrance Day Wreath","YELLOW 23: The Home Front","YELLOW 23.1: Ration It Out","YELLOW 23.2: Re-enactment Time","YELLOW 24: Values and Citizenship: What about Governments?","YELLOW 24.1: Your Local Government: Face to Face","YELLOW 24.2: Who's Who: Mayors or Provosts?","YELLOW 25: Saint George's Day","YELLOW 26: VE Victory Sponge","YELLOW 27: #SCRAPPLASTIC Swap Out Your Plastics","YELLOW 27.1: #SCRAPPLASTIC Plastic Free Day","YELLOW 27.2: #SCRAPPLASTIC Supermarket Challenge","YELLOW 27.3: #SCRAPPLASTIC Share What You Know","YELLOW 28: EARTHSHOT (WFW) - Tote-tally Awesome Up-cycled Bag","YELLOW 28.1: Earthshot (WFW) - Ecobricks","YELLOW 28.2: EARTHSHOT (WFW) - Need v Want","YELLOW 28.3: EARTHSHOT (FOC) - Utilising Technology","YELLOW 28.4: EARTHSHOT (WFW) - Where does our waste go?","YELLOW 29: Junior Sea Cadets Competitions","YELLOW 30: Your Identity Matters - Celebrating PRIDE","YELLOW 70: Special Edition Platinum Jubilee","YELLOW 70.1: The Platinum Thread","YELLOW 70.2: Platinum Jubilee Fact Find","YELLOW 71: Remembering Our Patron","YELLOW 72: King's Coronation Party event","YELLOW 72.1: King's Coronation POM POM decorations","YELLOW 73: Big Help Out - Special Call at a Landmark","STEM 1: Satellite Intelligence Mission","STEM 2: Egg Drop Challenge: Protecting The Vessels","STEM 3: Sink Or Swim: Tinfoil Boat Float Challenge","STEM 4: Launched Out To Sea: Pom Pom Catapult","STEM 5: Propeller Nation","STEM 6: Steer The Ship: Eco-Friendly Giant Maze","STEM 7: Why It Just Won't Work: Salt Pendulum","STEM 8: Amazing Anchors","STEM 9: Setting Sail","STEM 10: Ancient Compasses","STEM 11: Balancing Boats","STEM 12: Carrying Cargo","STEM 13: Electric Engines","STEM 14: Incredible Insulation","STEM 15: Invisible Islands","STEM 16: Luminous Lighthouses","STEM 17: Oceans In A Bottle","STEM 18: Salt In The Seas","STEM 19: Speedy Ships","STEM 20: The World Around Us: Which Metal? Rust!","STEM 21: Special Edition: Somewhere Over The Rainbow","STEM 22: Wind Speed And Pressure: Anemometer","STEM 23: Elastic Band Powered Cars","STEM 24: Propelling Forward","STEM 25: Get Moving - A Chemical Reaction Powered Model Boat!","STEM 26: Weather Warning - Making A Barometer","STEM 27: Underwater Volcano - A Force Of Nature!","STEM 28: Tornado In A Bottle","STEM 29: Cartesian Diver","STEM 30: How Long Is A Minute? - Water Clock","STEM 31: The Science Behind Making The Right Choice!","STEM 32: Up Periscope - Make Your Own Submarine Periscope","STEM 33: Geodesic Domes","STEM 34: Sublime Slime","STEM 35: Air Power: Balloon Car","STEM 36: Ruffle Some Feathers - Mini Vortex Cannon","STEM 37: Paper Roller Coaster - Kinetic & Potential Energy","STEM 38: Moon Dial","STEM 39: Paper Glider","STEM 40: Lava Lamp","STEM 41: Puffer Fish","STEM 42: Waste-Free Lunch"
+                                    ];
+                                    
+                                    // Get existing completions
+                                    const juniorData = getJuniorData();
+                                    
+                                    // Add module rows with X marks for existing completions
+                                    allModuleNames.forEach(moduleName => {
+                                        // Parse module name to extract section and code
+                                        const moduleMatch = moduleName.match(/^(RED|BLUE|GREEN|YELLOW|STEM)\s+([^:]+):/);
+                                        if (!moduleMatch) {
+                                            // If can't parse, just add blank row
+                                            csv += moduleName + ", " + juniors.map(() => "").join(", ") + "\n";
+                                            return;
+                                        }
+                                        
+                                        const section = moduleMatch[1].toLowerCase();
+                                        const moduleCode = moduleMatch[2].trim();
+                                        
+                                        // For each junior, check if they've completed this module
+                                        const cells = juniors.map(junior => {
+                                            const hasCompleted = juniorData.moduleCompletions.some(comp => 
+                                                comp.pNumber === junior.pNumber &&
+                                                comp.section === section &&
+                                                comp.moduleCode === moduleCode
+                                            );
+                                            return hasCompleted ? "X" : "";
+                                        });
+                                        
+                                        csv += moduleName + ", " + cells.join(", ") + "\n";
                                     });
                                     
                                     const blob = new Blob([csv], {type: 'text/csv'});
                                     const url = URL.createObjectURL(blob);
                                     const a = document.createElement('a');
                                     a.href = url;
-                                    a.download = `juniors_template_${new Date().toISOString().split('T')[0]}.csv`;
+                                    a.download = `juniors_grid_template_${new Date().toISOString().split('T')[0]}.csv`;
                                     a.click();
                                     setUploadStatus('Template downloaded successfully!');
                                     setTimeout(() => setUploadStatus(''), 3000);
@@ -5024,59 +5068,81 @@
                                         reader.onload = (event) => {
                                             try {
                                                 const text = event.target.result;
-                                                const lines = text.split('\n').filter(line => 
-                                                    line.trim() && !line.startsWith('#')
-                                                );
+                                                const lines = text.split('\n').filter(line => line.trim());
                                                 
                                                 if (lines.length < 2) {
-                                                    alert('Template appears empty. Add module completions and try again.');
+                                                    alert('Template appears empty. Add X marks for completed modules and try again.');
                                                     return;
                                                 }
                                                 
-                                                const headers = lines[0].trim().toLowerCase().split(',');
-                                                const pnumIdx = headers.indexOf('pnumber');
-                                                const sectionIdx = headers.indexOf('section');
-                                                const moduleIdx = headers.indexOf('modulecode');
-                                                const dateIdx = headers.indexOf('datecompleted');
+                                                // Parse header row to get juniors
+                                                const headerCells = splitCSVLine(lines[0]);
+                                                const juniors = [];
                                                 
-                                                if (pnumIdx === -1 || sectionIdx === -1 || moduleIdx === -1 || dateIdx === -1) {
-                                                    alert('Invalid template format. Use downloaded template.');
+                                                // Skip first cell (blank), then parse each junior cell
+                                                for (let i = 1; i < headerCells.length; i++) {
+                                                    const cell = headerCells[i].trim();
+                                                    if (!cell) continue;
+                                                    
+                                                    // Format: "Name - PNumber" (e.g., "ADKINS Millie - 11806919")
+                                                    const match = cell.match(/(.+?)\s*-\s*(.+)/);
+                                                    if (match) {
+                                                        juniors.push({
+                                                            index: i,
+                                                            name: match[1].trim(),
+                                                            pNumber: match[2].trim()
+                                                        });
+                                                    }
+                                                }
+                                                
+                                                if (juniors.length === 0) {
+                                                    alert('No juniors found in template header. Use downloaded template.');
                                                     return;
                                                 }
                                                 
                                                 const newCompletions = [];
                                                 let imported = 0;
+                                                const today = new Date().toISOString().split('T')[0];
                                                 
-                                                for (let i = 1; i < lines.length; i++) {
-                                                    const row = lines[i].trim().split(',');
-                                                    if (row.length < 4) continue;
+                                                // Parse each module row
+                                                for (let rowIdx = 1; rowIdx < lines.length; rowIdx++) {
+                                                    const cells = splitCSVLine(lines[rowIdx]);
+                                                    if (cells.length < 2) continue;
                                                     
-                                                    const pnum = row[pnumIdx]?.trim();
-                                                    const section = row[sectionIdx]?.trim().toLowerCase();
-                                                    const moduleCode = row[moduleIdx]?.trim();
-                                                    const dateComp = row[dateIdx]?.trim() || new Date().toISOString().split('T')[0];
+                                                    const moduleCell = cells[0].trim();
+                                                    if (!moduleCell) continue;
                                                     
-                                                    if (!pnum || !section || !moduleCode) continue;
-                                                    if (!['red', 'blue', 'green', 'yellow', 'stem'].includes(section)) continue;
+                                                    // Parse module: "SECTION CODE: Name" (e.g., "RED 1: Unit Induction: Tour of Unit")
+                                                    const moduleMatch = moduleCell.match(/^(RED|BLUE|GREEN|YELLOW|STEM)\s+([^:]+):\s*(.+)/i);
+                                                    if (!moduleMatch) continue;
                                                     
-                                                    newCompletions.push({
-                                                        pNumber: pnum,
-                                                        section: section,
-                                                        moduleCode: moduleCode.toUpperCase(),
-                                                        moduleName: moduleCode,
-                                                        dateCompleted: dateComp,
-                                                        isCore: false
+                                                    const section = moduleMatch[1].toLowerCase();
+                                                    const moduleCode = moduleMatch[2].trim();
+                                                    const moduleName = moduleMatch[3].trim();
+                                                    
+                                                    // Check each junior's cell for "X"
+                                                    juniors.forEach(junior => {
+                                                        const cell = (cells[junior.index] || "").trim().toUpperCase();
+                                                        if (cell === "X") {
+                                                            newCompletions.push({
+                                                                pNumber: junior.pNumber,
+                                                                section: section,
+                                                                moduleCode: moduleCode,
+                                                                moduleName: moduleName,
+                                                                dateCompleted: today,
+                                                                isCore: false
+                                                            });
+                                                            imported++;
+                                                        }
                                                     });
-                                                    
-                                                    imported++;
                                                 }
                                                 
                                                 if (imported === 0) {
-                                                    alert('No valid completions found in template.');
+                                                    alert('No X marks found in template. Add X marks for completed modules.');
                                                     return;
                                                 }
                                                 
-                                                if (confirm(`Import ${imported} module completions? This will ADD to existing data.`)) {
+                                                if (confirm(`Import ${imported} module completions for ${juniors.length} juniors? This will ADD to existing data.`)) {
                                                     const currentData = getJuniorData();
                                                     const updatedData = {
                                                         ...currentData,
@@ -5089,6 +5155,7 @@
                                                     }
                                                 }
                                             } catch (err) {
+                                                console.error('Template upload error:', err);
                                                 alert('Error processing template: ' + err.message);
                                             }
                                         };
@@ -5099,7 +5166,7 @@
                         </div>
                         
                         <div className="mt-4 p-3 bg-amber-100 rounded text-xs text-amber-900">
-                            <p className="mb-1"><strong>CSV Format:</strong> PNumber, Name, Rank, Age, Section, ModuleCode, DateCompleted</p>
+                            <p className="mb-1"><strong>CSV Format:</strong> Grid with modules in rows, juniors in columns, X marks for completions</p>
                             <p><strong>Sections:</strong> red (Unit), blue (Waterborne), green (Outdoor), yellow (Community), stem (STEM)</p>
                         </div>
                     </div>
@@ -5897,11 +5964,41 @@
                             
                             // Check each section for near-completion (13 or 14 modules)
                             const sections = [
-                                { name: 'RED - Unit', count: redModules, color: 'amber', icon: 'Home' },
-                                { name: 'BLUE - Waterborne', count: blueModules, color: 'blue', icon: 'Waves' },
-                                { name: 'GREEN - Outdoor', count: greenModules, color: 'green', icon: 'Trees' },
-                                { name: 'YELLOW - Community', count: yellowModules, color: 'yellow', icon: 'Users' },
-                                { name: 'STEM', count: stemModules, color: 'purple', icon: 'Atom' }
+                                { 
+                                    name: 'RED - Unit', 
+                                    count: redModules, 
+                                    icon: 'Home',
+                                    colors14: { bg: 'bg-red-50', border: 'border-red-400', text: 'text-red-900', icon: 'text-red-600' },
+                                    colors13: { bg: 'bg-red-50', border: 'border-red-300', text: 'text-red-800', icon: 'text-red-500' }
+                                },
+                                { 
+                                    name: 'BLUE - Waterborne', 
+                                    count: blueModules, 
+                                    icon: 'Waves',
+                                    colors14: { bg: 'bg-blue-50', border: 'border-blue-400', text: 'text-blue-900', icon: 'text-blue-600' },
+                                    colors13: { bg: 'bg-blue-50', border: 'border-blue-300', text: 'text-blue-800', icon: 'text-blue-500' }
+                                },
+                                { 
+                                    name: 'GREEN - Outdoor', 
+                                    count: greenModules, 
+                                    icon: 'Trees',
+                                    colors14: { bg: 'bg-green-50', border: 'border-green-400', text: 'text-green-900', icon: 'text-green-600' },
+                                    colors13: { bg: 'bg-green-50', border: 'border-green-300', text: 'text-green-800', icon: 'text-green-500' }
+                                },
+                                { 
+                                    name: 'YELLOW - Community', 
+                                    count: yellowModules, 
+                                    icon: 'Users',
+                                    colors14: { bg: 'bg-yellow-50', border: 'border-yellow-400', text: 'text-yellow-900', icon: 'text-yellow-600' },
+                                    colors13: { bg: 'bg-yellow-50', border: 'border-yellow-300', text: 'text-yellow-800', icon: 'text-yellow-500' }
+                                },
+                                { 
+                                    name: 'STEM', 
+                                    count: stemModules, 
+                                    icon: 'Atom',
+                                    colors14: { bg: 'bg-purple-50', border: 'border-purple-400', text: 'text-purple-900', icon: 'text-purple-600' },
+                                    colors13: { bg: 'bg-purple-50', border: 'border-purple-300', text: 'text-purple-800', icon: 'text-purple-500' }
+                                }
                             ];
                             
                             sections.forEach(section => {
@@ -5910,20 +6007,20 @@
                                         ...section,
                                         urgency: 'high',
                                         message: 'Just 1 more module for badge!',
-                                        bgColor: 'bg-green-50',
-                                        borderColor: 'border-green-400',
-                                        textColor: 'text-green-900',
-                                        iconColor: 'text-green-600'
+                                        bgColor: section.colors14.bg,
+                                        borderColor: section.colors14.border,
+                                        textColor: section.colors14.text,
+                                        iconColor: section.colors14.icon
                                     });
                                 } else if (section.count === 13) {
                                     alerts.push({
                                         ...section,
                                         urgency: 'medium',
                                         message: 'Only 2 more modules needed!',
-                                        bgColor: 'bg-amber-50',
-                                        borderColor: 'border-amber-400',
-                                        textColor: 'text-amber-900',
-                                        iconColor: 'text-amber-600'
+                                        bgColor: section.colors13.bg,
+                                        borderColor: section.colors13.border,
+                                        textColor: section.colors13.text,
+                                        iconColor: section.colors13.icon
                                     });
                                 }
                             });
@@ -5976,6 +6073,77 @@
                                 );
                             }
                             return null;
+                        })()}
+                    </div>
+                    {/* Commodore's Broad Pennant Progress */}
+                    <div className="bg-white rounded-lg shadow p-6 mt-6">
+                        <div className="flex items-center gap-3 mb-4">
+                            <h3 className="text-xl font-bold text-purple-900">Commodore's Broad Pennant</h3>
+                            <span className="text-sm text-purple-600 font-semibold">Highest Junior Achievement</span>
+                        </div>
+                        {(() => {
+                            // Check if awarded
+                            const hasPennant = qualifications?.find(q => 
+                                q.pNumber === junior.pNumber && 
+                                (q.module.includes("Commodore") || q.module.includes("Pennant"))
+                            );
+                            
+                            if (hasPennant) {
+                                return (
+                                    <div className="bg-purple-50 p-6 rounded-lg border-2 border-purple-300 text-center">
+                                        <img 
+                                            src="scc_award_commodores_pennant.webp" 
+                                            alt="Commodore's Broad Pennant"
+                                            className="w-32 h-32 mx-auto mb-3"
+                                            onError={(e) => {
+                                                e.target.style.display = 'none';
+                                                e.target.nextSibling.style.display = 'block';
+                                            }}
+                                        />
+                                        <div style={{display: 'none'}} className="text-5xl mb-3">🏆</div>
+                                        <p className="text-lg font-bold text-purple-900 mb-1">AWARDED</p>
+                                        {hasPennant.date && <p className="text-sm text-purple-700">on {formatDate(hasPennant.date)}</p>}
+                                    </div>
+                                );
+                            }
+                            
+                            // Calculate what's still needed
+                            const remaining = [];
+                            
+                            // Check badges (15+ modules needed)
+                            if (redModules < 15) remaining.push(`${15 - redModules} more RED module${15 - redModules > 1 ? 's' : ''} for badge (currently ${redModules}/15)`);
+                            if (blueModules < 15) remaining.push(`${15 - blueModules} more BLUE module${15 - blueModules > 1 ? 's' : ''} for badge (currently ${blueModules}/15)`);
+                            if (greenModules < 15) remaining.push(`${15 - greenModules} more GREEN module${15 - greenModules > 1 ? 's' : ''} for badge (currently ${greenModules}/15)`);
+                            if (yellowModules < 15) remaining.push(`${15 - yellowModules} more YELLOW module${15 - yellowModules > 1 ? 's' : ''} for badge (currently ${yellowModules}/15)`);
+                            
+                            // Check extra modules (23+ total needed)
+                            if (redModules >= 15 && redModules < 23) remaining.push(`${23 - redModules} more RED module${23 - redModules > 1 ? 's' : ''} for 8 extra (currently ${redModules}/23)`);
+                            if (blueModules >= 15 && blueModules < 23) remaining.push(`${23 - blueModules} more BLUE module${23 - blueModules > 1 ? 's' : ''} for 8 extra (currently ${blueModules}/23)`);
+                            if (greenModules >= 15 && greenModules < 23) remaining.push(`${23 - greenModules} more GREEN module${23 - greenModules > 1 ? 's' : ''} for 8 extra (currently ${greenModules}/23)`);
+                            if (yellowModules >= 15 && yellowModules < 23) remaining.push(`${23 - yellowModules} more YELLOW module${23 - yellowModules > 1 ? 's' : ''} for 8 extra (currently ${yellowModules}/23)`);
+                            
+                            if (remaining.length === 0) {
+                                return (
+                                    <div className="bg-green-50 p-6 rounded-lg border-2 border-green-300 text-center">
+                                        <p className="text-lg font-bold text-green-900 mb-2">✓ ALL REQUIREMENTS MET</p>
+                                        <p className="text-sm text-green-700">Ready to be awarded the Commodore's Broad Pennant!</p>
+                                    </div>
+                                );
+                            }
+                            
+                            return (
+                                <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
+                                    <p className="text-sm font-semibold text-purple-700 mb-3">Still needed:</p>
+                                    <ul className="text-sm text-slate-700 space-y-2">
+                                        {remaining.map((req, idx) => (
+                                            <li key={idx} className="flex items-start gap-2">
+                                                <span className="text-purple-600 font-bold">•</span>
+                                                <span>{req}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            );
                         })()}
                     </div>
                     
@@ -6461,8 +6629,21 @@
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<App />);
         
-        console.log(`RC2.66 loaded successfully! Version: ${DATA_VERSION}`);
-        console.log("RC2.66 FIXED: Recognize numeric-only P-Number format (7-8 digits like 11806919) - Westminster export format");
+        console.log(`RC2.68c loaded successfully! Version: ${DATA_VERSION}`);
+        console.log("RC2.68c IMPROVED: Alert boxes now match section colours (red/blue/green/yellow/purple) 🎨");
+        console.log("RC2.68c IMPROVED: Commodore's Pennant moved below Section Progress 🏆");
+        console.log("RC2.68b IMPROVED: Pennant box moved below age section, shows only remaining requirements");
+        console.log("RC2.68a CORRECTED: Commodore's Broad Pennant requirements - 4 coloured badges + 8 extra modules each");
+        console.log("RC2.68 NEW FEATURE: Commodore's Pennant requirements display on Junior Focus view");
+        console.log("RC2.67d FEATURE: Template now pre-filled with existing completions (X marks) ✓");
+        console.log("RC2.67c BUGFIX: Fixed CSV header format - names properly formatted ✓");
+        console.log("RC2.67b BUGFIX: Fixed template download with all 335 official junior modules ✓");
+        console.log("RC2.67a BUGFIX: Fixed template download button (corrected constant name)");
+        console.log("RC2.67 BUG FIXES:");
+        console.log("  - Waterborne page now shows cadets only (adults excluded)");
+        console.log("  - Text updated: 'Bulk Upload Junior Modules from Legacy System'");
+        console.log("  - Template format: Grid with X marks (modules down, cadets across)");
+        console.log("RC2.66 FIXED: Recognize numeric-only P-Number format (7-8 digits like 11806919)");
         console.log("RC2.65 FIXED: Recognize adult volunteer P-Number formats (CV##### and L######L) - no more false warnings!");
         console.log("RC2.65 FIXED: Missing rank now treated as 'Unit Assistant (UA)' for adult volunteers");
         console.log("RC2.64 NEW: Persistent warnings banner - Validation warnings now stay visible after import and can be dismissed");

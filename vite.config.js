@@ -16,5 +16,5 @@ export default defineConfig({
   // Base URL for deployment
   // For GitHub Pages: Set to '/REPO-NAME/' (e.g., '/scc-dashboard/')
   // For custom domain or root: Set to '/'
-  base: './TS_Dashboard',
+  base: './',
 })

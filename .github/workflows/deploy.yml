@@ -51,3 +51,43 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+```
+
+### Step 3: Save, Commit, Push
+
+**In GitHub Desktop**:
+1. Summary: "Fix GitHub Actions - update to v4"
+2. Click "Commit to main"
+3. Click "Push origin"
+
+---
+
+## What Changed
+
+Your error shows you're downloading **v3** versions:
+```
+actions/checkout@v3          ← WRONG
+actions/setup-node@v3        ← WRONG
+actions/configure-pages@v3   ← WRONG
+actions/upload-pages-artifact@v2  ← WRONG
+```
+
+Must be **v4** (except upload-pages-artifact which is v3):
+```
+actions/checkout@v4          ← CORRECT
+actions/setup-node@v4        ← CORRECT
+actions/configure-pages@v4   ← CORRECT
+actions/upload-pages-artifact@v3  ← CORRECT
+actions/deploy-pages@v4      ← CORRECT
+```
+
+---
+
+## After You Push
+
+Check the Actions log. Should see:
+```
+✓ Download action repository 'actions/checkout@v4'
+✓ Download action repository 'actions/setup-node@v4'
+✓ Download action repository 'actions/configure-pages@v4'
+✓ Download action repository 'actions/upload-pages-artifact@v3'

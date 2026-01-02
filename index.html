@@ -107,7 +107,7 @@
         // ============================================================================
         
         // --- 1.1 VERSION ---
-        const DATA_VERSION = "1.0-RC2.68d"; // IMPROVED: Proficiencies and Pennant side-by-side to save vertical space 
+        const DATA_VERSION = "1.0-RC2.68e"; // FEATURE: JSC STEM Award now shown in Junior Proficiencies box 
 
         // --- 1.2 BADGE & RANK IMAGE MAPS ---
         const RANK_IMG_MAP = {
@@ -6082,17 +6082,18 @@
                             <h3 className="text-xl font-bold mb-4 flex items-center gap-2"><Icon name="Award" className="w-5 h-5 text-purple-600"/> Junior Proficiencies</h3>
                             {(() => {
                                 const cadetQuals = qualifications.filter(q => q.pNumber === junior.pNumber && q.module);
-                                const awardedWaterborne = [];
+                                const awardedProficiencies = [];
                                 
+                                // Swim Test (always show, required)
                                 const swimQual = cadetQuals.find(q => {
                                     const m = q.module.toLowerCase();
                                     return m.includes("swim test") || m.includes("swimming test") || m.includes("water safety");
                                 });
 
                                 if (swimQual) {
-                                    awardedWaterborne.push({ name: "Swim Test / Water Safety", key: "Swim Test", date: swimQual.date });
+                                    awardedProficiencies.push({ name: "Swim Test / Water Safety", key: "Swim Test", date: swimQual.date });
                                 } else {
-                                    awardedWaterborne.push({ name: "Swim Test Required", key: "No Swim Test", date: null });
+                                    awardedProficiencies.push({ name: "Swim Test Required", key: "No Swim Test", date: null });
                                 }
 
                                 // Check for waterborne profs
@@ -6111,21 +6112,30 @@
                                 profNames.forEach(prof => {
                                     const found = cadetQuals.find(q => prof.search.some(s => q.module.includes(s)));
                                     if (found) {
-                                        awardedWaterborne.push({ name: found.module, key: prof.key, date: found.date });
+                                        awardedProficiencies.push({ name: found.module, key: prof.key, date: found.date });
                                     }
                                 });
+                                
+                                // Check for JSC STEM Award (8+ STEM modules OR explicit qualification)
+                                const stemAwardQual = cadetQuals.find(q => q.module.includes("JSC STEM") || q.module.includes("STEM Unit Activities Badge"));
+                                if (stemAwardQual) {
+                                    awardedProficiencies.push({ name: "JSC STEM Award", key: "JSC STEM Unit Activities Badge", date: stemAwardQual.date });
+                                } else if (stemModules >= 8) {
+                                    // Award is due but not yet recorded in qualifications
+                                    awardedProficiencies.push({ name: "JSC STEM Award (DUE)", key: "JSC STEM Unit Activities Badge", date: null });
+                                }
 
-                                return awardedWaterborne.length === 0 ? (
-                                    <div className="w-full text-center py-4 text-slate-400 italic bg-slate-50 rounded border border-dashed">No waterborne proficiencies found for this junior.</div>
+                                return awardedProficiencies.length === 0 ? (
+                                    <div className="w-full text-center py-4 text-slate-400 italic bg-slate-50 rounded border border-dashed">No proficiencies found for this junior.</div>
                                 ) : (
                                     <div className="flex gap-4 overflow-x-auto pb-4">
-                                        {awardedWaterborne.map((wb, idx) => (
+                                        {awardedProficiencies.map((prof, idx) => (
                                             <div key={idx} className="flex-shrink-0 flex flex-col items-center justify-center bg-slate-50 border border-slate-200 rounded-lg p-3 min-w-[120px] text-center">
                                                 <div className="h-24 flex items-center justify-center mb-2">
-                                                    <BadgeImage name={wb.key} className="h-24 w-auto object-contain" fallbackIcon="Award"/>
+                                                    <BadgeImage name={prof.key} className="h-24 w-auto object-contain" fallbackIcon="Award"/>
                                                 </div>
-                                                <p className="text-xs font-bold text-slate-700 leading-tight">{wb.name}</p>
-                                                <p className="text-[10px] text-slate-500 mt-1">{formatDate(wb.date)}</p>
+                                                <p className="text-xs font-bold text-slate-700 leading-tight">{prof.name}</p>
+                                                <p className="text-[10px] text-slate-500 mt-1">{formatDate(prof.date)}</p>
                                             </div>
                                         ))}
                                     </div>
@@ -6632,8 +6642,9 @@
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<App />);
         
-        console.log(`RC2.68d loaded successfully! Version: ${DATA_VERSION}`);
-        console.log("RC2.68d IMPROVED: Junior Proficiencies and Commodore's Pennant side-by-side (saves vertical space) 📐");
+        console.log(`RC2.68e loaded successfully! Version: ${DATA_VERSION}`);
+        console.log("RC2.68e FEATURE: JSC STEM Award displayed in Junior Proficiencies box 🔬");
+        console.log("RC2.68d IMPROVED: Junior Proficiencies and Commodore's Pennant side-by-side (saves vertical space)");
         console.log("RC2.68c IMPROVED: Alert boxes match section colours, Pennant moved below Section Progress");
         console.log("RC2.68b IMPROVED: Pennant box moved below age section, shows only remaining requirements");
         console.log("RC2.68a CORRECTED: Commodore's Broad Pennant requirements - 4 coloured badges + 8 extra modules each");

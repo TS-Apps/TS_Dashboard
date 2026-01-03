@@ -97,7 +97,7 @@
         // CONSTANTS & DATA
         // ═══════════════════════════════════════════════════════════════════════════
         
-        const DATA_VERSION = "3.1.4"; // CORRECTED: Junior proficiency counting (JSC STEM Award, YSS Stage 2, SCC Row 1, BC Paddlesport Discover)
+        const DATA_VERSION = "3.1.5"; // FIXED: Exclude tasters/start awards/swim tests from proficiency count, correct Row 2 as junior proficiency
  
         // Badge & Rank Image Maps
         const RANK_IMG_MAP = {
@@ -5912,31 +5912,35 @@
                                 let juniorProficiencies = 0;
                                 
                                 // Standard proficiencies from Proficiencies syllabus
+                                // EXCLUDE: Swimming tests (safety requirements, not proficiencies)
                                 juniorProficiencies += cadetQuals.filter(q => 
-                                    q.syllabus && q.syllabus.includes("Proficiencies")
+                                    q.syllabus && q.syllabus.includes("Proficiencies") &&
+                                    q.module && !q.module.includes("Water Safety") && !q.module.includes("Swimming Test")
                                 ).length;
                                 
                                 // JSC STEM Award (15+ STEM modules)
                                 if (stemCount >= 15) juniorProficiencies++;
                                 
-                                // YSS Stage 2 sailing
+                                // YSS Stage 2 sailing - junior proficiency
                                 if (cadetQuals.some(q => q.module && q.module.includes("YSS Stage 2"))) {
                                     juniorProficiencies++;
                                 }
                                 
-                                // SCC Row 1
-                                if (cadetQuals.some(q => q.module && (
-                                    q.module.includes("SCC Row 1") || 
-                                    q.module.includes("Rowing Stage 1")
-                                ))) {
+                                // SCC Row 2 (BR Go Row 2) - junior proficiency
+                                // EXCLUDE: Tasters (e.g., "SCC Row 1-Rowing Taster")
+                                if (cadetQuals.some(q => q.module && 
+                                    (q.module.includes("Go Row 2") || q.module.includes("SCC Row 2") || q.module.includes("Rowing Stage 2")) &&
+                                    !q.module.includes("Taster")
+                                )) {
                                     juniorProficiencies++;
                                 }
                                 
-                                // BC Paddlesport Discover
-                                if (cadetQuals.some(q => q.module && (
-                                    q.module.includes("Paddlesport Discover") ||
-                                    q.module.includes("BC Paddlesport Discover")
-                                ))) {
+                                // BC Paddlesport Discover - junior proficiency
+                                // EXCLUDE: Start awards
+                                if (cadetQuals.some(q => q.module && 
+                                    (q.module.includes("Paddlesport Discover") || q.module.includes("BC Paddlesport Discover")) &&
+                                    !q.module.includes("Start")
+                                )) {
                                     juniorProficiencies++;
                                 }
                                 
@@ -6078,15 +6082,17 @@
                 let count = 0;
                 
                 // Standard proficiencies from Proficiencies syllabus
+                // EXCLUDE: Swimming tests (not proficiencies, just safety requirements)
                 count += juniorQuals.filter(q => 
-                    q.syllabus && q.syllabus.includes("Proficiencies")
+                    q.syllabus && q.syllabus.includes("Proficiencies") &&
+                    q.module && !q.module.includes("Water Safety") && !q.module.includes("Swimming Test")
                 ).length;
                 
                 // JSC STEM Award (15+ STEM modules)
                 const stemCount = juniorMods.filter(m => m.section === 'stem').length;
                 if (stemCount >= 15) count++;
                 
-                // YSS Stage 2 sailing (RYA)
+                // YSS Stage 2 sailing (RYA) - junior proficiency
                 if (juniorQuals.some(q => q.module && (
                     q.module.includes("YSS Stage 2") ||
                     q.module.includes("RYA YSS Stage 2")
@@ -6094,21 +6100,21 @@
                     count++;
                 }
                 
-                // SCC Row 1 (not Row 2!)
-                if (juniorQuals.some(q => q.module && (
-                    q.module.includes("SCC Row 1") ||
-                    q.module.includes("Rowing Stage 1") ||
-                    q.module.includes("Go Row 1")
-                ))) {
+                // SCC Row 2 (BR Go Row 2) - junior proficiency
+                // EXCLUDE: Tasters (e.g., "SCC Row 1-Rowing Taster")
+                if (juniorQuals.some(q => q.module && 
+                    (q.module.includes("Go Row 2") || q.module.includes("SCC Row 2") || q.module.includes("Rowing Stage 2")) &&
+                    !q.module.includes("Taster")
+                )) {
                     count++;
                 }
                 
-                // BC Paddlesport Discover
-                if (juniorQuals.some(q => q.module && (
-                    q.module.includes("Paddlesport Discover") ||
-                    q.module.includes("BC Paddlesport Discover") ||
-                    q.module.includes("BC Paddle Discover")
-                ))) {
+                // BC Paddlesport Discover - junior proficiency
+                // EXCLUDE: Start awards (introductory, not proficiency level)
+                if (juniorQuals.some(q => q.module && 
+                    (q.module.includes("Paddlesport Discover") || q.module.includes("BC Paddlesport Discover")) &&
+                    !q.module.includes("Start")
+                )) {
                     count++;
                 }
                 

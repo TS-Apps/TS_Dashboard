@@ -97,7 +97,7 @@
         // CONSTANTS & DATA
         // ═══════════════════════════════════════════════════════════════════════════
         
-        const DATA_VERSION = "3.1.3"; // FEATURE: Promotion readiness alert + Select All button in Awards
+        const DATA_VERSION = "3.1.4"; // CORRECTED: Junior proficiency counting (JSC STEM Award, YSS Stage 2, SCC Row 1, BC Paddlesport Discover)
  
         // Badge & Rank Image Maps
         const RANK_IMG_MAP = {
@@ -5906,10 +5906,39 @@
                                 const blueCount = juniorMods.filter(m => m.section === 'blue').length;
                                 const greenCount = juniorMods.filter(m => m.section === 'green').length;
                                 const yellowCount = juniorMods.filter(m => m.section === 'yellow').length;
+                                const stemCount = juniorMods.filter(m => m.section === 'stem').length;
                                 
-                                const proficiencies = cadetQuals.filter(q => 
+                                // Count JUNIOR PROFICIENCIES
+                                let juniorProficiencies = 0;
+                                
+                                // Standard proficiencies from Proficiencies syllabus
+                                juniorProficiencies += cadetQuals.filter(q => 
                                     q.syllabus && q.syllabus.includes("Proficiencies")
                                 ).length;
+                                
+                                // JSC STEM Award (15+ STEM modules)
+                                if (stemCount >= 15) juniorProficiencies++;
+                                
+                                // YSS Stage 2 sailing
+                                if (cadetQuals.some(q => q.module && q.module.includes("YSS Stage 2"))) {
+                                    juniorProficiencies++;
+                                }
+                                
+                                // SCC Row 1
+                                if (cadetQuals.some(q => q.module && (
+                                    q.module.includes("SCC Row 1") || 
+                                    q.module.includes("Rowing Stage 1")
+                                ))) {
+                                    juniorProficiencies++;
+                                }
+                                
+                                // BC Paddlesport Discover
+                                if (cadetQuals.some(q => q.module && (
+                                    q.module.includes("Paddlesport Discover") ||
+                                    q.module.includes("BC Paddlesport Discover")
+                                ))) {
+                                    juniorProficiencies++;
+                                }
                                 
                                 // Calculate service time
                                 let serviceMonths = 0;
@@ -5923,16 +5952,16 @@
                                 }
                                 
                                 // Junior Cadet → Junior Cadet 1st Class
-                                if (rankLower.includes("junior cadet") && !rankLower.includes("1st") && !rankLower.includes("able") && !rankLower.includes("leading")) {
+                                if (rankLower === "jc" || (rankLower.includes("junior cadet") && !rankLower.includes("1st") && !rankLower.includes("able") && !rankLower.includes("leading"))) {
                                     return redCount >= 4 && blueCount >= 3 && greenCount >= 3 && yellowCount >= 2 && serviceMonths >= 3;
                                 }
                                 // Junior Cadet 1st Class → Able Junior Cadet
-                                else if (rankLower.includes("1st class") || rankLower.includes("jc1c")) {
-                                    return blueCount >= 4 && proficiencies >= 1 && serviceMonths >= 12;
+                                else if (rankLower === "jcfc" || rankLower.includes("1st class") || rankLower.includes("jc1c")) {
+                                    return blueCount >= 4 && juniorProficiencies >= 1 && serviceMonths >= 12;
                                 }
                                 // Able Junior Cadet → Leading Junior Cadet
-                                else if (rankLower.includes("able junior") || rankLower.includes("ajc")) {
-                                    return redCount >= 15 && blueCount >= 15 && greenCount >= 15 && yellowCount >= 15 && proficiencies >= 2;
+                                else if (rankLower === "ajc" || rankLower.includes("able junior")) {
+                                    return redCount >= 15 && blueCount >= 15 && greenCount >= 15 && yellowCount >= 15 && juniorProficiencies >= 2;
                                 }
                             }
                             
@@ -6044,17 +6073,46 @@
             const countProficiencies = (pNumber) => {
                 if (!qualifications || qualifications.length === 0) return 0;
                 const juniorQuals = qualifications.filter(q => q.pNumber === pNumber);
-                const proficiencyNames = [
-                    "BC Paddle Discover Award",
-                    "RYA YSS Stage 2",
-                    "Sail - RYA YSS Stage 2",
-                    "SCC Row 2",
-                    "BR Explore Rowing - Go Row 2 (Fixed)",
-                    "Rowing - BR Explore Rowing - Go Row 2 (Fixed)"
-                ];
-                return juniorQuals.filter(q => 
-                    proficiencyNames.some(name => q.module.includes(name))
+                const juniorMods = juniorData.moduleCompletions.filter(m => m.pNumber === pNumber);
+                
+                let count = 0;
+                
+                // Standard proficiencies from Proficiencies syllabus
+                count += juniorQuals.filter(q => 
+                    q.syllabus && q.syllabus.includes("Proficiencies")
                 ).length;
+                
+                // JSC STEM Award (15+ STEM modules)
+                const stemCount = juniorMods.filter(m => m.section === 'stem').length;
+                if (stemCount >= 15) count++;
+                
+                // YSS Stage 2 sailing (RYA)
+                if (juniorQuals.some(q => q.module && (
+                    q.module.includes("YSS Stage 2") ||
+                    q.module.includes("RYA YSS Stage 2")
+                ))) {
+                    count++;
+                }
+                
+                // SCC Row 1 (not Row 2!)
+                if (juniorQuals.some(q => q.module && (
+                    q.module.includes("SCC Row 1") ||
+                    q.module.includes("Rowing Stage 1") ||
+                    q.module.includes("Go Row 1")
+                ))) {
+                    count++;
+                }
+                
+                // BC Paddlesport Discover
+                if (juniorQuals.some(q => q.module && (
+                    q.module.includes("Paddlesport Discover") ||
+                    q.module.includes("BC Paddlesport Discover") ||
+                    q.module.includes("BC Paddle Discover")
+                ))) {
+                    count++;
+                }
+                
+                return count;
             };
             
             // Helper: Count RED core modules (specific list from syllabus)

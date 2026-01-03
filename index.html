@@ -97,7 +97,7 @@
         // CONSTANTS & DATA
         // ═══════════════════════════════════════════════════════════════════════════
         
-        const DATA_VERSION = "3.1.6"; // FEATURE: Core modules marked with stars, updated RED/BLUE core module lists for promotion requirements
+        const DATA_VERSION = "3.1.7"; // CRITICAL FIX: Corrected junior promotion requirements per official regulations (no GREEN/YELLOW for JC→JC1C, check all core modules)
  
         // Badge & Rank Image Maps
         const RANK_IMG_MAP = {
@@ -5944,6 +5944,16 @@
                                     juniorProficiencies++;
                                 }
                                 
+                                // Count RED and BLUE core modules
+                                const redCores = ["1", "1.1", "1.2", "1.3", "1.4", "1.5", "2", "2.1", "2.2", "2.3", "3", "4", "4.1", "4.2", "5", "6"];
+                                const blueCores = ["1", "1.1", "1.2", "9", "21", "21.1", "21.2", "21.3", "25"];
+                                const redCoresCompleted = juniorMods.filter(m => 
+                                    m.section === 'red' && redCores.includes(m.moduleCode)
+                                ).length;
+                                const blueCoresCompleted = juniorMods.filter(m => 
+                                    m.section === 'blue' && blueCores.includes(m.moduleCode)
+                                ).length;
+                                
                                 // Calculate service time
                                 let serviceMonths = 0;
                                 if (cadet.tos) {
@@ -5956,14 +5966,17 @@
                                 }
                                 
                                 // Junior Cadet → Junior Cadet 1st Class
+                                // Requires: ALL RED core modules (16 total) + 6 months service
                                 if (rankLower === "jc" || (rankLower.includes("junior cadet") && !rankLower.includes("1st") && !rankLower.includes("able") && !rankLower.includes("leading"))) {
-                                    return redCount >= 4 && blueCount >= 3 && greenCount >= 3 && yellowCount >= 2 && serviceMonths >= 3;
+                                    return redCoresCompleted >= 16 && serviceMonths >= 6;
                                 }
                                 // Junior Cadet 1st Class → Able Junior Cadet
+                                // Requires: ALL BLUE core modules (9 total) + 1 proficiency + 12 months service
                                 else if (rankLower === "jcfc" || rankLower.includes("1st class") || rankLower.includes("jc1c")) {
-                                    return blueCount >= 4 && juniorProficiencies >= 1 && serviceMonths >= 12;
+                                    return blueCoresCompleted >= 9 && juniorProficiencies >= 1 && serviceMonths >= 12;
                                 }
                                 // Able Junior Cadet → Leading Junior Cadet
+                                // Requires: All four sections complete (15 each) + 2 proficiencies
                                 else if (rankLower === "ajc" || rankLower.includes("able junior")) {
                                     return redCount >= 15 && blueCount >= 15 && greenCount >= 15 && yellowCount >= 15 && juniorProficiencies >= 2;
                                 }
@@ -6147,12 +6160,12 @@
             if (rankLower.includes("junior cadet 1st class") || rankLower.includes("jcfc")) {
                 nextRank = "Able Junior Cadet";
                 
-                // BLUE Core modules
-                const blueNeed = 4 - blueCoresCompleted;
-                if (blueCoresCompleted >= 4) {
-                    requirements.push("✓ BLUE Section Core modules (4/4 completed)");
+                // BLUE Core modules (ALL 9 required)
+                const blueNeed = 9 - blueCoresCompleted;
+                if (blueCoresCompleted >= 9) {
+                    requirements.push("✓ BLUE Section Core modules (9/9 completed)");
                 } else {
-                    requirements.push(`Complete BLUE Section Core modules (${blueCoresCompleted}/4 - need ${blueNeed} more)`);
+                    requirements.push(`Complete BLUE Section Core modules (${blueCoresCompleted}/9 - need ${blueNeed} more)`);
                 }
                 
                 // 12 months service
@@ -6217,12 +6230,12 @@
                 // Default: Junior Cadet
                 nextRank = "Junior Cadet 1st Class";
                 
-                // RED Core modules
-                const redNeed = 11 - redCoresCompleted;
-                if (redCoresCompleted >= 11) {
-                    requirements.push("✓ RED Section Core modules (11/11 completed)");
+                // RED Core modules (ALL 16 required)
+                const redNeed = 16 - redCoresCompleted;
+                if (redCoresCompleted >= 16) {
+                    requirements.push("✓ RED Section Core modules (16/16 completed)");
                 } else {
-                    requirements.push(`Complete RED Section Core modules (${redCoresCompleted}/11 - need ${redNeed} more)`);
+                    requirements.push(`Complete RED Section Core modules (${redCoresCompleted}/16 - need ${redNeed} more)`);
                 }
                 
                 // 6 months service

@@ -97,7 +97,7 @@
         // CONSTANTS & DATA
         // ═══════════════════════════════════════════════════════════════════════════
         
-        const DATA_VERSION = "3.1.5"; // FIXED: Exclude tasters/start awards/swim tests from proficiency count, correct Row 2 as junior proficiency
+        const DATA_VERSION = "3.1.6"; // FEATURE: Core modules marked with stars, updated RED/BLUE core module lists for promotion requirements
  
         // Badge & Rank Image Maps
         const RANK_IMG_MAP = {
@@ -6121,14 +6121,14 @@
                 return count;
             };
             
-            // Helper: Count RED core modules (specific list from syllabus)
-            const redCoreModules = ["1", "1.1", "1.2", "1.3", "1.4", "1.5", "5", "6", "15", "16", "17"];
+            // Helper: Count RED core modules (required for JC → JC1C promotion)
+            const redCoreModules = ["1", "1.1", "1.2", "1.3", "1.4", "1.5", "2", "2.1", "2.2", "2.3", "3", "4", "4.1", "4.2", "5", "6"];
             const redCoresCompleted = juniorModules.filter(m => 
                 m.section === 'red' && redCoreModules.includes(m.moduleCode)
             ).length;
             
-            // Helper: Count BLUE core modules
-            const blueCoreModules = ["1", "9", "15", "21"];
+            // Helper: Count BLUE core modules (required for JC1C → AJC promotion)
+            const blueCoreModules = ["1", "1.1", "1.2", "9", "21", "21.1", "21.2", "21.3", "25"];
             const blueCoresCompleted = juniorModules.filter(m => 
                 m.section === 'blue' && blueCoreModules.includes(m.moduleCode)
             ).length;
@@ -6785,12 +6785,21 @@
                     
                     {/* Completed Modules List */}
                     <div className="bg-white rounded-lg shadow p-6">
-                        <h3 className="text-xl font-bold mb-4">Completed Modules ({juniorModules.length})</h3>
+                        <h3 className="text-xl font-bold mb-2">Completed Modules ({juniorModules.length})</h3>
+                        <p className="text-sm text-slate-600 mb-4">
+                            <span className="text-amber-500 font-bold">★</span> = Core module required for promotion
+                        </p>
                         {juniorModules.length === 0 ? (
                             <p className="text-slate-500 italic">No modules completed yet.</p>
                         ) : (
                             <div className="space-y-2 max-h-96 overflow-y-auto">
-                                {juniorModules.map((mod, idx) => (
+                                {juniorModules.map((mod, idx) => {
+                                    // Check if this is a core module
+                                    const isRedCore = mod.section === 'red' && redCoreModules.includes(mod.moduleCode);
+                                    const isBlueCore = mod.section === 'blue' && blueCoreModules.includes(mod.moduleCode);
+                                    const isCore = isRedCore || isBlueCore;
+                                    
+                                    return (
                                     <div key={idx} className="flex justify-between items-center p-3 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors">
                                         <div className="flex-1">
                                             <span className={`inline-block px-2 py-1 rounded text-xs font-semibold mr-2 ${
@@ -6802,6 +6811,7 @@
                                             }`}>
                                                 {mod.section.toUpperCase()} {mod.moduleCode}
                                             </span>
+                                            {isCore && <span className="text-amber-500 font-bold mr-2" title="Core module required for promotion">★</span>}
                                             <span className="text-slate-700">{mod.moduleName}</span>
                                         </div>
                                         <div className="flex items-center gap-3">
@@ -6816,7 +6826,8 @@
                                             </button>
                                         </div>
                                     </div>
-                                ))}
+                                    );
+                                })}
                             </div>
                         )}
                     </div>

@@ -97,7 +97,7 @@
         // CONSTANTS & DATA
         // ═══════════════════════════════════════════════════════════════════════════
         
-        const DATA_VERSION = "3.1.7"; // CRITICAL FIX: Corrected junior promotion requirements per official regulations (no GREEN/YELLOW for JC→JC1C, check all core modules)
+        const DATA_VERSION = "3.1.8"; // FEATURE: Added core module star indicators to RED/BLUE progress charts
  
         // Badge & Rank Image Maps
         const RANK_IMG_MAP = {
@@ -6390,6 +6390,9 @@
                                 <div className="w-full bg-red-200 rounded-full h-2 mt-2">
                                     <div className="bg-red-600 h-2 rounded-full" style={{width: `${Math.min((redModules/15)*100, 100)}%`}}></div>
                                 </div>
+                                <p className="text-xs text-red-700 mt-1">
+                                    <span className="text-amber-500 font-bold">★</span> Core: {redCoresCompleted}/16
+                                </p>
                                 {(() => {
                                     const redBadge = qualifications?.find(q => q.pNumber === junior.pNumber && q.module.includes("JSC Red Unit Activities Badge"));
                                     if (redBadge && redBadge.date) {
@@ -6406,6 +6409,9 @@
                                 <div className="w-full bg-blue-200 rounded-full h-2 mt-2">
                                     <div className="bg-blue-600 h-2 rounded-full" style={{width: `${Math.min((blueModules/15)*100, 100)}%`}}></div>
                                 </div>
+                                <p className="text-xs text-blue-700 mt-1">
+                                    <span className="text-amber-500 font-bold">★</span> Core: {blueCoresCompleted}/9
+                                </p>
                                 {(() => {
                                     const blueBadge = qualifications?.find(q => q.pNumber === junior.pNumber && q.module.includes("JSC Blue Waterborne Activities Badge"));
                                     if (blueBadge && blueBadge.date) {

@@ -97,7 +97,7 @@
         // CONSTANTS & DATA
         // ═══════════════════════════════════════════════════════════════════════════
         
-        const DATA_VERSION = "3.1.8"; // FEATURE: Added core module star indicators to RED/BLUE progress charts
+        const DATA_VERSION = "3.1.9"; // FEATURE: Added core module stars to Junior Progress Chart matrix view
  
         // Badge & Rank Image Maps
         const RANK_IMG_MAP = {
@@ -5165,7 +5165,19 @@
                                         <tr key={`${mod.s}-${mod.c}`} className={getSectionBg(mod.s)}>
                                             <td className={`sticky left-0 px-2 py-1 font-semibold border-r border-b z-10 text-xs ${getSectionModuleBg(mod.s)}`} style={{maxWidth: '200px', width: '200px'}}>
                                                 <div className="overflow-hidden text-ellipsis whitespace-nowrap" title={`${mod.s.toUpperCase()} ${mod.c}: ${mod.n}`}>
-                                                    <span className="font-bold">{mod.s.toUpperCase()} {mod.c}:</span> {mod.n}
+                                                    {(() => {
+                                                        // Check if this is a core module
+                                                        const redCores = ["1", "1.1", "1.2", "1.3", "1.4", "1.5", "2", "2.1", "2.2", "2.3", "3", "4", "4.1", "4.2", "5", "6"];
+                                                        const blueCores = ["1", "1.1", "1.2", "9", "21", "21.1", "21.2", "21.3", "25"];
+                                                        const isCore = (mod.s === 'red' && redCores.includes(mod.c)) || (mod.s === 'blue' && blueCores.includes(mod.c));
+                                                        
+                                                        return (
+                                                            <>
+                                                                {isCore && <span className="text-amber-500 mr-1">★</span>}
+                                                                <span className="font-bold">{mod.s.toUpperCase()} {mod.c}:</span> {mod.n}
+                                                            </>
+                                                        );
+                                                    })()}
                                                 </div>
                                             </td>
                                             {juniors.map(junior => {

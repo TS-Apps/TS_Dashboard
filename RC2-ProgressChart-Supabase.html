@@ -1709,6 +1709,58 @@
                 return personnelData;
             };
 
+            const deduplicatePersonnel = (personnelData) => {
+                // Smart deduplication for Westminster's duplicate exports
+                // When someone is in both SCC and RMC, Westminster exports them twice
+                // Strategy: Keep the RMC record (identified by "(RMCD)" in unit name)
+                
+                const grouped = {};
+                
+                // Group by P-Number
+                personnelData.forEach(person => {
+                    if (!grouped[person.pNumber]) {
+                        grouped[person.pNumber] = [];
+                    }
+                    grouped[person.pNumber].push(person);
+                });
+                
+                const deduplicated = [];
+                const mergeLog = [];
+                
+                // For each P-Number, select the best record
+                Object.entries(grouped).forEach(([pNumber, records]) => {
+                    if (records.length === 1) {
+                        // No duplicates, just keep it
+                        deduplicated.push(records[0]);
+                    } else {
+                        // Multiple records - prefer RMC version
+                        // RMC records have "(RMCD)" in unit name
+                        const rmcRecord = records.find(r => r.unit && r.unit.includes('(RMCD)'));
+                        const sccRecord = records.find(r => r.unit && !r.unit.includes('(RMCD)'));
+                        
+                        if (rmcRecord) {
+                            deduplicated.push(rmcRecord);
+                            mergeLog.push(
+                                `${pNumber} (${rmcRecord.name}): Kept RMC record, removed SCC duplicate`
+                            );
+                        } else {
+                            // Fallback: just keep first record
+                            deduplicated.push(records[0]);
+                            mergeLog.push(
+                                `${pNumber} (${records[0].name}): ${records.length} duplicates found, kept first`
+                            );
+                        }
+                    }
+                });
+                
+                if (mergeLog.length > 0) {
+                    console.log(`✓ Deduplicated ${mergeLog.length} records (Westminster SCC+RMC duplicates):`);
+                    mergeLog.forEach(log => console.log(`  • ${log}`));
+                }
+                
+                return deduplicated;
+            };
+
             const processQualsFile = async (text) => {
                 const qualsData = [];
                 const lines = text.split('\n');
@@ -1768,7 +1820,11 @@
                     const qualsText = await readFile(qualsFile);
                     
                     const validationErrors = [];
-                    const personnelData = await processPersonnelFile(personnelText, validationErrors);
+                    let personnelData = await processPersonnelFile(personnelText, validationErrors);
+                    
+                    // Deduplicate personnel (handles Westminster exporting same person twice for SCC+RMC)
+                    personnelData = deduplicatePersonnel(personnelData);
+                    
                     const qualsData = await processQualsFile(qualsText);
                     
                     // Generate preview (first 10 rows)
@@ -1807,26 +1863,37 @@
                         throw new Error('User not authenticated');
                     }
                     
-                    // Step 1: Delete existing data (with confirmation)
+                    // Step 1: Check for existing data
                     const { count: existingPersonnel } = await supabase
                         .from('personnel')
                         .select('*', { count: 'exact', head: true });
                     
                     if (existingPersonnel > 0) {
-                        const proceed = confirm(
-                            `Database contains ${existingPersonnel} existing personnel records.\n\n` +
-                            `This import will DELETE ALL existing data and replace with the new CSV files.\n\n` +
-                            `Do you want to continue?`
+                        // Database contains data - user must clear manually
+                        setError(
+                            `⚠️ DATABASE CONTAINS ${existingPersonnel} EXISTING RECORDS\n\n` +
+                            `BEFORE YOU CAN UPLOAD:\n\n` +
+                            `1. Open Supabase SQL Editor (link will open in new tab)\n` +
+                            `2. Copy this SQL and paste into the editor:\n\n` +
+                            `──────────────────────────────────────────\n` +
+                            `TRUNCATE TABLE qualifications CASCADE;\n` +
+                            `TRUNCATE TABLE personnel CASCADE;\n` +
+                            `SELECT COUNT(*) FROM personnel;\n` +
+                            `──────────────────────────────────────────\n\n` +
+                            `3. Click RUN button\n` +
+                            `4. Verify you see "0" in the result\n` +
+                            `5. Come back here and upload your CSV files\n\n` +
+                            `(Click OK to open SQL Editor in new tab)`
                         );
-                        if (!proceed) {
-                            setLoading(false);
-                            return;
-                        }
                         
-                        // Delete existing data
-                        await supabase.from('personnel').delete().neq('p_number', '');
-                        await supabase.from('qualifications').delete().neq('p_number', '');
+                        // Open SQL Editor in new tab
+                        window.open('https://supabase.com/dashboard/project/dussngodqlbmfduwfvkc/sql/new', '_blank');
+                        
+                        setLoading(false);
+                        return;
                     }
+                    
+                    console.log('✓ Database is empty, proceeding with import...');
                     
                     // Step 2: Insert personnel data (in batches of 100)
                     const personnelBatches = [];
@@ -1967,11 +2034,11 @@
 
                     {error && (
                         <div className="mb-4 p-4 bg-red-50 border-l-4 border-red-500 text-red-700 flex justify-between items-start">
-                            <div>
+                            <div className="flex-1">
                                 <p className="font-bold">Error Processing Files</p>
-                                <p className="text-sm">{error}</p>
+                                <pre className="text-sm whitespace-pre-wrap font-sans mt-2">{error}</pre>
                             </div>
-                            <button onClick={() => setError(null)} className="text-red-500 hover:text-red-700" aria-label="Dismiss error message">
+                            <button onClick={() => setError(null)} className="text-red-500 hover:text-red-700 ml-4" aria-label="Dismiss error message">
                                 <Icon name="X" className="w-4 h-4" />
                             </button>
                         </div>
@@ -2150,7 +2217,8 @@
                                              setError(null);
                                              try {
                                                  const text = await readFile(personnelFile);
-                                                 const personnelData = await processPersonnelFile(text);
+                                                 let personnelData = await processPersonnelFile(text);
+                                                 personnelData = deduplicatePersonnel(personnelData);
                                                  onDataLoaded(personnelData, JSON.parse(localStorage.getItem('scc_quals') || '[]'));
                                                  setPersonnelFile(null);
                                              } catch (err) {

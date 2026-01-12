@@ -1285,7 +1285,7 @@
         };
         
         // Check if cadet is a junior (under 12 OR age 12 with junior modules/rank)
-        const isJunior = (dob, pNumber = null, rank = null, juniorData = null) => {
+        const isJunior = (dob, pNumber = null, rank = null) => {
             const age = calculateAge(dob);
             if (age === "Unknown") return false;
             
@@ -1293,7 +1293,8 @@
             if (age < 12) return true;
             
             // For 12-year-olds, check if they have junior modules or junior rank
-            if (age === 12 && pNumber && juniorData) {
+            if (age === 12 && pNumber) {
+                const juniorData = getJuniorData();
                 const hasJuniorModules = juniorData.moduleCompletions.some(m => m.pNumber === pNumber);
                 
                 // Check if they have a junior rank (passed as parameter)
@@ -1347,33 +1348,13 @@
         };
         
         // Get junior data from localStorage
-        // Get junior data from Supabase
-        const getJuniorData = async () => {
+        const getJuniorData = () => {
             try {
-                const { data: modules, error } = await supabase
-                    .from('junior_modules')
-                    .select('*')
-                    .order('date_completed', { ascending: false });
-                
-                if (error) {
-                    console.error("Error loading junior data from Supabase:", error);
-                    return { moduleCompletions: [], rankHistory: [], sectionBadges: [] };
-                }
-                
-                // Transform database format back to app format
-                const moduleCompletions = modules.map(m => ({
-                    pNumber: m.p_number,
-                    section: m.section,
-                    moduleCode: m.module_code,
-                    moduleName: m.module_name,
-                    dateCompleted: m.date_completed,
-                    isCore: m.is_core
-                }));
-                
-                return {
-                    moduleCompletions,
-                    rankHistory: [], // TODO: Implement if needed
-                    sectionBadges: [] // TODO: Implement if needed
+                const data = localStorage.getItem('scc_juniors');
+                return data ? JSON.parse(data) : {
+                    moduleCompletions: [], // {pNumber, section, moduleCode, moduleName, dateCompleted, isCore}
+                    rankHistory: [], // {pNumber, rank, dateAwarded}
+                    sectionBadges: [] // {pNumber, section, dateAwarded, modulesCompleted}
                 };
             } catch (e) {
                 console.error("Error loading junior data:", e);
@@ -1381,50 +1362,10 @@
             }
         };
         
-        // Save junior data to Supabase
-        const saveJuniorData = async (data) => {
+        // Save junior data to localStorage
+        const saveJuniorData = (data) => {
             try {
-                // First, clear existing modules for this user
-                const { error: deleteError } = await supabase
-                    .from('junior_modules')
-                    .delete()
-                    .neq('id', 0); // Delete all (RLS will limit to user's own data)
-                
-                if (deleteError) {
-                    console.error("Error clearing junior modules:", deleteError);
-                    return false;
-                }
-                
-                // Get current user
-                const { data: { user } } = await supabase.auth.getUser();
-                if (!user) {
-                    console.error("No authenticated user");
-                    return false;
-                }
-                
-                // Transform app format to database format and insert
-                const modulesToInsert = data.moduleCompletions.map(m => ({
-                    user_id: user.id,
-                    p_number: m.pNumber,
-                    section: m.section,
-                    module_code: m.moduleCode,
-                    module_name: m.moduleName,
-                    date_completed: m.dateCompleted,
-                    is_core: m.isCore || false
-                }));
-                
-                if (modulesToInsert.length > 0) {
-                    const { error: insertError } = await supabase
-                        .from('junior_modules')
-                        .insert(modulesToInsert);
-                    
-                    if (insertError) {
-                        console.error("Error inserting junior modules:", insertError);
-                        return false;
-                    }
-                }
-                
-                console.log(`✓ Saved ${modulesToInsert.length} junior module completions to Supabase`);
+                localStorage.setItem('scc_juniors', JSON.stringify(data));
                 return true;
             } catch (e) {
                 console.error("Error saving junior data:", e);
@@ -2460,7 +2401,7 @@
         };
 
         // Awards View Component
-        const AwardsView = ({ personnel, quals, juniorData }) => {
+        const AwardsView = ({ personnel, quals }) => {
             const [monthOffset, setMonthOffset] = useState(0); 
             // New State for PDF Selection
             const [selectedAwardKeys, setSelectedAwardKeys] = useState(new Set());
@@ -2664,6 +2605,7 @@
                 // Use cadets already filtered above
                 
                 cadets.forEach(junior => {
+                    const juniorData = getJuniorData();
                     const juniorModules = juniorData.moduleCompletions.filter(m => m.pNumber === junior.pNumber);
                     
                     const redCount = juniorModules.filter(m => m.section === 'red').length;
@@ -4742,11 +4684,12 @@
         };
 
         // --- JUNIOR PROGRESS VIEW (Grid Chart) ---
-        const JuniorProgressView = ({ personnel, juniorData, setJuniorData }) => {
+        const JuniorProgressView = ({ personnel }) => {
             const [selectedSection, setSelectedSection] = useState('red');
             const [recordingMode, setRecordingMode] = useState(false);
             const [selectedModules, setSelectedModules] = useState(new Set());
-            const juniors = personnel.filter(c => isJunior(c.dob, c.pNumber, c.rank, juniorData)).sort((a, b) => a.name.localeCompare(b.name));
+            const juniorData = getJuniorData();
+            const juniors = personnel.filter(c => isJunior(c.dob, c.pNumber, c.rank)).sort((a, b) => a.name.localeCompare(b.name));
             
             if (juniors.length === 0) {
                 return (
@@ -5277,7 +5220,7 @@
                 setSelectedModules(new Set());
             };
             
-            const saveModules = async () => {
+            const saveModules = () => {
                 if (selectedModules.size === 0) {
                     alert('No modules selected. Please select modules to record.');
                     return;
@@ -5286,6 +5229,7 @@
                 const confirmMsg = `Record ${selectedModules.size} module completion${selectedModules.size !== 1 ? 's' : ''}?\n\nThis will mark them as completed with today's date.`;
                 if (!confirm(confirmMsg)) return;
                 
+                const currentData = getJuniorData();
                 const today = new Date().toISOString().split('T')[0];
                 const newCompletions = [];
                 
@@ -5304,13 +5248,11 @@
                 });
                 
                 const updatedData = {
-                    ...juniorData,
-                    moduleCompletions: [...juniorData.moduleCompletions, ...newCompletions]
+                    ...currentData,
+                    moduleCompletions: [...currentData.moduleCompletions, ...newCompletions]
                 };
                 
-                const success = await saveJuniorData(updatedData);
-                if (success) {
-                    setJuniorData(updatedData); // Update state
+                if (saveJuniorData(updatedData)) {
                     alert(`Successfully recorded ${selectedModules.size} module completion${selectedModules.size !== 1 ? 's' : ''}!`);
                     setSelectedModules(new Set());
                     setRecordingMode(false);
@@ -5676,12 +5618,13 @@
         // DATA / UTILITIES VIEW COMPONENT
         // ============================================================================
         
-        const DataUtilitiesView = ({ clearData, wipeAllData, setView, personnel, juniorData }) => {
+        const DataUtilitiesView = ({ clearData, wipeAllData, setView, personnel }) => {
             const [uploadStatus, setUploadStatus] = useState('');
             const [showLogoUpdate, setShowLogoUpdate] = useState(false);
             const [sccLogoPreview, setSccLogoPreview] = useState(localStorage.getItem('scc_logo') || null);
             const [rmcLogoPreview, setRmcLogoPreview] = useState(localStorage.getItem('rmc_logo') || null);
             const [unitCrestPreview, setUnitCrestPreview] = useState(localStorage.getItem('unit_crest') || null);
+            const juniorData = getJuniorData();
             
             const handleLogoUpload = (file, type) => {
                 if (!file) return;
@@ -5895,6 +5838,9 @@
                                         "RED 1: Unit Induction: Tour of Unit","RED 1.1: Unit Induction: Unit Fire Drill","RED 1.2: Unit Induction: Map Out Your Unit","RED 1.3: Unit Induction: What's Important?","RED 1.4: Unit Induction: Uniformed Art","RED 1.5: Unit Induction: Badges & Ranks","RED 2: Two Questions & A Funny","RED 2.1: Paper Planes","RED 2.2: Names and Beanbags","RED 2.3: Mini Me","RED 3: Unit Who's Who: Say Cheese","RED 4: Basic Drill","RED 4.1: Unit Calls (Piping)","RED 4.2: Colours & Naval Customs","RED 4.3: Treat Yourself","RED 5: Junior Sea Cadet Uniform","RED 6: Safeguarding: SHOUT","RED 7: Organising Unit Activities","RED 7.1: Unit Activities","RED 7.2: Ready Aye Ready","RED 7.3: Unit Elevator Pitch","RED 7.4: Unit Advert","RED 7.5: Theme Tune","RED 8: How's Your Aim?","RED 9: Royal Marines Cadet Guest","RED 9.1: Royal Marines Cadets","RED 9.2: Royal Marines Activities","RED 10: Scrap Book Memories","RED 11: Passing Messages: Flags","RED 11.1: Lord Nelson's Message","RED 11.2: Codebreaker: Morse","RED 11.3: What's Your Position?","RED 11.4: Turn Up The Radios","RED 11.5: Phonetic Alphabet","RED 12: Chocolate Crispies","RED 12.1: Apple & Ginger","RED 12.2: Chefs' Sweet Tooth","RED 12.3: Chefs Savoury Tooth","RED 12.4: Chefs Cuppa","RED 13: Who Can Help Me?","RED 13.1: Emergency Visits","RED 14: How International Are We?","RED 15: First Aid Basics","RED 15.1: First Aid Relay","RED 15.2: Units Safety Poster","RED 16: Naval Heraldry","RED 17: Throw Yourself a Knot","RED 17.1: Tasty Knots","RED 17.2: Rope and Spoons","RED 17.3: Knot Board","RED 17.4: Paracord Keyrings","RED 17.5: Parts of a Ship","RED 17.6: Ship Ahoy!","RED 18: Planning & Preparation","RED 18.1: Food Storage","RED 18.2: Keeping Germs at Bay","RED 18.3: Missed a Spot!","RED 18.4: Building Bacteria","RED 18.5: Fuzzy Bread","RED 18.6: Clean Hands?","RED 19: Earthshot Challenge","RED 20: Suggestion Box","RED 21: Kindness and Wellbeing","RED 21.1: Kindness and Wellbeing","RED 22: Teamwork Skills","BLUE T1: Dinghy Sailing Taster","BLUE T2: Paddlesport Taster","BLUE T3: Windsurfing Taster","BLUE T4: Rowing Taster","BLUE 1: Safety by the Water","BLUE 1.1: Rescue Line","BLUE 1.2: Help I Need Help!","BLUE 2: Cardinal Marks","BLUE 2.1: Danger Zones","BLUE 3: Royal & Merchant Navy","BLUE 4: Going on a Mission","BLUE 5: Maritime Museum","BLUE 6: Battleships","BLUE 7: Remember The Facts","BLUE 7.1: Famous Figures","BLUE 7.2: Picasso's Nelson","BLUE 8: Boat Construction","BLUE 8.1: Build Boat","BLUE 8.2: Model Raft","BLUE 8.3: Water Raft","BLUE 9: Wise Near Water","BLUE 9.1: What Flag Am I?","BLUE 10: Lifeguards","BLUE 11: Keep Swimming","BLUE 12: Swimathon","BLUE 13: Marco Polo","BLUE 13.1: Synchronised Swim","BLUE 13.2: Water Polo","BLUE 14: Swimming Gala","BLUE 15: Signposts at Sea","BLUE 15.1: Edible Signposts","BLUE 15.2: Ropes on Biscuits","BLUE 16: Saving Sam","BLUE 16.1: Don't Fall Out!","BLUE 17: Go Rowing!","BLUE 17.1: Learn Rowing!","BLUE 18: Go Sailing!","BLUE 18.1: Learn Sailing!","BLUE 19: Go Paddling!","BLUE 19.1: Learn Paddlesport!","BLUE 19.2: Voyage of Discovery","BLUE 20: Learn Windsurfing!","BLUE 20.1: Go Windsurfing!","BLUE 21: Good Look Out","BLUE 21.1: Hazards","BLUE 21.2: Buoyancy","BLUE 21.3: Safe Speeds","BLUE 22: Navigation","BLUE 23: Crossing The Line","BLUE 23.1: Nautical Terms","BLUE 23.2: Sea Shanties","BLUE 23.3: Hornpipe Dance","BLUE 24: Boat Types","BLUE 24.1: RS ZEST Single","BLUE 24.2: RS QUEST Crewed","BLUE 25: Cold Water Shock","BLUE 26: Towpath I Spy","BLUE 27: Flag Etiquette","BLUE 28: Green and Clean","BLUE 29: Big Clean Up","BLUE 29.2: Plastic Eating Machine","GREEN 1: 50 Things","GREEN 2: Mapping It Out","GREEN 2.1: Around the Globe","GREEN 3: Grid References","GREEN 4: Weather","GREEN 4.1: Make it Rain!","GREEN 5: Captain's Coming","GREEN 5.1: Home Made Compass","GREEN 6: Photography","GREEN 7: Pacing It Out","GREEN 7.1: Micro Journey","GREEN 7.2: Unique Monopoly","GREEN 7.3: Navigate Further","GREEN 8: Basic Outdoors","GREEN 8.1: Zero Trace","GREEN 8.2: What to Wear","GREEN 8.3: Keeping Tidy","GREEN 9: Stoves","GREEN 9.1: Open Fires 101","GREEN 9.2: Fire Recipes","GREEN 9.3: Junior Survivor","GREEN 9.4: Master Chef Outdoors","GREEN 10: Practice","GREEN 10.1: Amazing Race Junior","GREEN 11: Country Code","GREEN 11.1: Country Code Guide","GREEN 11.2: Environment","GREEN 12: Tenting Around","GREEN 12.1: Pitching Tent","GREEN 13: Safe Outdoors","GREEN 13.1: Stranger Danger","GREEN 14: Meteorology","GREEN 14.1: Weather on Water","GREEN 14.2: Storm Surge","GREEN 14.3: Low Visibility","GREEN 14.4: Celestial Navigation","GREEN 15: Wind Blowing","GREEN 16: Warming Up","GREEN 16.1: Warm Up Guide","GREEN 17: Keep Fit","GREEN 17.1: Training Games","GREEN 17.2: Competitive","GREEN 17.3: Happy Healthy","GREEN 17.4: Eating Healthy","GREEN 17.5: Games to Start","GREEN 18: Bird Feeder","GREEN 18.1: Bee Bombs","GREEN 18.2: Seed Paper","GREEN 18.3: Carbon Footprint","YELLOW 1: Mardi Gras/Fat Tuesday/Shrove Tuesday","YELLOW 1.1: Parade with Mardi Gras Masks","YELLOW 1.2: Musical Celebration: Jazz Band","YELLOW 2: Celebrating Easter","YELLOW 2.1: Yummy Easter Hot Cross Buns","YELLOW 2.2: Twisted Pretzel: A Food of Lent","YELLOW 2.3: Creative Easter Eggs","YELLOW 3: Festival of Colour Holi","YELLOW 3.1: Colours of Holi","YELLOW 3.2: Nariyal Barfi","YELLOW 4: Happy Diwali (Divali)","YELLOW 4.1: Festival of Lights","YELLOW 4.2: Rangoli Designs","YELLOW 4.3: Karah Parshad","YELLOW 5: Snap It Up With Chinese New Year!","YELLOW 5.1: Taste of China: Sweet Dumplings","YELLOW 5.2: Fortune Cookie Jar","YELLOW 5.3: Prosperity & Good Fortune in Red","YELLOW 5.4: Chinese Dragon Costume (Individual)","YELLOW 5.5: Chinese Dragon Costume (large)","YELLOW 5.6: The Beating Drum","YELLOW 6: Celebrate with an Australian Cork Hat","YELLOW 6.1: Getting to know indigenous Australia","YELLOW 6.2: Didgeridoo: Music Maker","YELLOW 6.3: Australian Bakes: ANZAC Biscuits","YELLOW 7: Everything Christmas: Decorating Time!","YELLOW 7.1: Christmas Bingo!","YELLOW 7.2: A Ginger Christmas","YELLOW 7.3: Chocolate Logs Yule Love!","YELLOW 7.4: Chocolate Logs Made Easy","YELLOW 7.5: Gingerbread Biscuits","YELLOW 7.6: Christmas Gift photo frame","YELLOW 7.7: Seasonal Festive Wreath","YELLOW 7.8: Odd Sock Beanbag Characters","YELLOW 8: Research Time!","YELLOW 8.1: Unit Spookyville","YELLOW 8.2: All Things Spooky","YELLOW 8.3: What Are The Nine Candles?","YELLOW 8.4: Saint Valentine's Day Kindness Box","YELLOW 8.5: Saint Patrick's Day: Shamrock Shake","YELLOW 8.6: A Special Sunday for Mothers & Caregivers","YELLOW 8.7: Celebrating the Iranian New Year","YELLOW 8.8: Halloween Trick or Treats","YELLOW 9: All About The Community","YELLOW 9.1: Community 101","YELLOW 9.2: Community Tree","YELLOW 9.3: Community Mind Map","YELLOW 10: Survey Mania","YELLOW 10.1: Chips Ahoy! Chip Ship Survey","YELLOW 10.2: Shop Surveys","YELLOW 11: Getting Involved: Community Projects","YELLOW 11.1: Junior Cadets of the World!","YELLOW 11.2: Celebrating Diversity in Your Community","YELLOW 12: Welsh Style: Traditional Welsh Cakes","YELLOW 12.1: Welsh Style: Welsh Rarebit","YELLOW 12.2: Yr laith Gymraeg: Welsh Language","YELLOW 12.3: Y Ddraig Goch Flag: The Red Dragon","YELLOW 13: The Scottish Way: Haggis Neeps & Tatties","YELLOW 13.1: The Scottish Way: Cèilidh","YELLOW 13.2: The Scottish Way: The Flag of Scotland","YELLOW 13.3: The Scottish Way: Scots Gàidhlig","YELLOW 13.4: Celebrate Saint Andrews Day: Scottish Kilt Card","YELLOW 13.5: Exploring Burns Night Supper","YELLOW 15: The Arrival of Summer: Maypole Dancing","YELLOW 15.1: Morris Dancing","YELLOW 16: 4 Nations in 1","YELLOW 17: Places of Interest","YELLOW 17.1: Scavenger Hunt","YELLOW 17.2: Town Maps Maps of Your Town","YELLOW 18: Broadening The Horizon","YELLOW 19: We Are Different We are the Same!","YELLOW 19.1: Embrace It: Inclusion & Diversity","YELLOW 19.2: All in a phrase","YELLOW 19.3: Communicating Through Sign Language","YELLOW 19.4: Ditch The Labels!","YELLOW 19.5: Communicating through Braille","YELLOW 20: It's Never the Same!","YELLOW 20.1: The Issue","YELLOW 20.2: Wear It On Your Wrist!","YELLOW 20.3: Activists in Action! Anti-bullying Campaign","YELLOW 20.4: Online: It is Still Not Okay!","YELLOW 21: Ten Keys","YELLOW 22: Remembrance Day Parade","YELLOW 22.1: Cenotaphs In The Community","YELLOW 22.2: Paper Plate Poppies","YELLOW 22.3: Recycled Remembrance Poppies","YELLOW 22.4: Remembrance Art","YELLOW 22.5: Medals to Remember","YELLOW 22.6: Portraits of Boy Seaman John T. Cornwell V.C.","YELLOW 22.7: What is your unit's History?","YELLOW 22.8: Remembrance Light Jars","YELLOW 22.9: Remembrance Day Wreath","YELLOW 23: The Home Front","YELLOW 23.1: Ration It Out","YELLOW 23.2: Re-enactment Time","YELLOW 24: Values and Citizenship: What about Governments?","YELLOW 24.1: Your Local Government: Face to Face","YELLOW 24.2: Who's Who: Mayors or Provosts?","YELLOW 25: Saint George's Day","YELLOW 26: VE Victory Sponge","YELLOW 27: #SCRAPPLASTIC Swap Out Your Plastics","YELLOW 27.1: #SCRAPPLASTIC Plastic Free Day","YELLOW 27.2: #SCRAPPLASTIC Supermarket Challenge","YELLOW 27.3: #SCRAPPLASTIC Share What You Know","YELLOW 28: EARTHSHOT (WFW) - Tote-tally Awesome Up-cycled Bag","YELLOW 28.1: Earthshot (WFW) - Ecobricks","YELLOW 28.2: EARTHSHOT (WFW) - Need v Want","YELLOW 28.3: EARTHSHOT (FOC) - Utilising Technology","YELLOW 28.4: EARTHSHOT (WFW) - Where does our waste go?","YELLOW 29: Junior Sea Cadets Competitions","YELLOW 30: Your Identity Matters - Celebrating PRIDE","YELLOW 70: Special Edition Platinum Jubilee","YELLOW 70.1: The Platinum Thread","YELLOW 70.2: Platinum Jubilee Fact Find","YELLOW 71: Remembering Our Patron","YELLOW 72: King's Coronation Party event","YELLOW 72.1: King's Coronation POM POM decorations","YELLOW 73: Big Help Out - Special Call at a Landmark","STEM 1: Satellite Intelligence Mission","STEM 2: Egg Drop Challenge: Protecting The Vessels","STEM 3: Sink Or Swim: Tinfoil Boat Float Challenge","STEM 4: Launched Out To Sea: Pom Pom Catapult","STEM 5: Propeller Nation","STEM 6: Steer The Ship: Eco-Friendly Giant Maze","STEM 7: Why It Just Won't Work: Salt Pendulum","STEM 8: Amazing Anchors","STEM 9: Setting Sail","STEM 10: Ancient Compasses","STEM 11: Balancing Boats","STEM 12: Carrying Cargo","STEM 13: Electric Engines","STEM 14: Incredible Insulation","STEM 15: Invisible Islands","STEM 16: Luminous Lighthouses","STEM 17: Oceans In A Bottle","STEM 18: Salt In The Seas","STEM 19: Speedy Ships","STEM 20: The World Around Us: Which Metal? Rust!","STEM 21: Special Edition: Somewhere Over The Rainbow","STEM 22: Wind Speed And Pressure: Anemometer","STEM 23: Elastic Band Powered Cars","STEM 24: Propelling Forward","STEM 25: Get Moving - A Chemical Reaction Powered Model Boat!","STEM 26: Weather Warning - Making A Barometer","STEM 27: Underwater Volcano - A Force Of Nature!","STEM 28: Tornado In A Bottle","STEM 29: Cartesian Diver","STEM 30: How Long Is A Minute? - Water Clock","STEM 31: The Science Behind Making The Right Choice!","STEM 32: Up Periscope - Make Your Own Submarine Periscope","STEM 33: Geodesic Domes","STEM 34: Sublime Slime","STEM 35: Air Power: Balloon Car","STEM 36: Ruffle Some Feathers - Mini Vortex Cannon","STEM 37: Paper Roller Coaster - Kinetic & Potential Energy","STEM 38: Moon Dial","STEM 39: Paper Glider","STEM 40: Lava Lamp","STEM 41: Puffer Fish","STEM 42: Waste-Free Lunch"
                                     ];
                                     
+                                    // Get existing completions
+                                    const juniorData = getJuniorData();
+                                    
                                     // Add module rows with X marks for existing completions
                                     allModuleNames.forEach(moduleName => {
                                         // Parse module name to extract section and code
@@ -5948,7 +5894,7 @@
                                         if (!file) return;
                                         
                                         const reader = new FileReader();
-                                        reader.onload = async (event) => {
+                                        reader.onload = (event) => {
                                             try {
                                                 const text = event.target.result;
                                                 const lines = text.split('\n').filter(line => line.trim());
@@ -6026,7 +5972,7 @@
                                                 }
                                                 
                                                 if (confirm(`Import ${imported} module completions for ${juniors.length} juniors? This will ADD to existing data.`)) {
-                                                    const currentData = await getJuniorData();
+                                                    const currentData = getJuniorData();
                                                     const updatedData = {
                                                         ...currentData,
                                                         moduleCompletions: [...currentData.moduleCompletions, ...newCompletions]
@@ -6350,10 +6296,11 @@
         // JUNIORS VIEW COMPONENT
         // ============================================================================
         
-        const JuniorsView = ({ personnel, qualifications, juniorData, setJuniorData }) => {
+        const JuniorsView = ({ personnel, qualifications }) => {
+            const juniorData = getJuniorData();
             
             // Filter personnel to only juniors (under 12 or 12 with junior modules/rank)
-            const juniors = personnel.filter(cadet => isJunior(cadet.dob, cadet.pNumber, cadet.rank, juniorData)).sort((a, b) => a.name.localeCompare(b.name));
+            const juniors = personnel.filter(cadet => isJunior(cadet.dob, cadet.pNumber, cadet.rank)).sort((a, b) => a.name.localeCompare(b.name));
             
             const [selectedJuniorPNum, setSelectedJuniorPNum] = useState(juniors.length > 0 ? juniors[0].pNumber : "");
             
@@ -6624,7 +6571,7 @@
                             const cadetQuals = qualifications.filter(q => q.pNumber === cadet.pNumber);
                             
                             // For juniors, check junior rank requirements
-                            if (isJunior(cadet.dob, cadet.pNumber, cadet.rank, juniorData)) {
+                            if (isJunior(cadet.dob, cadet.pNumber, cadet.rank)) {
                                 const juniorMods = juniorData.moduleCompletions.filter(m => m.pNumber === cadet.pNumber);
                                 const redCount = juniorMods.filter(m => m.section === 'red').length;
                                 const blueCount = juniorMods.filter(m => m.section === 'blue').length;
@@ -6766,13 +6713,13 @@
                     })()}
                     
                     {/* Junior Detail */}
-                    <JuniorDetail junior={selectedJunior} juniorData={juniorData} setJuniorData={setJuniorData} personnel={personnel} qualifications={qualifications} />
+                    <JuniorDetail junior={selectedJunior} juniorData={juniorData} personnel={personnel} qualifications={qualifications} />
                 </div>
             );
         };
         
         // Junior Detail Component
-        const JuniorDetail = ({ junior, juniorData, setJuniorData, personnel, qualifications }) => {
+        const JuniorDetail = ({ junior, juniorData, personnel, qualifications }) => {
             const [section, setSection] = useState('red');
             const [moduleCode, setModuleCode] = useState('');
             const [dateCompleted, setDateCompleted] = useState(new Date().toISOString().split('T')[0]);
@@ -6971,7 +6918,7 @@
                 }
             }
             
-            const handleModuleSubmit = async () => {
+            const handleModuleSubmit = () => {
                 if (!moduleCode.trim()) {
                     alert("Please enter a module code");
                     return;
@@ -7010,9 +6957,7 @@
                     moduleCompletions: [...juniorData.moduleCompletions, newModule]
                 };
                 
-                const success = await saveJuniorData(updatedData);
-                if (success) {
-                    setJuniorData(updatedData); // Update state
+                if (saveJuniorData(updatedData)) {
                     setShowSuccess(true);
                     setModuleCode('');
                     setTimeout(() => {
@@ -7829,7 +7774,6 @@
             const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
             const [personnelData, setPersonnelData] = useState([]);
             const [qualsData, setQualsData] = useState([]);
-            const [juniorData, setJuniorData] = useState({ moduleCompletions: [], rankHistory: [], sectionBadges: [] });
             // NEW STATE for Drill Down Feature
             const [drillDownInfo, setDrillDownInfo] = useState(null); 
             
@@ -7883,16 +7827,6 @@
                         
                         if (qError) throw qError;
                         
-                        // Load junior modules data
-                        const { data: juniorModules, error: jError } = await supabase
-                            .from('junior_modules')
-                            .select('*')
-                            .order('date_completed', { ascending: false });
-                        
-                        if (jError) {
-                            console.warn('Junior modules table may not exist yet:', jError);
-                        }
-                        
                         // If we have data, transform and load it
                         if (personnel && personnel.length > 0) {
                             // Transform database format back to app format
@@ -7915,26 +7849,11 @@
                                 syllabus: q.syllabus
                             })).sort((a, b) => b.date - a.date); // SORT BY DATE (newest first)
                             
-                            // Transform junior modules data
-                            const juniorDataTransformed = {
-                                moduleCompletions: juniorModules ? juniorModules.map(m => ({
-                                    pNumber: m.p_number,
-                                    section: m.section,
-                                    moduleCode: m.module_code,
-                                    moduleName: m.module_name,
-                                    dateCompleted: m.date_completed,
-                                    isCore: m.is_core
-                                })) : [],
-                                rankHistory: [],
-                                sectionBadges: []
-                            };
-                            
                             setPersonnelData(personnelData);
                             setQualsData(qualsData);
-                            setJuniorData(juniorDataTransformed);
                             setView('home');
                             
-                            console.log(`✓ Loaded ${personnelData.length} personnel, ${qualsData.length} qualifications, and ${juniorDataTransformed.moduleCompletions.length} junior modules from Supabase`);
+                            console.log(`✓ Loaded ${personnelData.length} personnel and ${qualsData.length} qualifications from Supabase`);
                         } else {
                             console.log('No data in database - showing upload screen');
                         }
@@ -8152,14 +8071,14 @@
                         <main className={`flex-1 ${sidebarCollapsed ? 'ml-20' : 'ml-64'} p-8 overflow-y-auto transition-all duration-300`}>
                             {view === 'home' && <HomeView personnel={personnelData} />} 
                             {view === 'cadet_focus' && <CadetFocus personnel={personnelData} qualsData={qualsData} />}
-                            {view === 'juniors' && <JuniorsView personnel={personnelData} qualifications={qualsData} juniorData={juniorData} setJuniorData={setJuniorData} />}
-                            {view === 'junior_progress' && <JuniorProgressView personnel={personnelData} juniorData={juniorData} setJuniorData={setJuniorData} />}
-                            {view === 'awards' && <AwardsView personnel={personnelData} quals={qualsData} juniorData={juniorData} />}
+                            {view === 'juniors' && <JuniorsView personnel={personnelData} qualifications={qualsData} />}
+                            {view === 'junior_progress' && <JuniorProgressView personnel={personnelData} />}
+                            {view === 'awards' && <AwardsView personnel={personnelData} quals={qualsData} />}
                             {(view === 'waterborne') && <WaterborneView personnel={personnelData} qualsData={qualsData} />}
                             {(view === 'planner') && <TrainingPlanner personnel={personnelData} getCadetProgress={getCadetProgress} qualsData={qualsData} title="SCC CTP Progress" rankOrder={SCC_RANK_ORDER} syllabus={SCC_SYLLABUS} iconName="ShipWheel" onModuleClick={handleModuleDrillDown} />}
                             {(view === 'rmc_planner') && <TrainingPlanner personnel={personnelData} getCadetProgress={getCadetProgress} qualsData={qualsData} title="RMC CTS Progress" rankOrder={RMC_RANK_ORDER} syllabus={RMC_SYLLABUS} colorTheme="green" iconName="Target" onModuleClick={handleModuleDrillDown} />}
                             {(view === 'suggestions') && <TrainingSuggestions personnel={personnelData} getCadetProgress={getCadetProgress} qualsData={qualsData} />}
-                            {view === 'data_utilities' && <DataUtilitiesView clearData={clearData} wipeAllData={wipeAllData} setView={setView} personnel={personnelData} juniorData={juniorData} />}
+                            {view === 'data_utilities' && <DataUtilitiesView clearData={clearData} wipeAllData={wipeAllData} setView={setView} personnel={personnelData} />}
                         </main>
                     </div>
                     {/* Render the Drill Down Modal */}

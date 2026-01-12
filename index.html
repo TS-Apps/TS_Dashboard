@@ -10,6 +10,9 @@
     
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     
+    <!-- Supabase Client Library -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
     <script src="https://cdn.tailwindcss.com"></script>
     
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -94,10 +97,23 @@
         const { useState, useEffect, useMemo, useCallback, Component } = React;
         
         // ═══════════════════════════════════════════════════════════════════════════
+        // SUPABASE INITIALIZATION
+        // ═══════════════════════════════════════════════════════════════════════════
+        const SUPABASE_URL = 'https://dussngodqlbmfduwfvkc.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR1c3NuZ29kcWxibWZkdXdmdmtjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgyMDYwNzgsImV4cCI6MjA4Mzc4MjA3OH0.pCGxiK5lNcmZ0Mv3nQozZlZi-ykliJIma99Y7ekNMKY';
+        
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        // Test connection on load (simple check without auth)
+        console.log('✓ Supabase client initialized successfully');
+        console.log('  URL:', SUPABASE_URL);
+        console.log('  Ready to authenticate');
+        
+        // ═══════════════════════════════════════════════════════════════════════════
         // CONSTANTS & DATA
         // ═══════════════════════════════════════════════════════════════════════════
         
-        const DATA_VERSION = "3.3.0"; // FEATURE: Bulk Module Recording in Junior Progress Chart
+        const DATA_VERSION = "3.3.0-SUPABASE"; // FEATURE: Supabase Integration + Bulk Module Recording
  
         // Badge & Rank Image Maps
         const RANK_IMG_MAP = {
@@ -1428,9 +1444,42 @@
             const [importSummary, setImportSummary] = useState(null); // NEW: Import summary
             
             // Logo upload states
-            const [unitCrestPreview, setUnitCrestPreview] = useState(localStorage.getItem('unit_crest') || null);
-            const [sccLogoPreview, setSccLogoPreview] = useState(localStorage.getItem('scc_logo') || null);
-            const [rmcLogoPreview, setRmcLogoPreview] = useState(localStorage.getItem('rmc_logo') || null);
+            const [unitCrestPreview, setUnitCrestPreview] = useState(null);
+            const [sccLogoPreview, setSccLogoPreview] = useState(null);
+            const [rmcLogoPreview, setRmcLogoPreview] = useState(null);
+
+            // Load logos from Supabase on mount
+            useEffect(() => {
+                const loadLogos = async () => {
+                    try {
+                        const { data: settings, error } = await supabase
+                            .from('settings')
+                            .select('key, value')
+                            .in('key', ['unit_crest', 'scc_logo', 'rmc_logo']);
+                        
+                        if (error) {
+                            console.error('Error loading logos:', error);
+                            return;
+                        }
+                        
+                        if (settings) {
+                            settings.forEach(setting => {
+                                const base64 = setting.value?.base64;
+                                if (base64) {
+                                    if (setting.key === 'unit_crest') setUnitCrestPreview(base64);
+                                    else if (setting.key === 'scc_logo') setSccLogoPreview(base64);
+                                    else if (setting.key === 'rmc_logo') setRmcLogoPreview(base64);
+                                }
+                            });
+                            console.log(`✓ Loaded ${settings.length} logos from Supabase`);
+                        }
+                    } catch (err) {
+                        console.error('Error loading logos:', err);
+                    }
+                };
+                
+                loadLogos();
+            }, []);
 
             const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB limit
             const VALID_MIME_TYPES = ['text/csv', 'application/vnd.ms-excel', 'text/plain'];
@@ -1457,7 +1506,7 @@
                 if (error) setError(null); // Clear error on new file selection
             };
 
-            const handleLogoUpload = (file, type) => {
+            const handleLogoUpload = async (file, type) => {
                 if (!file) return;
                 
                 // Validate file size
@@ -1472,36 +1521,81 @@
                     return;
                 }
                 
-                // Convert to base64 and store
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    const base64 = e.target.result;
-                    
-                    // Store in localStorage
-                    if (type === 'crest') {
-                        localStorage.setItem('unit_crest', base64);
-                        setUnitCrestPreview(base64);
-                    } else if (type === 'scc') {
-                        localStorage.setItem('scc_logo', base64);
-                        setSccLogoPreview(base64);
-                    } else if (type === 'rmc') {
-                        localStorage.setItem('rmc_logo', base64);
-                        setRmcLogoPreview(base64);
-                    }
-                };
-                reader.readAsDataURL(file);
+                try {
+                    // Convert to base64
+                    const reader = new FileReader();
+                    reader.onload = async (e) => {
+                        const base64 = e.target.result;
+                        
+                        // Determine settings key
+                        const settingsKey = type === 'crest' ? 'unit_crest' : 
+                                          type === 'scc' ? 'scc_logo' : 
+                                          'rmc_logo';
+                        
+                        // Save to Supabase settings table
+                        const { error: upsertError } = await supabase
+                            .from('settings')
+                            .upsert({
+                                key: settingsKey,
+                                value: { base64: base64 }
+                            }, {
+                                onConflict: 'key'
+                            });
+                        
+                        if (upsertError) {
+                            console.error('Error saving logo:', upsertError);
+                            setError('Error saving logo: ' + upsertError.message);
+                            return;
+                        }
+                        
+                        // Update preview
+                        if (type === 'crest') {
+                            setUnitCrestPreview(base64);
+                        } else if (type === 'scc') {
+                            setSccLogoPreview(base64);
+                        } else if (type === 'rmc') {
+                            setRmcLogoPreview(base64);
+                        }
+                        
+                        console.log(`✓ Logo saved to Supabase: ${settingsKey}`);
+                    };
+                    reader.readAsDataURL(file);
+                } catch (err) {
+                    console.error('Error uploading logo:', err);
+                    setError('Error uploading logo: ' + err.message);
+                }
             };
 
-            const removeLogo = (type) => {
-                if (type === 'crest') {
-                    localStorage.removeItem('unit_crest');
-                    setUnitCrestPreview(null);
-                } else if (type === 'scc') {
-                    localStorage.removeItem('scc_logo');
-                    setSccLogoPreview(null);
-                } else if (type === 'rmc') {
-                    localStorage.removeItem('rmc_logo');
-                    setRmcLogoPreview(null);
+            const removeLogo = async (type) => {
+                try {
+                    // Determine settings key
+                    const settingsKey = type === 'crest' ? 'unit_crest' : 
+                                      type === 'scc' ? 'scc_logo' : 
+                                      'rmc_logo';
+                    
+                    // Delete from Supabase
+                    const { error: deleteError } = await supabase
+                        .from('settings')
+                        .delete()
+                        .eq('key', settingsKey);
+                    
+                    if (deleteError) {
+                        console.error('Error removing logo:', deleteError);
+                        return;
+                    }
+                    
+                    // Update preview
+                    if (type === 'crest') {
+                        setUnitCrestPreview(null);
+                    } else if (type === 'scc') {
+                        setSccLogoPreview(null);
+                    } else if (type === 'rmc') {
+                        setRmcLogoPreview(null);
+                    }
+                    
+                    console.log(`✓ Logo removed from Supabase: ${settingsKey}`);
+                } catch (err) {
+                    console.error('Error removing logo:', err);
                 }
             };
 
@@ -1604,15 +1698,67 @@
                         rank: normalizeRank(rank || "Unit Assistant (UA)"),
                         name: `${surname}, ${firstname}`,
                         unit: sanitizeText(row[idx.unit] || "").trim(),
-                        dob: row[idx.dob],
-                        tos: row[idx.tos],
-                        rankDate: row[idx.rankDate],
-                        cvqo: sanitizeText(row[idx.cvqo]),
+                        dob: row[idx.dob]?.trim() || null,  // Convert empty to null
+                        tos: row[idx.tos]?.trim() || null,  // Convert empty to null
+                        rankDate: row[idx.rankDate]?.trim() || null,  // Convert empty to null
+                        cvqo: sanitizeText(row[idx.cvqo]) || null,  // Convert empty to null
                         _hasWarnings: rowErrors.length > 0 // Flag for preview
                     });
                 }
                 
                 return personnelData;
+            };
+
+            const deduplicatePersonnel = (personnelData) => {
+                // Smart deduplication for Westminster's duplicate exports
+                // When someone is in both SCC and RMC, Westminster exports them twice
+                // Strategy: Keep the RMC record (identified by "(RMCD)" in unit name)
+                
+                const grouped = {};
+                
+                // Group by P-Number
+                personnelData.forEach(person => {
+                    if (!grouped[person.pNumber]) {
+                        grouped[person.pNumber] = [];
+                    }
+                    grouped[person.pNumber].push(person);
+                });
+                
+                const deduplicated = [];
+                const mergeLog = [];
+                
+                // For each P-Number, select the best record
+                Object.entries(grouped).forEach(([pNumber, records]) => {
+                    if (records.length === 1) {
+                        // No duplicates, just keep it
+                        deduplicated.push(records[0]);
+                    } else {
+                        // Multiple records - prefer RMC version
+                        // RMC records have "(RMCD)" in unit name
+                        const rmcRecord = records.find(r => r.unit && r.unit.includes('(RMCD)'));
+                        const sccRecord = records.find(r => r.unit && !r.unit.includes('(RMCD)'));
+                        
+                        if (rmcRecord) {
+                            deduplicated.push(rmcRecord);
+                            mergeLog.push(
+                                `${pNumber} (${rmcRecord.name}): Kept RMC record, removed SCC duplicate`
+                            );
+                        } else {
+                            // Fallback: just keep first record
+                            deduplicated.push(records[0]);
+                            mergeLog.push(
+                                `${pNumber} (${records[0].name}): ${records.length} duplicates found, kept first`
+                            );
+                        }
+                    }
+                });
+                
+                if (mergeLog.length > 0) {
+                    console.log(`✓ Deduplicated ${mergeLog.length} records (Westminster SCC+RMC duplicates):`);
+                    mergeLog.forEach(log => console.log(`  • ${log}`));
+                }
+                
+                return deduplicated;
             };
 
             const processQualsFile = async (text) => {
@@ -1674,7 +1820,11 @@
                     const qualsText = await readFile(qualsFile);
                     
                     const validationErrors = [];
-                    const personnelData = await processPersonnelFile(personnelText, validationErrors);
+                    let personnelData = await processPersonnelFile(personnelText, validationErrors);
+                    
+                    // Deduplicate personnel (handles Westminster exporting same person twice for SCC+RMC)
+                    personnelData = deduplicatePersonnel(personnelData);
+                    
                     const qualsData = await processQualsFile(qualsText);
                     
                     // Generate preview (first 10 rows)
@@ -1688,16 +1838,6 @@
                     
                     setPreview(previewData);
                     setValidationErrors(validationErrors);
-                    
-                    // Store warnings in localStorage so they persist after navigation
-                    if (validationErrors.length > 0) {
-                        localStorage.setItem('importWarnings', JSON.stringify({
-                            warnings: validationErrors,
-                            timestamp: new Date().toISOString(),
-                            personnelCount: personnelData.length,
-                            qualsCount: qualsData.length
-                        }));
-                    }
                     
                     // If there are critical errors (more than 10% of records), require confirmation
                     const errorRate = validationErrors.length / personnelData.length;
@@ -1713,10 +1853,126 @@
                         }
                     }
                     
-                    // Import data
+                    // ============================================================
+                    // SUPABASE MIGRATION: Write to database instead of localStorage
+                    // ============================================================
+                    
+                    // Get current user for audit logging
+                    const { data: { user } } = await supabase.auth.getUser();
+                    if (!user) {
+                        throw new Error('User not authenticated');
+                    }
+                    
+                    // Step 1: Check for existing data
+                    const { count: existingPersonnel } = await supabase
+                        .from('personnel')
+                        .select('*', { count: 'exact', head: true });
+                    
+                    if (existingPersonnel > 0) {
+                        // Database contains data - user must clear manually
+                        setError(
+                            `⚠️ DATABASE CONTAINS ${existingPersonnel} EXISTING RECORDS\n\n` +
+                            `BEFORE YOU CAN UPLOAD:\n\n` +
+                            `1. Open Supabase SQL Editor (link will open in new tab)\n` +
+                            `2. Copy this SQL and paste into the editor:\n\n` +
+                            `──────────────────────────────────────────\n` +
+                            `TRUNCATE TABLE qualifications CASCADE;\n` +
+                            `TRUNCATE TABLE personnel CASCADE;\n` +
+                            `SELECT COUNT(*) FROM personnel;\n` +
+                            `──────────────────────────────────────────\n\n` +
+                            `3. Click RUN button\n` +
+                            `4. Verify you see "0" in the result\n` +
+                            `5. Come back here and upload your CSV files\n\n` +
+                            `(Click OK to open SQL Editor in new tab)`
+                        );
+                        
+                        // Open SQL Editor in new tab
+                        window.open('https://supabase.com/dashboard/project/dussngodqlbmfduwfvkc/sql/new', '_blank');
+                        
+                        setLoading(false);
+                        return;
+                    }
+                    
+                    console.log('✓ Database is empty, proceeding with import...');
+                    
+                    // Step 2: Insert personnel data (in batches of 100)
+                    const personnelBatches = [];
+                    for (let i = 0; i < personnelData.length; i += 100) {
+                        personnelBatches.push(personnelData.slice(i, i + 100));
+                    }
+                    
+                    let personnelInserted = 0;
+                    for (const batch of personnelBatches) {
+                        const dbRecords = batch.map(p => ({
+                            p_number: p.pNumber,
+                            rank: p.rank,
+                            name: p.name,
+                            unit: p.unit,
+                            dob: p.dob || null,  // Convert empty string to null
+                            tos: p.tos || null,  // Convert empty string to null
+                            rank_date: p.rankDate || null,  // Convert empty string to null
+                            cvqo: p.cvqo || null  // Convert empty string to null
+                        }));
+                        
+                        const { error: insertError } = await supabase
+                            .from('personnel')
+                            .insert(dbRecords);
+                        
+                        if (insertError) {
+                            throw new Error(`Personnel insert error: ${insertError.message}`);
+                        }
+                        
+                        personnelInserted += batch.length;
+                        console.log(`Inserted ${personnelInserted}/${personnelData.length} personnel records`);
+                    }
+                    
+                    // Step 3: Insert qualifications data (in batches of 500)
+                    const qualsBatches = [];
+                    for (let i = 0; i < qualsData.length; i += 500) {
+                        qualsBatches.push(qualsData.slice(i, i + 500));
+                    }
+                    
+                    let qualsInserted = 0;
+                    for (const batch of qualsBatches) {
+                        const dbRecords = batch.map(q => ({
+                            p_number: q.pNumber,
+                            module: q.module,
+                            date_achieved: q.date ? q.date.toISOString().split('T')[0] : null,
+                            result: q.result,
+                            syllabus: q.syllabus
+                        }));
+                        
+                        const { error: insertError } = await supabase
+                            .from('qualifications')
+                            .insert(dbRecords);
+                        
+                        if (insertError) {
+                            throw new Error(`Qualifications insert error: ${insertError.message}`);
+                        }
+                        
+                        qualsInserted += batch.length;
+                        console.log(`Inserted ${qualsInserted}/${qualsData.length} qualification records`);
+                    }
+                    
+                    // Step 4: Add audit log entry
+                    await supabase.from('audit_log').insert({
+                        user_id: user.id,
+                        user_email: user.email,
+                        action: 'IMPORT_CSV',
+                        table_name: 'personnel,qualifications',
+                        record_id: null,
+                        old_values: { count: existingPersonnel || 0 },
+                        new_values: {
+                            personnel: personnelData.length,
+                            qualifications: qualsData.length,
+                            warnings: validationErrors.length
+                        }
+                    });
+                    
+                    // Step 5: Trigger data reload in parent component
                     onDataLoaded(personnelData, qualsData);
                     
-                    // Show summary (warnings box is shown above via setValidationErrors)
+                    // Show summary
                     setImportSummary({
                         personnelImported: personnelData.length,
                         qualificationsImported: qualsData.length,
@@ -1724,11 +1980,13 @@
                         success: true
                     });
                     
+                    console.log('✓ CSV import to Supabase completed successfully');
+                    
                     // Scroll to top to show warnings
                     window.scrollTo({ top: 0, behavior: 'smooth' });
                     
                 } catch (err) {
-                    console.error(err);
+                    console.error('Import error:', err);
                     setError(err.message);
                     setImportSummary({
                         success: false,
@@ -1776,11 +2034,11 @@
 
                     {error && (
                         <div className="mb-4 p-4 bg-red-50 border-l-4 border-red-500 text-red-700 flex justify-between items-start">
-                            <div>
+                            <div className="flex-1">
                                 <p className="font-bold">Error Processing Files</p>
-                                <p className="text-sm">{error}</p>
+                                <pre className="text-sm whitespace-pre-wrap font-sans mt-2">{error}</pre>
                             </div>
-                            <button onClick={() => setError(null)} className="text-red-500 hover:text-red-700" aria-label="Dismiss error message">
+                            <button onClick={() => setError(null)} className="text-red-500 hover:text-red-700 ml-4" aria-label="Dismiss error message">
                                 <Icon name="X" className="w-4 h-4" />
                             </button>
                         </div>
@@ -1959,7 +2217,8 @@
                                              setError(null);
                                              try {
                                                  const text = await readFile(personnelFile);
-                                                 const personnelData = await processPersonnelFile(text);
+                                                 let personnelData = await processPersonnelFile(text);
+                                                 personnelData = deduplicatePersonnel(personnelData);
                                                  onDataLoaded(personnelData, JSON.parse(localStorage.getItem('scc_quals') || '[]'));
                                                  setPersonnelFile(null);
                                              } catch (err) {
@@ -2472,13 +2731,9 @@
                 }
             };
 
-            const generateCertificates = () => {
+            const generateCertificates = async () => {
                 if (selectedAwardKeys.size === 0) {
-                    // Use a custom message box instead of alert()
-                    const message = "Please select at least one award to print.";
-                    console.log(message); // Console log fallback
-                    // A custom modal/message box implementation is normally needed here. 
-                    // For brevity and compliance with single file constraint, using console.log/simple approach.
+                    alert('Please select at least one award to print.');
                     return; 
                 }
 
@@ -2494,10 +2749,28 @@
                     word.charAt(0).toUpperCase() + word.slice(1)
                 ).join(' ');
                 
-                // Load logos from localStorage
-                const unitCrest = localStorage.getItem('unit_crest');
-                const sccLogo = localStorage.getItem('scc_logo');
-                const rmcLogo = localStorage.getItem('rmc_logo');
+                // Load logos from Supabase
+                let unitCrest = null;
+                let sccLogo = null;
+                let rmcLogo = null;
+                
+                try {
+                    const { data: settings, error } = await supabase
+                        .from('settings')
+                        .select('key, value')
+                        .in('key', ['unit_crest', 'scc_logo', 'rmc_logo']);
+                    
+                    if (!error && settings) {
+                        settings.forEach(setting => {
+                            if (setting.key === 'unit_crest') unitCrest = setting.value?.base64;
+                            else if (setting.key === 'scc_logo') sccLogo = setting.value?.base64;
+                            else if (setting.key === 'rmc_logo') rmcLogo = setting.value?.base64;
+                        });
+                        console.log('✓ Loaded logos for certificates');
+                    }
+                } catch (err) {
+                    console.error('Error loading logos for certificates:', err);
+                }
                 
                 // Helper function to add image with preserved aspect ratio
                 const itemsToPrint = pastAwards.filter(a => selectedAwardKeys.has(a.uniqueId));
@@ -7398,69 +7671,285 @@
             );
         };
         
+        // ═══════════════════════════════════════════════════════════════════════════
+        // LOGIN SCREEN COMPONENT
+        // ═══════════════════════════════════════════════════════════════════════════
+        
+        const LoginScreen = ({ onLoginSuccess }) => {
+            const [email, setEmail] = useState('');
+            const [password, setPassword] = useState('');
+            const [loading, setLoading] = useState(false);
+            const [error, setError] = useState('');
+            
+            const handleLogin = async (e) => {
+                e.preventDefault();
+                setLoading(true);
+                setError('');
+                
+                try {
+                    const { data, error } = await supabase.auth.signInWithPassword({
+                        email: email.trim(),
+                        password: password,
+                    });
+                    
+                    if (error) throw error;
+                    
+                    console.log('✓ Login successful:', data.user.email);
+                    onLoginSuccess(data.user);
+                } catch (err) {
+                    console.error('Login error:', err);
+                    setError(err.message || 'Login failed');
+                    setLoading(false);
+                }
+            };
+            
+            return (
+                <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-800 to-blue-900 flex items-center justify-center p-4">
+                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-md p-8">
+                        <div className="text-center mb-8">
+                            <img src="media/ts_dashboard.webp" alt="TS Dashboard" className="w-48 h-auto mx-auto mb-4" />
+                            <h1 className="text-2xl font-bold text-slate-900 mb-2">Sea Cadet Training Dashboard</h1>
+                            <p className="text-sm text-slate-600">Please sign in to continue</p>
+                        </div>
+                        
+                        <form onSubmit={handleLogin} className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-semibold text-slate-700 mb-2">Email</label>
+                                <input
+                                    type="email"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    placeholder="your.email@mhseacadets.org"
+                                    required
+                                    disabled={loading}
+                                />
+                            </div>
+                            
+                            <div>
+                                <label className="block text-sm font-semibold text-slate-700 mb-2">Password</label>
+                                <input
+                                    type="password"
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    placeholder="Enter your password"
+                                    required
+                                    disabled={loading}
+                                />
+                            </div>
+                            
+                            {error && (
+                                <div className="bg-red-50 border-l-4 border-red-500 p-3 rounded">
+                                    <p className="text-sm text-red-700">{error}</p>
+                                </div>
+                            )}
+                            
+                            <button
+                                type="submit"
+                                disabled={loading}
+                                className={`w-full py-3 rounded-lg font-bold text-white transition-colors ${
+                                    loading 
+                                        ? 'bg-blue-400 cursor-not-allowed' 
+                                        : 'bg-blue-700 hover:bg-blue-800'
+                                }`}
+                            >
+                                {loading ? 'Signing in...' : 'Sign In'}
+                            </button>
+                        </form>
+                        
+                        <div className="mt-6 text-center text-xs text-slate-500">
+                            <p>Protected by Supabase Authentication</p>
+                            <p className="mt-2">Version {DATA_VERSION}</p>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+        
         const App = () => {
+            const [user, setUser] = useState(null);
+            const [loading, setLoading] = useState(true);
             const [view, setView] = useState('upload'); 
             const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
             const [personnelData, setPersonnelData] = useState([]);
             const [qualsData, setQualsData] = useState([]);
             // NEW STATE for Drill Down Feature
             const [drillDownInfo, setDrillDownInfo] = useState(null); 
+            
+            // Check authentication on mount
+            useEffect(() => {
+                // Check current session
+                supabase.auth.getSession().then(({ data: { session } }) => {
+                    setUser(session?.user ?? null);
+                    setLoading(false);
+                    if (session?.user) {
+                        console.log('✓ User authenticated:', session.user.email);
+                    }
+                });
+                
+                // Listen for auth changes
+                const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+                    setUser(session?.user ?? null);
+                    if (session?.user) {
+                        console.log('✓ Auth state changed:', session.user.email);
+                    }
+                });
+                
+                return () => subscription.unsubscribe();
+            }, []);
+            
+            const handleLogout = async () => {
+                if (confirm('Sign out of the dashboard?')) {
+                    await supabase.auth.signOut();
+                    setUser(null);
+                    console.log('✓ User signed out');
+                }
+            };
 
             // Icon Render - run when view changes or sidebar collapses/expands
             useEffect(() => { lucide.createIcons(); }, [view, sidebarCollapsed]);
 
             useEffect(() => {
-                const savedVersion = localStorage.getItem('scc_version');
-                if (savedVersion !== DATA_VERSION) {
-                    localStorage.clear();
-                    localStorage.setItem('scc_version', DATA_VERSION);
-                } else {
-                    const savedP = localStorage.getItem('scc_personnel');
-                    const savedQ = localStorage.getItem('scc_quals');
-                    if (savedP && savedQ) {
-                        try {
-                            const parsedP = JSON.parse(savedP);
-                            const parsedQ = JSON.parse(savedQ);
-                            
-                            // Rehydrate Date objects
-                            const hydratedQ = parsedQ.map(q => ({
-                                ...q,
-                                date: q.date ? new Date(q.date) : null
+                const loadDataFromSupabase = async () => {
+                    try {
+                        // Load personnel data
+                        const { data: personnel, error: pError } = await supabase
+                            .from('personnel')
+                            .select('*');
+                        
+                        if (pError) throw pError;
+                        
+                        // Load qualifications data
+                        const { data: qualifications, error: qError } = await supabase
+                            .from('qualifications')
+                            .select('*');
+                        
+                        if (qError) throw qError;
+                        
+                        // If we have data, transform and load it
+                        if (personnel && personnel.length > 0) {
+                            // Transform database format back to app format
+                            const personnelData = personnel.map(p => ({
+                                pNumber: p.p_number,
+                                rank: p.rank,
+                                name: p.name,
+                                unit: p.unit,
+                                dob: p.dob,
+                                tos: p.tos,
+                                rankDate: p.rank_date,
+                                cvqo: p.cvqo
                             }));
                             
-                            setPersonnelData(parsedP);
-                            setQualsData(hydratedQ);
-                            // Set to 'home' view when data is loaded from storage
-                            setView('home'); 
-                        } catch (e) {
-                            console.error("Error rehydrating data", e);
-                            localStorage.clear();
+                            const qualsData = qualifications.map(q => ({
+                                pNumber: q.p_number,
+                                module: q.module,
+                                date: q.date_achieved ? new Date(q.date_achieved) : null,
+                                result: q.result,
+                                syllabus: q.syllabus
+                            }));
+                            
+                            setPersonnelData(personnelData);
+                            setQualsData(qualsData);
+                            setView('home');
+                            
+                            console.log(`✓ Loaded ${personnelData.length} personnel and ${qualsData.length} qualifications from Supabase`);
+                        } else {
+                            console.log('No data in database - showing upload screen');
                         }
+                    } catch (err) {
+                        console.error('Error loading data from Supabase:', err);
                     }
+                };
+                
+                // Only load data if user is authenticated
+                if (user) {
+                    loadDataFromSupabase();
                 }
-            }, []);
+            }, [user]);
 
             const handleDataLoaded = (pData, qData) => {
                 setPersonnelData(pData);
                 setQualsData(qData);
-                localStorage.setItem('scc_personnel', JSON.stringify(pData));
-                localStorage.setItem('scc_quals', JSON.stringify(qData));
+                // Note: Data is already in Supabase from processFiles, no need to save to localStorage
                 // Set to 'home' view when data is freshly loaded
                 setView('home'); 
             };
 
-            const clearData = () => {
-                // Only clear cadet data, preserve logos
-                localStorage.removeItem('scc_personnel');
-                localStorage.removeItem('scc_quals');
-                localStorage.removeItem('scc_version');
-                window.location.reload();
+            const clearData = async () => {
+                if (!confirm('Clear all cadet data from database? This will delete personnel, qualifications, and junior modules. Logos and settings will be preserved.')) {
+                    return;
+                }
+                
+                try {
+                    // Get current user for audit log
+                    const { data: { user } } = await supabase.auth.getUser();
+                    
+                    // Delete all cadet data
+                    await supabase.from('personnel').delete().neq('p_number', '');
+                    await supabase.from('qualifications').delete().neq('p_number', '');
+                    await supabase.from('junior_modules').delete().neq('p_number', '');
+                    
+                    // Add audit log
+                    if (user) {
+                        await supabase.from('audit_log').insert({
+                            user_id: user.id,
+                            user_email: user.email,
+                            action: 'CLEAR_DATA',
+                            table_name: 'personnel,qualifications,junior_modules',
+                            record_id: null,
+                            old_values: {},
+                            new_values: { cleared: true }
+                        });
+                    }
+                    
+                    window.location.reload();
+                } catch (err) {
+                    console.error('Error clearing data:', err);
+                    alert('Error clearing data: ' + err.message);
+                }
             };
 
-            const wipeAllData = () => {
-                // Clear everything including logos
-                localStorage.clear();
-                window.location.reload();
+            const wipeAllData = async () => {
+                if (!confirm('WIPE ALL DATA including logos and settings? This cannot be undone!')) {
+                    return;
+                }
+                
+                if (!confirm('Are you absolutely sure? This will delete EVERYTHING. Click OK to confirm.')) {
+                    return;
+                }
+                
+                try {
+                    // Get current user for audit log
+                    const { data: { user } } = await supabase.auth.getUser();
+                    
+                    // Delete everything
+                    await supabase.from('personnel').delete().neq('p_number', '');
+                    await supabase.from('qualifications').delete().neq('p_number', '');
+                    await supabase.from('junior_modules').delete().neq('p_number', '');
+                    await supabase.from('settings').delete().neq('key', '');
+                    
+                    // Add audit log
+                    if (user) {
+                        await supabase.from('audit_log').insert({
+                            user_id: user.id,
+                            user_email: user.email,
+                            action: 'WIPE_ALL',
+                            table_name: 'all',
+                            record_id: null,
+                            old_values: {},
+                            new_values: { wiped: true }
+                        });
+                    }
+                    
+                    // Also clear localStorage
+                    localStorage.clear();
+                    
+                    window.location.reload();
+                } catch (err) {
+                    console.error('Error wiping data:', err);
+                    alert('Error wiping data: ' + err.message);
+                }
             };
 
             // NEW: Handler for Module Drill-Down
@@ -7481,6 +7970,23 @@
                  }));
                  return { percentage: total === 0 ? 100 : Math.round((passed/total)*100) };
             }, [qualsData]);
+
+            // Show loading spinner while checking authentication
+            if (loading) {
+                return (
+                    <div className="min-h-screen flex items-center justify-center bg-slate-100">
+                        <div className="text-center">
+                            <div className="inline-block w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4"></div>
+                            <p className="text-slate-600">Checking authentication...</p>
+                        </div>
+                    </div>
+                );
+            }
+            
+            // Show login screen if not authenticated
+            if (!user) {
+                return <LoginScreen onLoginSuccess={(user) => setUser(user)} />;
+            }
 
             const NavItem = ({ id, icon, label }) => (
                 <button onClick={() => { setView(id); window.scrollTo(0, 0); }} className={`flex items-center gap-2 w-full p-2 rounded-lg transition-all text-sm ${view === id ? 'bg-blue-800 text-white' : 'text-blue-100 hover:bg-blue-800/50'}`}>
@@ -7539,9 +8045,26 @@
                             </nav>
                             <div className="p-3 border-t border-blue-800">
                                 {!sidebarCollapsed && (
-                                    <div>
+                                    <div className="space-y-2">
+                                        <button 
+                                            onClick={handleLogout}
+                                            className="w-full flex items-center gap-2 p-2 text-sm text-blue-100 hover:bg-blue-800/50 rounded-lg transition-colors"
+                                        >
+                                            <Icon name="LogOut" className="w-4 h-4" />
+                                            <span>Sign Out</span>
+                                        </button>
                                         <p className="text-[9px] text-blue-500 text-center">v{DATA_VERSION}</p>
+                                        <p className="text-[8px] text-blue-400 text-center truncate">{user?.email}</p>
                                     </div>
+                                )}
+                                {sidebarCollapsed && (
+                                    <button 
+                                        onClick={handleLogout}
+                                        className="w-full flex justify-center p-2 text-blue-100 hover:bg-blue-800/50 rounded-lg transition-colors"
+                                        title="Sign Out"
+                                    >
+                                        <Icon name="LogOut" className="w-4 h-4" />
+                                    </button>
                                 )}
                             </div>
                         </aside>

@@ -1841,10 +1841,10 @@
                             rank: p.rank,
                             name: p.name,
                             unit: p.unit,
-                            dob: p.dob,
-                            tos: p.tos,
-                            rank_date: p.rankDate,
-                            cvqo: p.cvqo
+                            dob: p.dob || null,  // Convert empty string to null
+                            tos: p.tos || null,  // Convert empty string to null
+                            rank_date: p.rankDate || null,  // Convert empty string to null
+                            cvqo: p.cvqo || null  // Convert empty string to null
                         }));
                         
                         const { error: insertError } = await supabase

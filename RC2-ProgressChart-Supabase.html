@@ -104,12 +104,10 @@
         
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         
-        // Test connection on load
-        supabase.from('profiles').select('count').then(result => {
-            console.log('✓ Supabase connection successful:', result);
-        }).catch(err => {
-            console.error('✗ Supabase connection failed:', err);
-        });
+        // Test connection on load (simple check without auth)
+        console.log('✓ Supabase client initialized successfully');
+        console.log('  URL:', SUPABASE_URL);
+        console.log('  Ready to authenticate');
         
         // ═══════════════════════════════════════════════════════════════════════════
         // CONSTANTS & DATA

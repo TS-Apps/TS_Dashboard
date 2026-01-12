@@ -1698,10 +1698,10 @@
                         rank: normalizeRank(rank || "Unit Assistant (UA)"),
                         name: `${surname}, ${firstname}`,
                         unit: sanitizeText(row[idx.unit] || "").trim(),
-                        dob: row[idx.dob],
-                        tos: row[idx.tos],
-                        rankDate: row[idx.rankDate],
-                        cvqo: sanitizeText(row[idx.cvqo]),
+                        dob: row[idx.dob]?.trim() || null,  // Convert empty to null
+                        tos: row[idx.tos]?.trim() || null,  // Convert empty to null
+                        rankDate: row[idx.rankDate]?.trim() || null,  // Convert empty to null
+                        cvqo: sanitizeText(row[idx.cvqo]) || null,  // Convert empty to null
                         _hasWarnings: rowErrors.length > 0 // Flag for preview
                     });
                 }

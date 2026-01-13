@@ -10,14 +10,14 @@
     
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     
-    <!-- Supabase Client Library -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    
     <script src="https://cdn.tailwindcss.com"></script>
     
     <script src="https://unpkg.com/lucide@latest"></script>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    
+    <!-- Supabase Client Library -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <style>
         body { background-color: #f1f5f9; }
@@ -97,23 +97,26 @@
         const { useState, useEffect, useMemo, useCallback, Component } = React;
         
         // ═══════════════════════════════════════════════════════════════════════════
-        // SUPABASE INITIALIZATION
+        // SUPABASE CLIENT
         // ═══════════════════════════════════════════════════════════════════════════
         const SUPABASE_URL = 'https://dussngodqlbmfduwfvkc.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR1c3NuZ29kcWxibWZkdXdmdmtjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgyMDYwNzgsImV4cCI6MjA4Mzc4MjA3OH0.pCGxiK5lNcmZ0Mv3nQozZlZi-ykliJIma99Y7ekNMKY';
         
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         
-        // Test connection on load (simple check without auth)
-        console.log('✓ Supabase client initialized successfully');
-        console.log('  URL:', SUPABASE_URL);
-        console.log('  Ready to authenticate');
+        // Get or create anonymous user ID
+        let currentUserId = localStorage.getItem('supabase_user_id');
+        if (!currentUserId) {
+            currentUserId = 'anon_' + Math.random().toString(36).substring(2, 15);
+            localStorage.setItem('supabase_user_id', currentUserId);
+        }
+        console.log('🔑 User ID:', currentUserId);
         
         // ═══════════════════════════════════════════════════════════════════════════
         // CONSTANTS & DATA
         // ═══════════════════════════════════════════════════════════════════════════
         
-        const DATA_VERSION = "3.3.0-SUPABASE"; // FEATURE: Supabase Integration + Bulk Module Recording
+        const DATA_VERSION = "3.4.5-SUPABASE"; // FEATURE: Cloud storage with Supabase (personnel, quals, junior modules)
  
         // Badge & Rank Image Maps
         const RANK_IMG_MAP = {
@@ -1285,7 +1288,7 @@
         };
         
         // Check if cadet is a junior (under 12 OR age 12 with junior modules/rank)
-        const isJunior = (dob, pNumber = null, rank = null, juniorData = null) => {
+        const isJunior = (dob, pNumber = null, rank = null) => {
             const age = calculateAge(dob);
             if (age === "Unknown") return false;
             
@@ -1293,7 +1296,8 @@
             if (age < 12) return true;
             
             // For 12-year-olds, check if they have junior modules or junior rank
-            if (age === 12 && pNumber && juniorData) {
+            if (age === 12 && pNumber) {
+                const juniorData = getJuniorData();
                 const hasJuniorModules = juniorData.moduleCompletions.some(m => m.pNumber === pNumber);
                 
                 // Check if they have a junior rank (passed as parameter)
@@ -1346,34 +1350,14 @@
             }
         };
         
-        // Get junior data from localStorage
-        // Get junior data from Supabase
-        const getJuniorData = async () => {
+        // Get junior data from localStorage (synchronous for component use)
+        const getJuniorData = () => {
             try {
-                const { data: modules, error } = await supabase
-                    .from('junior_modules')
-                    .select('*')
-                    .order('date_completed', { ascending: false });
-                
-                if (error) {
-                    console.error("Error loading junior data from Supabase:", error);
-                    return { moduleCompletions: [], rankHistory: [], sectionBadges: [] };
-                }
-                
-                // Transform database format back to app format
-                const moduleCompletions = modules.map(m => ({
-                    pNumber: m.p_number,
-                    section: m.section,
-                    moduleCode: m.module_code,
-                    moduleName: m.module_name,
-                    dateCompleted: m.date_completed,
-                    isCore: m.is_core
-                }));
-                
-                return {
-                    moduleCompletions,
-                    rankHistory: [], // TODO: Implement if needed
-                    sectionBadges: [] // TODO: Implement if needed
+                const data = localStorage.getItem('scc_juniors');
+                return data ? JSON.parse(data) : {
+                    moduleCompletions: [],
+                    rankHistory: [],
+                    sectionBadges: []
                 };
             } catch (e) {
                 console.error("Error loading junior data:", e);
@@ -1381,53 +1365,105 @@
             }
         };
         
-        // Save junior data to Supabase
+        // Save junior data to localStorage + sync to Supabase
         const saveJuniorData = async (data) => {
             try {
-                // First, clear existing modules for this user
-                const { error: deleteError } = await supabase
-                    .from('junior_modules')
-                    .delete()
-                    .neq('id', 0); // Delete all (RLS will limit to user's own data)
+                // Save to localStorage immediately (for synchronous access)
+                localStorage.setItem('scc_juniors', JSON.stringify(data));
                 
-                if (deleteError) {
-                    console.error("Error clearing junior modules:", deleteError);
-                    return false;
-                }
-                
-                // Get current user
-                const { data: { user } } = await supabase.auth.getUser();
-                if (!user) {
-                    console.error("No authenticated user");
-                    return false;
-                }
-                
-                // Transform app format to database format and insert
-                const modulesToInsert = data.moduleCompletions.map(m => ({
-                    user_id: user.id,
-                    p_number: m.pNumber,
-                    section: m.section,
-                    module_code: m.moduleCode,
-                    module_name: m.moduleName,
-                    date_completed: m.dateCompleted,
-                    is_core: m.isCore || false
+                // Transform to Supabase format
+                const records = data.moduleCompletions.map(mod => ({
+                    user_id: currentUserId,
+                    p_number: mod.pNumber,
+                    section: mod.section,
+                    module_code: mod.moduleCode,
+                    module_name: mod.moduleName,
+                    date_completed: mod.dateCompleted,
+                    is_core: mod.isCore || false
                 }));
                 
-                if (modulesToInsert.length > 0) {
-                    const { error: insertError } = await supabase
-                        .from('junior_modules')
-                        .insert(modulesToInsert);
+                // Deduplicate to prevent PostgreSQL error
+                const uniqueMap = new Map();
+                records.forEach(rec => {
+                    const key = `${rec.user_id}-${rec.p_number}-${rec.section}-${rec.module_code}`;
+                    uniqueMap.set(key, rec);
+                });
+                const uniqueRecords = Array.from(uniqueMap.values());
+                
+                console.log(`💾 Syncing ${uniqueRecords.length} junior modules to Supabase...`);
+                
+                // Delete existing data
+                await supabase.from('junior_modules').delete().eq('user_id', currentUserId);
+                
+                if (uniqueRecords.length > 0) {
+                    // Batch insert in groups of 500 (Supabase limit is 1000)
+                    const batchSize = 500;
+                    let totalInserted = 0;
                     
-                    if (insertError) {
-                        console.error("Error inserting junior modules:", insertError);
-                        return false;
+                    for (let i = 0; i < uniqueRecords.length; i += batchSize) {
+                        const batch = uniqueRecords.slice(i, i + batchSize);
+                        console.log(`  📦 Inserting batch ${Math.floor(i/batchSize) + 1} (${batch.length} records)...`);
+                        
+                        const { error } = await supabase
+                            .from('junior_modules')
+                            .insert(batch);
+                        
+                        if (error) {
+                            console.error("❌ Supabase error saving batch:", error);
+                            console.error(`Failed at batch starting at index ${i}`);
+                            return false;
+                        }
+                        
+                        totalInserted += batch.length;
+                        console.log(`  ✓ Batch complete (${totalInserted}/${uniqueRecords.length})`);
                     }
                 }
                 
-                console.log(`✓ Saved ${modulesToInsert.length} junior module completions to Supabase`);
+                console.log('✓ All junior modules synced to Supabase');
                 return true;
             } catch (e) {
                 console.error("Error saving junior data:", e);
+                return false;
+            }
+        };
+        
+        // Load junior data from Supabase on app start
+        const loadJuniorDataFromSupabase = async () => {
+            try {
+                console.log('📥 Loading junior data from Supabase...');
+                const { data, error } = await supabase
+                    .from('junior_modules')
+                    .select('*')
+                    .eq('user_id', currentUserId);
+                
+                if (error) {
+                    console.error("❌ Supabase error loading junior data:", error);
+                    return false;
+                }
+                
+                console.log(`✓ Loaded ${data?.length || 0} junior module records`);
+                
+                // Transform to app format
+                const moduleCompletions = (data || []).map(row => ({
+                    pNumber: row.p_number,
+                    section: row.section,
+                    moduleCode: row.module_code,
+                    moduleName: row.module_name,
+                    dateCompleted: row.date_completed,
+                    isCore: row.is_core || false
+                }));
+                
+                const juniorData = {
+                    moduleCompletions,
+                    rankHistory: [],
+                    sectionBadges: []
+                };
+                
+                // Save to localStorage for synchronous access
+                localStorage.setItem('scc_juniors', JSON.stringify(juniorData));
+                return true;
+            } catch (e) {
+                console.error("Error loading junior data from Supabase:", e);
                 return false;
             }
         };
@@ -1503,42 +1539,9 @@
             const [importSummary, setImportSummary] = useState(null); // NEW: Import summary
             
             // Logo upload states
-            const [unitCrestPreview, setUnitCrestPreview] = useState(null);
-            const [sccLogoPreview, setSccLogoPreview] = useState(null);
-            const [rmcLogoPreview, setRmcLogoPreview] = useState(null);
-
-            // Load logos from Supabase on mount
-            useEffect(() => {
-                const loadLogos = async () => {
-                    try {
-                        const { data: settings, error } = await supabase
-                            .from('settings')
-                            .select('key, value')
-                            .in('key', ['unit_crest', 'scc_logo', 'rmc_logo']);
-                        
-                        if (error) {
-                            console.error('Error loading logos:', error);
-                            return;
-                        }
-                        
-                        if (settings) {
-                            settings.forEach(setting => {
-                                const base64 = setting.value?.base64;
-                                if (base64) {
-                                    if (setting.key === 'unit_crest') setUnitCrestPreview(base64);
-                                    else if (setting.key === 'scc_logo') setSccLogoPreview(base64);
-                                    else if (setting.key === 'rmc_logo') setRmcLogoPreview(base64);
-                                }
-                            });
-                            console.log(`✓ Loaded ${settings.length} logos from Supabase`);
-                        }
-                    } catch (err) {
-                        console.error('Error loading logos:', err);
-                    }
-                };
-                
-                loadLogos();
-            }, []);
+            const [unitCrestPreview, setUnitCrestPreview] = useState(localStorage.getItem('unit_crest') || null);
+            const [sccLogoPreview, setSccLogoPreview] = useState(localStorage.getItem('scc_logo') || null);
+            const [rmcLogoPreview, setRmcLogoPreview] = useState(localStorage.getItem('rmc_logo') || null);
 
             const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB limit
             const VALID_MIME_TYPES = ['text/csv', 'application/vnd.ms-excel', 'text/plain'];
@@ -1565,7 +1568,7 @@
                 if (error) setError(null); // Clear error on new file selection
             };
 
-            const handleLogoUpload = async (file, type) => {
+            const handleLogoUpload = (file, type) => {
                 if (!file) return;
                 
                 // Validate file size
@@ -1580,81 +1583,36 @@
                     return;
                 }
                 
-                try {
-                    // Convert to base64
-                    const reader = new FileReader();
-                    reader.onload = async (e) => {
-                        const base64 = e.target.result;
-                        
-                        // Determine settings key
-                        const settingsKey = type === 'crest' ? 'unit_crest' : 
-                                          type === 'scc' ? 'scc_logo' : 
-                                          'rmc_logo';
-                        
-                        // Save to Supabase settings table
-                        const { error: upsertError } = await supabase
-                            .from('settings')
-                            .upsert({
-                                key: settingsKey,
-                                value: { base64: base64 }
-                            }, {
-                                onConflict: 'key'
-                            });
-                        
-                        if (upsertError) {
-                            console.error('Error saving logo:', upsertError);
-                            setError('Error saving logo: ' + upsertError.message);
-                            return;
-                        }
-                        
-                        // Update preview
-                        if (type === 'crest') {
-                            setUnitCrestPreview(base64);
-                        } else if (type === 'scc') {
-                            setSccLogoPreview(base64);
-                        } else if (type === 'rmc') {
-                            setRmcLogoPreview(base64);
-                        }
-                        
-                        console.log(`✓ Logo saved to Supabase: ${settingsKey}`);
-                    };
-                    reader.readAsDataURL(file);
-                } catch (err) {
-                    console.error('Error uploading logo:', err);
-                    setError('Error uploading logo: ' + err.message);
-                }
+                // Convert to base64 and store
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const base64 = e.target.result;
+                    
+                    // Store in localStorage
+                    if (type === 'crest') {
+                        localStorage.setItem('unit_crest', base64);
+                        setUnitCrestPreview(base64);
+                    } else if (type === 'scc') {
+                        localStorage.setItem('scc_logo', base64);
+                        setSccLogoPreview(base64);
+                    } else if (type === 'rmc') {
+                        localStorage.setItem('rmc_logo', base64);
+                        setRmcLogoPreview(base64);
+                    }
+                };
+                reader.readAsDataURL(file);
             };
 
-            const removeLogo = async (type) => {
-                try {
-                    // Determine settings key
-                    const settingsKey = type === 'crest' ? 'unit_crest' : 
-                                      type === 'scc' ? 'scc_logo' : 
-                                      'rmc_logo';
-                    
-                    // Delete from Supabase
-                    const { error: deleteError } = await supabase
-                        .from('settings')
-                        .delete()
-                        .eq('key', settingsKey);
-                    
-                    if (deleteError) {
-                        console.error('Error removing logo:', deleteError);
-                        return;
-                    }
-                    
-                    // Update preview
-                    if (type === 'crest') {
-                        setUnitCrestPreview(null);
-                    } else if (type === 'scc') {
-                        setSccLogoPreview(null);
-                    } else if (type === 'rmc') {
-                        setRmcLogoPreview(null);
-                    }
-                    
-                    console.log(`✓ Logo removed from Supabase: ${settingsKey}`);
-                } catch (err) {
-                    console.error('Error removing logo:', err);
+            const removeLogo = (type) => {
+                if (type === 'crest') {
+                    localStorage.removeItem('unit_crest');
+                    setUnitCrestPreview(null);
+                } else if (type === 'scc') {
+                    localStorage.removeItem('scc_logo');
+                    setSccLogoPreview(null);
+                } else if (type === 'rmc') {
+                    localStorage.removeItem('rmc_logo');
+                    setRmcLogoPreview(null);
                 }
             };
 
@@ -1757,67 +1715,15 @@
                         rank: normalizeRank(rank || "Unit Assistant (UA)"),
                         name: `${surname}, ${firstname}`,
                         unit: sanitizeText(row[idx.unit] || "").trim(),
-                        dob: row[idx.dob]?.trim() || null,  // Convert empty to null
-                        tos: row[idx.tos]?.trim() || null,  // Convert empty to null
-                        rankDate: row[idx.rankDate]?.trim() || null,  // Convert empty to null
-                        cvqo: sanitizeText(row[idx.cvqo]) || null,  // Convert empty to null
+                        dob: row[idx.dob],
+                        tos: row[idx.tos],
+                        rankDate: row[idx.rankDate],
+                        cvqo: sanitizeText(row[idx.cvqo]),
                         _hasWarnings: rowErrors.length > 0 // Flag for preview
                     });
                 }
                 
                 return personnelData;
-            };
-
-            const deduplicatePersonnel = (personnelData) => {
-                // Smart deduplication for Westminster's duplicate exports
-                // When someone is in both SCC and RMC, Westminster exports them twice
-                // Strategy: Keep the RMC record (identified by "(RMCD)" in unit name)
-                
-                const grouped = {};
-                
-                // Group by P-Number
-                personnelData.forEach(person => {
-                    if (!grouped[person.pNumber]) {
-                        grouped[person.pNumber] = [];
-                    }
-                    grouped[person.pNumber].push(person);
-                });
-                
-                const deduplicated = [];
-                const mergeLog = [];
-                
-                // For each P-Number, select the best record
-                Object.entries(grouped).forEach(([pNumber, records]) => {
-                    if (records.length === 1) {
-                        // No duplicates, just keep it
-                        deduplicated.push(records[0]);
-                    } else {
-                        // Multiple records - prefer RMC version
-                        // RMC records have "(RMCD)" in unit name
-                        const rmcRecord = records.find(r => r.unit && r.unit.includes('(RMCD)'));
-                        const sccRecord = records.find(r => r.unit && !r.unit.includes('(RMCD)'));
-                        
-                        if (rmcRecord) {
-                            deduplicated.push(rmcRecord);
-                            mergeLog.push(
-                                `${pNumber} (${rmcRecord.name}): Kept RMC record, removed SCC duplicate`
-                            );
-                        } else {
-                            // Fallback: just keep first record
-                            deduplicated.push(records[0]);
-                            mergeLog.push(
-                                `${pNumber} (${records[0].name}): ${records.length} duplicates found, kept first`
-                            );
-                        }
-                    }
-                });
-                
-                if (mergeLog.length > 0) {
-                    console.log(`✓ Deduplicated ${mergeLog.length} records (Westminster SCC+RMC duplicates):`);
-                    mergeLog.forEach(log => console.log(`  • ${log}`));
-                }
-                
-                return deduplicated;
             };
 
             const processQualsFile = async (text) => {
@@ -1879,11 +1785,7 @@
                     const qualsText = await readFile(qualsFile);
                     
                     const validationErrors = [];
-                    let personnelData = await processPersonnelFile(personnelText, validationErrors);
-                    
-                    // Deduplicate personnel (handles Westminster exporting same person twice for SCC+RMC)
-                    personnelData = deduplicatePersonnel(personnelData);
-                    
+                    const personnelData = await processPersonnelFile(personnelText, validationErrors);
                     const qualsData = await processQualsFile(qualsText);
                     
                     // Generate preview (first 10 rows)
@@ -1897,6 +1799,16 @@
                     
                     setPreview(previewData);
                     setValidationErrors(validationErrors);
+                    
+                    // Store warnings in localStorage so they persist after navigation
+                    if (validationErrors.length > 0) {
+                        localStorage.setItem('importWarnings', JSON.stringify({
+                            warnings: validationErrors,
+                            timestamp: new Date().toISOString(),
+                            personnelCount: personnelData.length,
+                            qualsCount: qualsData.length
+                        }));
+                    }
                     
                     // If there are critical errors (more than 10% of records), require confirmation
                     const errorRate = validationErrors.length / personnelData.length;
@@ -1912,126 +1824,10 @@
                         }
                     }
                     
-                    // ============================================================
-                    // SUPABASE MIGRATION: Write to database instead of localStorage
-                    // ============================================================
-                    
-                    // Get current user for audit logging
-                    const { data: { user } } = await supabase.auth.getUser();
-                    if (!user) {
-                        throw new Error('User not authenticated');
-                    }
-                    
-                    // Step 1: Check for existing data
-                    const { count: existingPersonnel } = await supabase
-                        .from('personnel')
-                        .select('*', { count: 'exact', head: true });
-                    
-                    if (existingPersonnel > 0) {
-                        // Database contains data - user must clear manually
-                        setError(
-                            `⚠️ DATABASE CONTAINS ${existingPersonnel} EXISTING RECORDS\n\n` +
-                            `BEFORE YOU CAN UPLOAD:\n\n` +
-                            `1. Open Supabase SQL Editor (link will open in new tab)\n` +
-                            `2. Copy this SQL and paste into the editor:\n\n` +
-                            `──────────────────────────────────────────\n` +
-                            `TRUNCATE TABLE qualifications CASCADE;\n` +
-                            `TRUNCATE TABLE personnel CASCADE;\n` +
-                            `SELECT COUNT(*) FROM personnel;\n` +
-                            `──────────────────────────────────────────\n\n` +
-                            `3. Click RUN button\n` +
-                            `4. Verify you see "0" in the result\n` +
-                            `5. Come back here and upload your CSV files\n\n` +
-                            `(Click OK to open SQL Editor in new tab)`
-                        );
-                        
-                        // Open SQL Editor in new tab
-                        window.open('https://supabase.com/dashboard/project/dussngodqlbmfduwfvkc/sql/new', '_blank');
-                        
-                        setLoading(false);
-                        return;
-                    }
-                    
-                    console.log('✓ Database is empty, proceeding with import...');
-                    
-                    // Step 2: Insert personnel data (in batches of 100)
-                    const personnelBatches = [];
-                    for (let i = 0; i < personnelData.length; i += 100) {
-                        personnelBatches.push(personnelData.slice(i, i + 100));
-                    }
-                    
-                    let personnelInserted = 0;
-                    for (const batch of personnelBatches) {
-                        const dbRecords = batch.map(p => ({
-                            p_number: p.pNumber,
-                            rank: p.rank,
-                            name: p.name,
-                            unit: p.unit,
-                            dob: p.dob || null,  // Convert empty string to null
-                            tos: p.tos || null,  // Convert empty string to null
-                            rank_date: p.rankDate || null,  // Convert empty string to null
-                            cvqo: p.cvqo || null  // Convert empty string to null
-                        }));
-                        
-                        const { error: insertError } = await supabase
-                            .from('personnel')
-                            .insert(dbRecords);
-                        
-                        if (insertError) {
-                            throw new Error(`Personnel insert error: ${insertError.message}`);
-                        }
-                        
-                        personnelInserted += batch.length;
-                        console.log(`Inserted ${personnelInserted}/${personnelData.length} personnel records`);
-                    }
-                    
-                    // Step 3: Insert qualifications data (in batches of 500)
-                    const qualsBatches = [];
-                    for (let i = 0; i < qualsData.length; i += 500) {
-                        qualsBatches.push(qualsData.slice(i, i + 500));
-                    }
-                    
-                    let qualsInserted = 0;
-                    for (const batch of qualsBatches) {
-                        const dbRecords = batch.map(q => ({
-                            p_number: q.pNumber,
-                            module: q.module,
-                            date_achieved: q.date ? q.date.toISOString().split('T')[0] : null,
-                            result: q.result,
-                            syllabus: q.syllabus
-                        }));
-                        
-                        const { error: insertError } = await supabase
-                            .from('qualifications')
-                            .insert(dbRecords);
-                        
-                        if (insertError) {
-                            throw new Error(`Qualifications insert error: ${insertError.message}`);
-                        }
-                        
-                        qualsInserted += batch.length;
-                        console.log(`Inserted ${qualsInserted}/${qualsData.length} qualification records`);
-                    }
-                    
-                    // Step 4: Add audit log entry
-                    await supabase.from('audit_log').insert({
-                        user_id: user.id,
-                        user_email: user.email,
-                        action: 'IMPORT_CSV',
-                        table_name: 'personnel,qualifications',
-                        record_id: null,
-                        old_values: { count: existingPersonnel || 0 },
-                        new_values: {
-                            personnel: personnelData.length,
-                            qualifications: qualsData.length,
-                            warnings: validationErrors.length
-                        }
-                    });
-                    
-                    // Step 5: Trigger data reload in parent component
+                    // Import data
                     onDataLoaded(personnelData, qualsData);
                     
-                    // Show summary
+                    // Show summary (warnings box is shown above via setValidationErrors)
                     setImportSummary({
                         personnelImported: personnelData.length,
                         qualificationsImported: qualsData.length,
@@ -2039,13 +1835,11 @@
                         success: true
                     });
                     
-                    console.log('✓ CSV import to Supabase completed successfully');
-                    
                     // Scroll to top to show warnings
                     window.scrollTo({ top: 0, behavior: 'smooth' });
                     
                 } catch (err) {
-                    console.error('Import error:', err);
+                    console.error(err);
                     setError(err.message);
                     setImportSummary({
                         success: false,
@@ -2093,11 +1887,11 @@
 
                     {error && (
                         <div className="mb-4 p-4 bg-red-50 border-l-4 border-red-500 text-red-700 flex justify-between items-start">
-                            <div className="flex-1">
+                            <div>
                                 <p className="font-bold">Error Processing Files</p>
-                                <pre className="text-sm whitespace-pre-wrap font-sans mt-2">{error}</pre>
+                                <p className="text-sm">{error}</p>
                             </div>
-                            <button onClick={() => setError(null)} className="text-red-500 hover:text-red-700 ml-4" aria-label="Dismiss error message">
+                            <button onClick={() => setError(null)} className="text-red-500 hover:text-red-700" aria-label="Dismiss error message">
                                 <Icon name="X" className="w-4 h-4" />
                             </button>
                         </div>
@@ -2276,8 +2070,7 @@
                                              setError(null);
                                              try {
                                                  const text = await readFile(personnelFile);
-                                                 let personnelData = await processPersonnelFile(text);
-                                                 personnelData = deduplicatePersonnel(personnelData);
+                                                 const personnelData = await processPersonnelFile(text);
                                                  onDataLoaded(personnelData, JSON.parse(localStorage.getItem('scc_quals') || '[]'));
                                                  setPersonnelFile(null);
                                              } catch (err) {
@@ -2424,7 +2217,7 @@
                                     Welcome to the {unitName} Training Dashboard!
                                 </h2>
                                 <p className="text-sm text-blue-600 font-semibold mt-1">
-                                    RC3.3.0 - Full Junior Support + Bulk Module Recording
+                                    RC2 Complete - Now with Junior Sea Cadets tracking
                                 </p>
                             </div>
                         </div>
@@ -2460,7 +2253,7 @@
         };
 
         // Awards View Component
-        const AwardsView = ({ personnel, quals, juniorData }) => {
+        const AwardsView = ({ personnel, quals }) => {
             const [monthOffset, setMonthOffset] = useState(0); 
             // New State for PDF Selection
             const [selectedAwardKeys, setSelectedAwardKeys] = useState(new Set());
@@ -2664,6 +2457,7 @@
                 // Use cadets already filtered above
                 
                 cadets.forEach(junior => {
+                    const juniorData = getJuniorData();
                     const juniorModules = juniorData.moduleCompletions.filter(m => m.pNumber === junior.pNumber);
                     
                     const redCount = juniorModules.filter(m => m.section === 'red').length;
@@ -2789,9 +2583,13 @@
                 }
             };
 
-            const generateCertificates = async () => {
+            const generateCertificates = () => {
                 if (selectedAwardKeys.size === 0) {
-                    alert('Please select at least one award to print.');
+                    // Use a custom message box instead of alert()
+                    const message = "Please select at least one award to print.";
+                    console.log(message); // Console log fallback
+                    // A custom modal/message box implementation is normally needed here. 
+                    // For brevity and compliance with single file constraint, using console.log/simple approach.
                     return; 
                 }
 
@@ -2807,28 +2605,10 @@
                     word.charAt(0).toUpperCase() + word.slice(1)
                 ).join(' ');
                 
-                // Load logos from Supabase
-                let unitCrest = null;
-                let sccLogo = null;
-                let rmcLogo = null;
-                
-                try {
-                    const { data: settings, error } = await supabase
-                        .from('settings')
-                        .select('key, value')
-                        .in('key', ['unit_crest', 'scc_logo', 'rmc_logo']);
-                    
-                    if (!error && settings) {
-                        settings.forEach(setting => {
-                            if (setting.key === 'unit_crest') unitCrest = setting.value?.base64;
-                            else if (setting.key === 'scc_logo') sccLogo = setting.value?.base64;
-                            else if (setting.key === 'rmc_logo') rmcLogo = setting.value?.base64;
-                        });
-                        console.log('✓ Loaded logos for certificates');
-                    }
-                } catch (err) {
-                    console.error('Error loading logos for certificates:', err);
-                }
+                // Load logos from localStorage
+                const unitCrest = localStorage.getItem('unit_crest');
+                const sccLogo = localStorage.getItem('scc_logo');
+                const rmcLogo = localStorage.getItem('rmc_logo');
                 
                 // Helper function to add image with preserved aspect ratio
                 const itemsToPrint = pastAwards.filter(a => selectedAwardKeys.has(a.uniqueId));
@@ -4407,7 +4187,7 @@
         // Training Planner Component
         const TrainingPlanner = ({ personnel, getCadetProgress, qualsData, title, rankOrder, syllabus, colorTheme = "indigo", iconName, onModuleClick }) => {
             const [selectedRank, setSelectedRank] = useState(rankOrder[0]);
-            const cadetsAtRank = useMemo(() => personnel.filter(p => p.rank === selectedRank).sort((a, b) => a.name.localeCompare(b.name)), [personnel, selectedRank]);
+            const cadetsAtRank = useMemo(() => personnel.filter(p => p.rank === selectedRank), [personnel, selectedRank]);
             const currentSyllabus = syllabus[selectedRank];
             
             // Fix for displaying modules even if no cadets are at this rank
@@ -4681,7 +4461,7 @@
         const TrainingSuggestions = ({ personnel, getCadetProgress, qualsData }) => {
             const [selectedRank, setSelectedRank] = useState(SCC_RANK_ORDER[0]);
             const ALL_RANKS = [...SCC_RANK_ORDER, ...RMC_RANK_ORDER];
-            const cadetsAtRank = useMemo(() => personnel.filter(p => p.rank === selectedRank).sort((a, b) => a.name.localeCompare(b.name)), [personnel, selectedRank]);
+            const cadetsAtRank = useMemo(() => personnel.filter(p => p.rank === selectedRank), [personnel, selectedRank]);
             
             const suggestions = useMemo(() => {
                 if (!cadetsAtRank.length) return [];
@@ -4742,11 +4522,12 @@
         };
 
         // --- JUNIOR PROGRESS VIEW (Grid Chart) ---
-        const JuniorProgressView = ({ personnel, juniorData, setJuniorData }) => {
+        const JuniorProgressView = ({ personnel }) => {
             const [selectedSection, setSelectedSection] = useState('red');
             const [recordingMode, setRecordingMode] = useState(false);
             const [selectedModules, setSelectedModules] = useState(new Set());
-            const juniors = personnel.filter(c => isJunior(c.dob, c.pNumber, c.rank, juniorData)).sort((a, b) => a.name.localeCompare(b.name));
+            const juniorData = getJuniorData();
+            const juniors = personnel.filter(c => isJunior(c.dob, c.pNumber, c.rank));
             
             if (juniors.length === 0) {
                 return (
@@ -5277,7 +5058,7 @@
                 setSelectedModules(new Set());
             };
             
-            const saveModules = async () => {
+            const saveModules = () => {
                 if (selectedModules.size === 0) {
                     alert('No modules selected. Please select modules to record.');
                     return;
@@ -5286,6 +5067,7 @@
                 const confirmMsg = `Record ${selectedModules.size} module completion${selectedModules.size !== 1 ? 's' : ''}?\n\nThis will mark them as completed with today's date.`;
                 if (!confirm(confirmMsg)) return;
                 
+                const currentData = getJuniorData();
                 const today = new Date().toISOString().split('T')[0];
                 const newCompletions = [];
                 
@@ -5304,13 +5086,11 @@
                 });
                 
                 const updatedData = {
-                    ...juniorData,
-                    moduleCompletions: [...juniorData.moduleCompletions, ...newCompletions]
+                    ...currentData,
+                    moduleCompletions: [...currentData.moduleCompletions, ...newCompletions]
                 };
                 
-                const success = await saveJuniorData(updatedData);
-                if (success) {
-                    setJuniorData(updatedData); // Update state
+                if (saveJuniorData(updatedData)) {
                     alert(`Successfully recorded ${selectedModules.size} module completion${selectedModules.size !== 1 ? 's' : ''}!`);
                     setSelectedModules(new Set());
                     setRecordingMode(false);
@@ -5676,12 +5456,13 @@
         // DATA / UTILITIES VIEW COMPONENT
         // ============================================================================
         
-        const DataUtilitiesView = ({ clearData, wipeAllData, setView, personnel, juniorData }) => {
+        const DataUtilitiesView = ({ clearData, wipeAllData, setView, personnel }) => {
             const [uploadStatus, setUploadStatus] = useState('');
             const [showLogoUpdate, setShowLogoUpdate] = useState(false);
             const [sccLogoPreview, setSccLogoPreview] = useState(localStorage.getItem('scc_logo') || null);
             const [rmcLogoPreview, setRmcLogoPreview] = useState(localStorage.getItem('rmc_logo') || null);
             const [unitCrestPreview, setUnitCrestPreview] = useState(localStorage.getItem('unit_crest') || null);
+            const juniorData = getJuniorData();
             
             const handleLogoUpload = (file, type) => {
                 if (!file) return;
@@ -5742,14 +5523,22 @@
                 const file = e.target.files[0];
                 if (!file) return;
                 const reader = new FileReader();
-                reader.onload = (event) => {
+                reader.onload = async (event) => {
                     try {
                         const imported = JSON.parse(event.target.result);
                         if (confirm('Import this data? This will replace all local junior data.')) {
-                            saveJuniorData(imported);
-                            window.location.reload();
+                            setUploadStatus('Importing junior data...');
+                            const result = await saveJuniorData(imported);
+                            if (result) {
+                                setUploadStatus('Import successful! Reloading...');
+                                setTimeout(() => window.location.reload(), 1000);
+                            } else {
+                                setUploadStatus('');
+                                alert('Error importing data. Check console (F12) for details.');
+                            }
                         }
                     } catch (e) {
+                        console.error('Import error:', e);
                         alert('Error parsing JSON file: ' + e.message);
                     }
                 };
@@ -5895,6 +5684,9 @@
                                         "RED 1: Unit Induction: Tour of Unit","RED 1.1: Unit Induction: Unit Fire Drill","RED 1.2: Unit Induction: Map Out Your Unit","RED 1.3: Unit Induction: What's Important?","RED 1.4: Unit Induction: Uniformed Art","RED 1.5: Unit Induction: Badges & Ranks","RED 2: Two Questions & A Funny","RED 2.1: Paper Planes","RED 2.2: Names and Beanbags","RED 2.3: Mini Me","RED 3: Unit Who's Who: Say Cheese","RED 4: Basic Drill","RED 4.1: Unit Calls (Piping)","RED 4.2: Colours & Naval Customs","RED 4.3: Treat Yourself","RED 5: Junior Sea Cadet Uniform","RED 6: Safeguarding: SHOUT","RED 7: Organising Unit Activities","RED 7.1: Unit Activities","RED 7.2: Ready Aye Ready","RED 7.3: Unit Elevator Pitch","RED 7.4: Unit Advert","RED 7.5: Theme Tune","RED 8: How's Your Aim?","RED 9: Royal Marines Cadet Guest","RED 9.1: Royal Marines Cadets","RED 9.2: Royal Marines Activities","RED 10: Scrap Book Memories","RED 11: Passing Messages: Flags","RED 11.1: Lord Nelson's Message","RED 11.2: Codebreaker: Morse","RED 11.3: What's Your Position?","RED 11.4: Turn Up The Radios","RED 11.5: Phonetic Alphabet","RED 12: Chocolate Crispies","RED 12.1: Apple & Ginger","RED 12.2: Chefs' Sweet Tooth","RED 12.3: Chefs Savoury Tooth","RED 12.4: Chefs Cuppa","RED 13: Who Can Help Me?","RED 13.1: Emergency Visits","RED 14: How International Are We?","RED 15: First Aid Basics","RED 15.1: First Aid Relay","RED 15.2: Units Safety Poster","RED 16: Naval Heraldry","RED 17: Throw Yourself a Knot","RED 17.1: Tasty Knots","RED 17.2: Rope and Spoons","RED 17.3: Knot Board","RED 17.4: Paracord Keyrings","RED 17.5: Parts of a Ship","RED 17.6: Ship Ahoy!","RED 18: Planning & Preparation","RED 18.1: Food Storage","RED 18.2: Keeping Germs at Bay","RED 18.3: Missed a Spot!","RED 18.4: Building Bacteria","RED 18.5: Fuzzy Bread","RED 18.6: Clean Hands?","RED 19: Earthshot Challenge","RED 20: Suggestion Box","RED 21: Kindness and Wellbeing","RED 21.1: Kindness and Wellbeing","RED 22: Teamwork Skills","BLUE T1: Dinghy Sailing Taster","BLUE T2: Paddlesport Taster","BLUE T3: Windsurfing Taster","BLUE T4: Rowing Taster","BLUE 1: Safety by the Water","BLUE 1.1: Rescue Line","BLUE 1.2: Help I Need Help!","BLUE 2: Cardinal Marks","BLUE 2.1: Danger Zones","BLUE 3: Royal & Merchant Navy","BLUE 4: Going on a Mission","BLUE 5: Maritime Museum","BLUE 6: Battleships","BLUE 7: Remember The Facts","BLUE 7.1: Famous Figures","BLUE 7.2: Picasso's Nelson","BLUE 8: Boat Construction","BLUE 8.1: Build Boat","BLUE 8.2: Model Raft","BLUE 8.3: Water Raft","BLUE 9: Wise Near Water","BLUE 9.1: What Flag Am I?","BLUE 10: Lifeguards","BLUE 11: Keep Swimming","BLUE 12: Swimathon","BLUE 13: Marco Polo","BLUE 13.1: Synchronised Swim","BLUE 13.2: Water Polo","BLUE 14: Swimming Gala","BLUE 15: Signposts at Sea","BLUE 15.1: Edible Signposts","BLUE 15.2: Ropes on Biscuits","BLUE 16: Saving Sam","BLUE 16.1: Don't Fall Out!","BLUE 17: Go Rowing!","BLUE 17.1: Learn Rowing!","BLUE 18: Go Sailing!","BLUE 18.1: Learn Sailing!","BLUE 19: Go Paddling!","BLUE 19.1: Learn Paddlesport!","BLUE 19.2: Voyage of Discovery","BLUE 20: Learn Windsurfing!","BLUE 20.1: Go Windsurfing!","BLUE 21: Good Look Out","BLUE 21.1: Hazards","BLUE 21.2: Buoyancy","BLUE 21.3: Safe Speeds","BLUE 22: Navigation","BLUE 23: Crossing The Line","BLUE 23.1: Nautical Terms","BLUE 23.2: Sea Shanties","BLUE 23.3: Hornpipe Dance","BLUE 24: Boat Types","BLUE 24.1: RS ZEST Single","BLUE 24.2: RS QUEST Crewed","BLUE 25: Cold Water Shock","BLUE 26: Towpath I Spy","BLUE 27: Flag Etiquette","BLUE 28: Green and Clean","BLUE 29: Big Clean Up","BLUE 29.2: Plastic Eating Machine","GREEN 1: 50 Things","GREEN 2: Mapping It Out","GREEN 2.1: Around the Globe","GREEN 3: Grid References","GREEN 4: Weather","GREEN 4.1: Make it Rain!","GREEN 5: Captain's Coming","GREEN 5.1: Home Made Compass","GREEN 6: Photography","GREEN 7: Pacing It Out","GREEN 7.1: Micro Journey","GREEN 7.2: Unique Monopoly","GREEN 7.3: Navigate Further","GREEN 8: Basic Outdoors","GREEN 8.1: Zero Trace","GREEN 8.2: What to Wear","GREEN 8.3: Keeping Tidy","GREEN 9: Stoves","GREEN 9.1: Open Fires 101","GREEN 9.2: Fire Recipes","GREEN 9.3: Junior Survivor","GREEN 9.4: Master Chef Outdoors","GREEN 10: Practice","GREEN 10.1: Amazing Race Junior","GREEN 11: Country Code","GREEN 11.1: Country Code Guide","GREEN 11.2: Environment","GREEN 12: Tenting Around","GREEN 12.1: Pitching Tent","GREEN 13: Safe Outdoors","GREEN 13.1: Stranger Danger","GREEN 14: Meteorology","GREEN 14.1: Weather on Water","GREEN 14.2: Storm Surge","GREEN 14.3: Low Visibility","GREEN 14.4: Celestial Navigation","GREEN 15: Wind Blowing","GREEN 16: Warming Up","GREEN 16.1: Warm Up Guide","GREEN 17: Keep Fit","GREEN 17.1: Training Games","GREEN 17.2: Competitive","GREEN 17.3: Happy Healthy","GREEN 17.4: Eating Healthy","GREEN 17.5: Games to Start","GREEN 18: Bird Feeder","GREEN 18.1: Bee Bombs","GREEN 18.2: Seed Paper","GREEN 18.3: Carbon Footprint","YELLOW 1: Mardi Gras/Fat Tuesday/Shrove Tuesday","YELLOW 1.1: Parade with Mardi Gras Masks","YELLOW 1.2: Musical Celebration: Jazz Band","YELLOW 2: Celebrating Easter","YELLOW 2.1: Yummy Easter Hot Cross Buns","YELLOW 2.2: Twisted Pretzel: A Food of Lent","YELLOW 2.3: Creative Easter Eggs","YELLOW 3: Festival of Colour Holi","YELLOW 3.1: Colours of Holi","YELLOW 3.2: Nariyal Barfi","YELLOW 4: Happy Diwali (Divali)","YELLOW 4.1: Festival of Lights","YELLOW 4.2: Rangoli Designs","YELLOW 4.3: Karah Parshad","YELLOW 5: Snap It Up With Chinese New Year!","YELLOW 5.1: Taste of China: Sweet Dumplings","YELLOW 5.2: Fortune Cookie Jar","YELLOW 5.3: Prosperity & Good Fortune in Red","YELLOW 5.4: Chinese Dragon Costume (Individual)","YELLOW 5.5: Chinese Dragon Costume (large)","YELLOW 5.6: The Beating Drum","YELLOW 6: Celebrate with an Australian Cork Hat","YELLOW 6.1: Getting to know indigenous Australia","YELLOW 6.2: Didgeridoo: Music Maker","YELLOW 6.3: Australian Bakes: ANZAC Biscuits","YELLOW 7: Everything Christmas: Decorating Time!","YELLOW 7.1: Christmas Bingo!","YELLOW 7.2: A Ginger Christmas","YELLOW 7.3: Chocolate Logs Yule Love!","YELLOW 7.4: Chocolate Logs Made Easy","YELLOW 7.5: Gingerbread Biscuits","YELLOW 7.6: Christmas Gift photo frame","YELLOW 7.7: Seasonal Festive Wreath","YELLOW 7.8: Odd Sock Beanbag Characters","YELLOW 8: Research Time!","YELLOW 8.1: Unit Spookyville","YELLOW 8.2: All Things Spooky","YELLOW 8.3: What Are The Nine Candles?","YELLOW 8.4: Saint Valentine's Day Kindness Box","YELLOW 8.5: Saint Patrick's Day: Shamrock Shake","YELLOW 8.6: A Special Sunday for Mothers & Caregivers","YELLOW 8.7: Celebrating the Iranian New Year","YELLOW 8.8: Halloween Trick or Treats","YELLOW 9: All About The Community","YELLOW 9.1: Community 101","YELLOW 9.2: Community Tree","YELLOW 9.3: Community Mind Map","YELLOW 10: Survey Mania","YELLOW 10.1: Chips Ahoy! Chip Ship Survey","YELLOW 10.2: Shop Surveys","YELLOW 11: Getting Involved: Community Projects","YELLOW 11.1: Junior Cadets of the World!","YELLOW 11.2: Celebrating Diversity in Your Community","YELLOW 12: Welsh Style: Traditional Welsh Cakes","YELLOW 12.1: Welsh Style: Welsh Rarebit","YELLOW 12.2: Yr laith Gymraeg: Welsh Language","YELLOW 12.3: Y Ddraig Goch Flag: The Red Dragon","YELLOW 13: The Scottish Way: Haggis Neeps & Tatties","YELLOW 13.1: The Scottish Way: Cèilidh","YELLOW 13.2: The Scottish Way: The Flag of Scotland","YELLOW 13.3: The Scottish Way: Scots Gàidhlig","YELLOW 13.4: Celebrate Saint Andrews Day: Scottish Kilt Card","YELLOW 13.5: Exploring Burns Night Supper","YELLOW 15: The Arrival of Summer: Maypole Dancing","YELLOW 15.1: Morris Dancing","YELLOW 16: 4 Nations in 1","YELLOW 17: Places of Interest","YELLOW 17.1: Scavenger Hunt","YELLOW 17.2: Town Maps Maps of Your Town","YELLOW 18: Broadening The Horizon","YELLOW 19: We Are Different We are the Same!","YELLOW 19.1: Embrace It: Inclusion & Diversity","YELLOW 19.2: All in a phrase","YELLOW 19.3: Communicating Through Sign Language","YELLOW 19.4: Ditch The Labels!","YELLOW 19.5: Communicating through Braille","YELLOW 20: It's Never the Same!","YELLOW 20.1: The Issue","YELLOW 20.2: Wear It On Your Wrist!","YELLOW 20.3: Activists in Action! Anti-bullying Campaign","YELLOW 20.4: Online: It is Still Not Okay!","YELLOW 21: Ten Keys","YELLOW 22: Remembrance Day Parade","YELLOW 22.1: Cenotaphs In The Community","YELLOW 22.2: Paper Plate Poppies","YELLOW 22.3: Recycled Remembrance Poppies","YELLOW 22.4: Remembrance Art","YELLOW 22.5: Medals to Remember","YELLOW 22.6: Portraits of Boy Seaman John T. Cornwell V.C.","YELLOW 22.7: What is your unit's History?","YELLOW 22.8: Remembrance Light Jars","YELLOW 22.9: Remembrance Day Wreath","YELLOW 23: The Home Front","YELLOW 23.1: Ration It Out","YELLOW 23.2: Re-enactment Time","YELLOW 24: Values and Citizenship: What about Governments?","YELLOW 24.1: Your Local Government: Face to Face","YELLOW 24.2: Who's Who: Mayors or Provosts?","YELLOW 25: Saint George's Day","YELLOW 26: VE Victory Sponge","YELLOW 27: #SCRAPPLASTIC Swap Out Your Plastics","YELLOW 27.1: #SCRAPPLASTIC Plastic Free Day","YELLOW 27.2: #SCRAPPLASTIC Supermarket Challenge","YELLOW 27.3: #SCRAPPLASTIC Share What You Know","YELLOW 28: EARTHSHOT (WFW) - Tote-tally Awesome Up-cycled Bag","YELLOW 28.1: Earthshot (WFW) - Ecobricks","YELLOW 28.2: EARTHSHOT (WFW) - Need v Want","YELLOW 28.3: EARTHSHOT (FOC) - Utilising Technology","YELLOW 28.4: EARTHSHOT (WFW) - Where does our waste go?","YELLOW 29: Junior Sea Cadets Competitions","YELLOW 30: Your Identity Matters - Celebrating PRIDE","YELLOW 70: Special Edition Platinum Jubilee","YELLOW 70.1: The Platinum Thread","YELLOW 70.2: Platinum Jubilee Fact Find","YELLOW 71: Remembering Our Patron","YELLOW 72: King's Coronation Party event","YELLOW 72.1: King's Coronation POM POM decorations","YELLOW 73: Big Help Out - Special Call at a Landmark","STEM 1: Satellite Intelligence Mission","STEM 2: Egg Drop Challenge: Protecting The Vessels","STEM 3: Sink Or Swim: Tinfoil Boat Float Challenge","STEM 4: Launched Out To Sea: Pom Pom Catapult","STEM 5: Propeller Nation","STEM 6: Steer The Ship: Eco-Friendly Giant Maze","STEM 7: Why It Just Won't Work: Salt Pendulum","STEM 8: Amazing Anchors","STEM 9: Setting Sail","STEM 10: Ancient Compasses","STEM 11: Balancing Boats","STEM 12: Carrying Cargo","STEM 13: Electric Engines","STEM 14: Incredible Insulation","STEM 15: Invisible Islands","STEM 16: Luminous Lighthouses","STEM 17: Oceans In A Bottle","STEM 18: Salt In The Seas","STEM 19: Speedy Ships","STEM 20: The World Around Us: Which Metal? Rust!","STEM 21: Special Edition: Somewhere Over The Rainbow","STEM 22: Wind Speed And Pressure: Anemometer","STEM 23: Elastic Band Powered Cars","STEM 24: Propelling Forward","STEM 25: Get Moving - A Chemical Reaction Powered Model Boat!","STEM 26: Weather Warning - Making A Barometer","STEM 27: Underwater Volcano - A Force Of Nature!","STEM 28: Tornado In A Bottle","STEM 29: Cartesian Diver","STEM 30: How Long Is A Minute? - Water Clock","STEM 31: The Science Behind Making The Right Choice!","STEM 32: Up Periscope - Make Your Own Submarine Periscope","STEM 33: Geodesic Domes","STEM 34: Sublime Slime","STEM 35: Air Power: Balloon Car","STEM 36: Ruffle Some Feathers - Mini Vortex Cannon","STEM 37: Paper Roller Coaster - Kinetic & Potential Energy","STEM 38: Moon Dial","STEM 39: Paper Glider","STEM 40: Lava Lamp","STEM 41: Puffer Fish","STEM 42: Waste-Free Lunch"
                                     ];
                                     
+                                    // Get existing completions
+                                    const juniorData = getJuniorData();
+                                    
                                     // Add module rows with X marks for existing completions
                                     allModuleNames.forEach(moduleName => {
                                         // Parse module name to extract section and code
@@ -5948,7 +5740,7 @@
                                         if (!file) return;
                                         
                                         const reader = new FileReader();
-                                        reader.onload = async (event) => {
+                                        reader.onload = (event) => {
                                             try {
                                                 const text = event.target.result;
                                                 const lines = text.split('\n').filter(line => line.trim());
@@ -6026,7 +5818,7 @@
                                                 }
                                                 
                                                 if (confirm(`Import ${imported} module completions for ${juniors.length} juniors? This will ADD to existing data.`)) {
-                                                    const currentData = await getJuniorData();
+                                                    const currentData = getJuniorData();
                                                     const updatedData = {
                                                         ...currentData,
                                                         moduleCompletions: [...currentData.moduleCompletions, ...newCompletions]
@@ -6350,10 +6142,11 @@
         // JUNIORS VIEW COMPONENT
         // ============================================================================
         
-        const JuniorsView = ({ personnel, qualifications, juniorData, setJuniorData }) => {
+        const JuniorsView = ({ personnel, qualifications }) => {
+            const juniorData = getJuniorData();
             
             // Filter personnel to only juniors (under 12 or 12 with junior modules/rank)
-            const juniors = personnel.filter(cadet => isJunior(cadet.dob, cadet.pNumber, cadet.rank, juniorData)).sort((a, b) => a.name.localeCompare(b.name));
+            const juniors = personnel.filter(cadet => isJunior(cadet.dob, cadet.pNumber, cadet.rank));
             
             const [selectedJuniorPNum, setSelectedJuniorPNum] = useState(juniors.length > 0 ? juniors[0].pNumber : "");
             
@@ -6624,7 +6417,7 @@
                             const cadetQuals = qualifications.filter(q => q.pNumber === cadet.pNumber);
                             
                             // For juniors, check junior rank requirements
-                            if (isJunior(cadet.dob, cadet.pNumber, cadet.rank, juniorData)) {
+                            if (isJunior(cadet.dob, cadet.pNumber, cadet.rank)) {
                                 const juniorMods = juniorData.moduleCompletions.filter(m => m.pNumber === cadet.pNumber);
                                 const redCount = juniorMods.filter(m => m.section === 'red').length;
                                 const blueCount = juniorMods.filter(m => m.section === 'blue').length;
@@ -6766,13 +6559,13 @@
                     })()}
                     
                     {/* Junior Detail */}
-                    <JuniorDetail junior={selectedJunior} juniorData={juniorData} setJuniorData={setJuniorData} personnel={personnel} qualifications={qualifications} />
+                    <JuniorDetail junior={selectedJunior} juniorData={juniorData} personnel={personnel} qualifications={qualifications} />
                 </div>
             );
         };
         
         // Junior Detail Component
-        const JuniorDetail = ({ junior, juniorData, setJuniorData, personnel, qualifications }) => {
+        const JuniorDetail = ({ junior, juniorData, personnel, qualifications }) => {
             const [section, setSection] = useState('red');
             const [moduleCode, setModuleCode] = useState('');
             const [dateCompleted, setDateCompleted] = useState(new Date().toISOString().split('T')[0]);
@@ -6971,7 +6764,7 @@
                 }
             }
             
-            const handleModuleSubmit = async () => {
+            const handleModuleSubmit = () => {
                 if (!moduleCode.trim()) {
                     alert("Please enter a module code");
                     return;
@@ -7010,9 +6803,7 @@
                     moduleCompletions: [...juniorData.moduleCompletions, newModule]
                 };
                 
-                const success = await saveJuniorData(updatedData);
-                if (success) {
-                    setJuniorData(updatedData); // Update state
+                if (saveJuniorData(updatedData)) {
                     setShowSuccess(true);
                     setModuleCode('');
                     setTimeout(() => {
@@ -7024,31 +6815,49 @@
                 }
             };
             
-            const handleModuleDelete = (moduleToDelete) => {
+            const handleModuleDelete = async (moduleToDelete) => {
                 const confirmMessage = `Are you sure you want to delete this module?\n\n${moduleToDelete.section.toUpperCase()} ${moduleToDelete.moduleCode}: ${moduleToDelete.moduleName}\nCompleted: ${formatDate(moduleToDelete.dateCompleted)}\n\nThis action cannot be undone.`;
                 
                 if (!confirm(confirmMessage)) {
                     return;
                 }
                 
-                // Filter out the module to delete
-                const updatedCompletions = juniorData.moduleCompletions.filter(m => 
-                    !(m.pNumber === moduleToDelete.pNumber && 
-                      m.section === moduleToDelete.section && 
-                      m.moduleCode === moduleToDelete.moduleCode &&
-                      m.dateCompleted === moduleToDelete.dateCompleted)
-                );
-                
-                const updatedData = {
-                    ...juniorData,
-                    moduleCompletions: updatedCompletions
-                };
-                
-                if (saveJuniorData(updatedData)) {
-                    alert("Module deleted successfully");
-                    window.location.reload(); // Refresh to show updated data
-                } else {
-                    alert("Error deleting module");
+                try {
+                    // Filter out the module to delete
+                    const updatedCompletions = juniorData.moduleCompletions.filter(m => 
+                        !(m.pNumber === moduleToDelete.pNumber && 
+                          m.section === moduleToDelete.section && 
+                          m.moduleCode === moduleToDelete.moduleCode &&
+                          m.dateCompleted === moduleToDelete.dateCompleted)
+                    );
+                    
+                    const updatedData = {
+                        ...juniorData,
+                        moduleCompletions: updatedCompletions
+                    };
+                    
+                    // Show loading state
+                    const deleteBtn = event.target;
+                    const originalText = deleteBtn.textContent;
+                    deleteBtn.textContent = 'Deleting...';
+                    deleteBtn.disabled = true;
+                    
+                    const result = await saveJuniorData(updatedData);
+                    
+                    if (result) {
+                        console.log('✓ Module deleted successfully');
+                        window.location.reload(); // Refresh to show updated data
+                    } else {
+                        throw new Error('Save function returned false');
+                    }
+                } catch (error) {
+                    console.error('Delete error:', error);
+                    alert(`Error deleting module: ${error.message}\n\nPlease check the browser console (F12) for details.`);
+                    // Reset button state
+                    if (event && event.target) {
+                        event.target.textContent = 'Delete';
+                        event.target.disabled = false;
+                    }
                 }
             };
             
@@ -7726,311 +7535,173 @@
             );
         };
         
-        // ═══════════════════════════════════════════════════════════════════════════
-        // LOGIN SCREEN COMPONENT
-        // ═══════════════════════════════════════════════════════════════════════════
-        
-        const LoginScreen = ({ onLoginSuccess }) => {
-            const [email, setEmail] = useState('');
-            const [password, setPassword] = useState('');
-            const [loading, setLoading] = useState(false);
-            const [error, setError] = useState('');
-            
-            const handleLogin = async (e) => {
-                e.preventDefault();
-                setLoading(true);
-                setError('');
-                
-                try {
-                    const { data, error } = await supabase.auth.signInWithPassword({
-                        email: email.trim(),
-                        password: password,
-                    });
-                    
-                    if (error) throw error;
-                    
-                    console.log('✓ Login successful:', data.user.email);
-                    onLoginSuccess(data.user);
-                } catch (err) {
-                    console.error('Login error:', err);
-                    setError(err.message || 'Login failed');
-                    setLoading(false);
-                }
-            };
-            
-            return (
-                <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-800 to-blue-900 flex items-center justify-center p-4">
-                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-md p-8">
-                        <div className="text-center mb-8">
-                            <img src="media/ts_dashboard.webp" alt="TS Dashboard" className="w-48 h-auto mx-auto mb-4" />
-                            <h1 className="text-2xl font-bold text-slate-900 mb-2">Sea Cadet Training Dashboard</h1>
-                            <p className="text-sm text-slate-600">Please sign in to continue</p>
-                        </div>
-                        
-                        <form onSubmit={handleLogin} className="space-y-4">
-                            <div>
-                                <label className="block text-sm font-semibold text-slate-700 mb-2">Email</label>
-                                <input
-                                    type="email"
-                                    value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
-                                    className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                    placeholder="your.email@mhseacadets.org"
-                                    required
-                                    disabled={loading}
-                                />
-                            </div>
-                            
-                            <div>
-                                <label className="block text-sm font-semibold text-slate-700 mb-2">Password</label>
-                                <input
-                                    type="password"
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
-                                    className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                    placeholder="Enter your password"
-                                    required
-                                    disabled={loading}
-                                />
-                            </div>
-                            
-                            {error && (
-                                <div className="bg-red-50 border-l-4 border-red-500 p-3 rounded">
-                                    <p className="text-sm text-red-700">{error}</p>
-                                </div>
-                            )}
-                            
-                            <button
-                                type="submit"
-                                disabled={loading}
-                                className={`w-full py-3 rounded-lg font-bold text-white transition-colors ${
-                                    loading 
-                                        ? 'bg-blue-400 cursor-not-allowed' 
-                                        : 'bg-blue-700 hover:bg-blue-800'
-                                }`}
-                            >
-                                {loading ? 'Signing in...' : 'Sign In'}
-                            </button>
-                        </form>
-                        
-                        <div className="mt-6 text-center text-xs text-slate-500">
-                            <p>Protected by Supabase Authentication</p>
-                            <p className="mt-2">Version {DATA_VERSION}</p>
-                        </div>
-                    </div>
-                </div>
-            );
-        };
-        
         const App = () => {
-            const [user, setUser] = useState(null);
-            const [loading, setLoading] = useState(true);
             const [view, setView] = useState('upload'); 
             const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
             const [personnelData, setPersonnelData] = useState([]);
             const [qualsData, setQualsData] = useState([]);
-            const [juniorData, setJuniorData] = useState({ moduleCompletions: [], rankHistory: [], sectionBadges: [] });
             // NEW STATE for Drill Down Feature
             const [drillDownInfo, setDrillDownInfo] = useState(null); 
-            
-            // Check authentication on mount
-            useEffect(() => {
-                // Check current session
-                supabase.auth.getSession().then(({ data: { session } }) => {
-                    setUser(session?.user ?? null);
-                    setLoading(false);
-                    if (session?.user) {
-                        console.log('✓ User authenticated:', session.user.email);
-                    }
-                });
-                
-                // Listen for auth changes
-                const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-                    setUser(session?.user ?? null);
-                    if (session?.user) {
-                        console.log('✓ Auth state changed:', session.user.email);
-                    }
-                });
-                
-                return () => subscription.unsubscribe();
-            }, []);
-            
-            const handleLogout = async () => {
-                if (confirm('Sign out of the dashboard?')) {
-                    await supabase.auth.signOut();
-                    setUser(null);
-                    console.log('✓ User signed out');
-                }
-            };
 
             // Icon Render - run when view changes or sidebar collapses/expands
             useEffect(() => { lucide.createIcons(); }, [view, sidebarCollapsed]);
 
             useEffect(() => {
-                const loadDataFromSupabase = async () => {
+                const loadData = async () => {
+                    console.log('📊 Loading data from Supabase...');
+                    
                     try {
-                        // Load personnel data
-                        const { data: personnel, error: pError } = await supabase
+                        // Load personnel for current user
+                        const { data: personnelRows, error: pError } = await supabase
                             .from('personnel')
-                            .select('*');
+                            .select('*')
+                            .eq('user_id', currentUserId);
                         
                         if (pError) throw pError;
                         
-                        // Load qualifications data
-                        const { data: qualifications, error: qError } = await supabase
+                        // Load qualifications for current user
+                        const { data: qualsRows, error: qError } = await supabase
                             .from('qualifications')
-                            .select('*');
+                            .select('*')
+                            .eq('user_id', currentUserId);
                         
                         if (qError) throw qError;
                         
-                        // Load junior modules data
-                        const { data: juniorModules, error: jError } = await supabase
-                            .from('junior_modules')
-                            .select('*')
-                            .order('date_completed', { ascending: false });
+                        // Load junior modules
+                        await loadJuniorDataFromSupabase();
                         
-                        if (jError) {
-                            console.warn('Junior modules table may not exist yet:', jError);
-                        }
-                        
-                        // If we have data, transform and load it
-                        if (personnel && personnel.length > 0) {
-                            // Transform database format back to app format
-                            const personnelData = personnel.map(p => ({
-                                pNumber: p.p_number,
-                                rank: p.rank,
-                                name: p.name,
-                                unit: p.unit,
-                                dob: p.dob,
-                                tos: p.tos,
-                                rankDate: p.rank_date,
-                                cvqo: p.cvqo
-                            })).sort((a, b) => a.name.localeCompare(b.name)); // SORT BY NAME
+                        if (personnelRows && personnelRows.length > 0) {
+                            console.log(`✓ Loaded ${personnelRows.length} personnel, ${qualsRows?.length || 0} qualifications`);
                             
-                            const qualsData = qualifications.map(q => ({
-                                pNumber: q.p_number,
-                                module: q.module,
-                                date: q.date_achieved ? new Date(q.date_achieved) : null,
-                                result: q.result,
-                                syllabus: q.syllabus
-                            })).sort((a, b) => b.date - a.date); // SORT BY DATE (newest first)
+                            // Transform from Supabase format to app format
+                            const parsedP = personnelRows.map(row => ({
+                                pNumber: row.p_number,
+                                rank: row.rank,
+                                name: row.name,
+                                unit: row.unit,
+                                dob: row.dob,
+                                tos: row.tos,
+                                rankDate: row.rank_date,
+                                cvqo: row.cvqo
+                            }));
                             
-                            // Transform junior modules data
-                            const juniorDataTransformed = {
-                                moduleCompletions: juniorModules ? juniorModules.map(m => ({
-                                    pNumber: m.p_number,
-                                    section: m.section,
-                                    moduleCode: m.module_code,
-                                    moduleName: m.module_name,
-                                    dateCompleted: m.date_completed,
-                                    isCore: m.is_core
-                                })) : [],
-                                rankHistory: [],
-                                sectionBadges: []
-                            };
+                            const parsedQ = (qualsRows || []).map(row => ({
+                                pNumber: row.p_number,
+                                module: row.module,
+                                date: row.date_achieved ? new Date(row.date_achieved) : null,
+                                result: row.result,
+                                syllabus: row.syllabus
+                            }));
                             
-                            setPersonnelData(personnelData);
-                            setQualsData(qualsData);
-                            setJuniorData(juniorDataTransformed);
+                            // Sort personnel alphabetically by name
+                            parsedP.sort((a, b) => a.name.localeCompare(b.name));
+                            
+                            setPersonnelData(parsedP);
+                            setQualsData(parsedQ);
                             setView('home');
-                            
-                            console.log(`✓ Loaded ${personnelData.length} personnel, ${qualsData.length} qualifications, and ${juniorDataTransformed.moduleCompletions.length} junior modules from Supabase`);
                         } else {
-                            console.log('No data in database - showing upload screen');
+                            console.log('ℹ️ No data found in Supabase - showing upload screen');
                         }
-                    } catch (err) {
-                        console.error('Error loading data from Supabase:', err);
+                    } catch (e) {
+                        console.error("Error loading data from Supabase:", e);
                     }
                 };
                 
-                // Only load data if user is authenticated
-                if (user) {
-                    loadDataFromSupabase();
-                }
-            }, [user]);
+                loadData();
+            }, []);
 
-            const handleDataLoaded = (pData, qData) => {
-                setPersonnelData(pData);
-                setQualsData(qData);
-                // Note: Data is already in Supabase from processFiles, no need to save to localStorage
-                // Set to 'home' view when data is freshly loaded
-                setView('home'); 
+            const handleDataLoaded = async (pData, qData) => {
+                console.log(`💾 Saving ${pData.length} personnel, ${qData.length} qualifications to Supabase...`);
+                
+                try {
+                    // Transform personnel to Supabase format (convert empty strings to null for dates)
+                    const personnelRecords = pData.map(p => ({
+                        user_id: currentUserId,
+                        p_number: p.pNumber,
+                        rank: p.rank,
+                        name: p.name,
+                        unit: p.unit,
+                        dob: p.dob && p.dob.trim() !== '' ? p.dob : null,
+                        tos: p.tos && p.tos.trim() !== '' ? p.tos : null,
+                        rank_date: p.rankDate && p.rankDate.trim() !== '' ? p.rankDate : null,
+                        cvqo: p.cvqo
+                    }));
+                    
+                    // Transform qualifications to Supabase format
+                    const qualsRecords = qData.map(q => ({
+                        user_id: currentUserId,
+                        p_number: q.pNumber,
+                        module: q.module,
+                        date_achieved: q.date ? q.date.toISOString().split('T')[0] : null,
+                        result: q.result,
+                        syllabus: q.syllabus
+                    }));
+                    
+                    // Delete existing data for this user
+                    await supabase.from('personnel').delete().eq('user_id', currentUserId);
+                    await supabase.from('qualifications').delete().eq('user_id', currentUserId);
+                    
+                    // Batch insert personnel (allows duplicates for RMC staff)
+                    const personnelBatchSize = 1000;
+                    for (let i = 0; i < personnelRecords.length; i += personnelBatchSize) {
+                        const batch = personnelRecords.slice(i, i + personnelBatchSize);
+                        const { error: pError } = await supabase
+                            .from('personnel')
+                            .insert(batch);
+                        
+                        if (pError) throw pError;
+                    }
+                    
+                    // Batch insert qualifications to avoid hitting limits
+                    const qualsBatchSize = 1000;
+                    for (let i = 0; i < qualsRecords.length; i += qualsBatchSize) {
+                        const batch = qualsRecords.slice(i, i + qualsBatchSize);
+                        const { error: qError } = await supabase
+                            .from('qualifications')
+                            .insert(batch);
+                        
+                        if (qError) throw qError;
+                    }
+                    
+                    console.log('✓ Successfully saved to Supabase');
+                    
+                    // Sort personnel alphabetically by name
+                    pData.sort((a, b) => a.name.localeCompare(b.name));
+                    
+                    setPersonnelData(pData);
+                    setQualsData(qData);
+                    setView('home');
+                } catch (e) {
+                    console.error("Error saving to Supabase:", e);
+                    alert('Error saving data to cloud. Please try again.');
+                }
             };
 
             const clearData = async () => {
-                if (!confirm('Clear all cadet data from database? This will delete personnel, qualifications, and junior modules. Logos and settings will be preserved.')) {
-                    return;
-                }
-                
+                // Clear cadet data from Supabase
                 try {
-                    // Get current user for audit log
-                    const { data: { user } } = await supabase.auth.getUser();
-                    
-                    // Delete all cadet data
-                    await supabase.from('personnel').delete().neq('p_number', '');
-                    await supabase.from('qualifications').delete().neq('p_number', '');
-                    await supabase.from('junior_modules').delete().neq('p_number', '');
-                    
-                    // Add audit log
-                    if (user) {
-                        await supabase.from('audit_log').insert({
-                            user_id: user.id,
-                            user_email: user.email,
-                            action: 'CLEAR_DATA',
-                            table_name: 'personnel,qualifications,junior_modules',
-                            record_id: null,
-                            old_values: {},
-                            new_values: { cleared: true }
-                        });
-                    }
-                    
-                    window.location.reload();
-                } catch (err) {
-                    console.error('Error clearing data:', err);
-                    alert('Error clearing data: ' + err.message);
+                    await supabase.from('personnel').delete().eq('user_id', currentUserId);
+                    await supabase.from('qualifications').delete().eq('user_id', currentUserId);
+                    console.log('✓ Cleared cadet data from Supabase');
+                } catch (e) {
+                    console.error('Error clearing Supabase data:', e);
                 }
+                window.location.reload();
             };
 
             const wipeAllData = async () => {
-                if (!confirm('WIPE ALL DATA including logos and settings? This cannot be undone!')) {
-                    return;
-                }
-                
-                if (!confirm('Are you absolutely sure? This will delete EVERYTHING. Click OK to confirm.')) {
-                    return;
-                }
-                
+                // Clear everything from Supabase
                 try {
-                    // Get current user for audit log
-                    const { data: { user } } = await supabase.auth.getUser();
-                    
-                    // Delete everything
-                    await supabase.from('personnel').delete().neq('p_number', '');
-                    await supabase.from('qualifications').delete().neq('p_number', '');
-                    await supabase.from('junior_modules').delete().neq('p_number', '');
-                    await supabase.from('settings').delete().neq('key', '');
-                    
-                    // Add audit log
-                    if (user) {
-                        await supabase.from('audit_log').insert({
-                            user_id: user.id,
-                            user_email: user.email,
-                            action: 'WIPE_ALL',
-                            table_name: 'all',
-                            record_id: null,
-                            old_values: {},
-                            new_values: { wiped: true }
-                        });
-                    }
-                    
-                    // Also clear localStorage
-                    localStorage.clear();
-                    
-                    window.location.reload();
-                } catch (err) {
-                    console.error('Error wiping data:', err);
-                    alert('Error wiping data: ' + err.message);
+                    await supabase.from('personnel').delete().eq('user_id', currentUserId);
+                    await supabase.from('qualifications').delete().eq('user_id', currentUserId);
+                    await supabase.from('junior_modules').delete().eq('user_id', currentUserId);
+                    console.log('✓ Wiped all data from Supabase');
+                } catch (e) {
+                    console.error('Error wiping Supabase data:', e);
                 }
+                // Also clear localStorage
+                localStorage.clear();
+                window.location.reload();
             };
 
             // NEW: Handler for Module Drill-Down
@@ -8051,23 +7722,6 @@
                  }));
                  return { percentage: total === 0 ? 100 : Math.round((passed/total)*100) };
             }, [qualsData]);
-
-            // Show loading spinner while checking authentication
-            if (loading) {
-                return (
-                    <div className="min-h-screen flex items-center justify-center bg-slate-100">
-                        <div className="text-center">
-                            <div className="inline-block w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4"></div>
-                            <p className="text-slate-600">Checking authentication...</p>
-                        </div>
-                    </div>
-                );
-            }
-            
-            // Show login screen if not authenticated
-            if (!user) {
-                return <LoginScreen onLoginSuccess={(user) => setUser(user)} />;
-            }
 
             const NavItem = ({ id, icon, label }) => (
                 <button onClick={() => { setView(id); window.scrollTo(0, 0); }} className={`flex items-center gap-2 w-full p-2 rounded-lg transition-all text-sm ${view === id ? 'bg-blue-800 text-white' : 'text-blue-100 hover:bg-blue-800/50'}`}>
@@ -8126,40 +7780,23 @@
                             </nav>
                             <div className="p-3 border-t border-blue-800">
                                 {!sidebarCollapsed && (
-                                    <div className="space-y-2">
-                                        <button 
-                                            onClick={handleLogout}
-                                            className="w-full flex items-center gap-2 p-2 text-sm text-blue-100 hover:bg-blue-800/50 rounded-lg transition-colors"
-                                        >
-                                            <Icon name="LogOut" className="w-4 h-4" />
-                                            <span>Sign Out</span>
-                                        </button>
+                                    <div>
                                         <p className="text-[9px] text-blue-500 text-center">v{DATA_VERSION}</p>
-                                        <p className="text-[8px] text-blue-400 text-center truncate">{user?.email}</p>
                                     </div>
-                                )}
-                                {sidebarCollapsed && (
-                                    <button 
-                                        onClick={handleLogout}
-                                        className="w-full flex justify-center p-2 text-blue-100 hover:bg-blue-800/50 rounded-lg transition-colors"
-                                        title="Sign Out"
-                                    >
-                                        <Icon name="LogOut" className="w-4 h-4" />
-                                    </button>
                                 )}
                             </div>
                         </aside>
                         <main className={`flex-1 ${sidebarCollapsed ? 'ml-20' : 'ml-64'} p-8 overflow-y-auto transition-all duration-300`}>
                             {view === 'home' && <HomeView personnel={personnelData} />} 
                             {view === 'cadet_focus' && <CadetFocus personnel={personnelData} qualsData={qualsData} />}
-                            {view === 'juniors' && <JuniorsView personnel={personnelData} qualifications={qualsData} juniorData={juniorData} setJuniorData={setJuniorData} />}
-                            {view === 'junior_progress' && <JuniorProgressView personnel={personnelData} juniorData={juniorData} setJuniorData={setJuniorData} />}
-                            {view === 'awards' && <AwardsView personnel={personnelData} quals={qualsData} juniorData={juniorData} />}
+                            {view === 'juniors' && <JuniorsView personnel={personnelData} qualifications={qualsData} />}
+                            {view === 'junior_progress' && <JuniorProgressView personnel={personnelData} />}
+                            {view === 'awards' && <AwardsView personnel={personnelData} quals={qualsData} />}
                             {(view === 'waterborne') && <WaterborneView personnel={personnelData} qualsData={qualsData} />}
                             {(view === 'planner') && <TrainingPlanner personnel={personnelData} getCadetProgress={getCadetProgress} qualsData={qualsData} title="SCC CTP Progress" rankOrder={SCC_RANK_ORDER} syllabus={SCC_SYLLABUS} iconName="ShipWheel" onModuleClick={handleModuleDrillDown} />}
                             {(view === 'rmc_planner') && <TrainingPlanner personnel={personnelData} getCadetProgress={getCadetProgress} qualsData={qualsData} title="RMC CTS Progress" rankOrder={RMC_RANK_ORDER} syllabus={RMC_SYLLABUS} colorTheme="green" iconName="Target" onModuleClick={handleModuleDrillDown} />}
                             {(view === 'suggestions') && <TrainingSuggestions personnel={personnelData} getCadetProgress={getCadetProgress} qualsData={qualsData} />}
-                            {view === 'data_utilities' && <DataUtilitiesView clearData={clearData} wipeAllData={wipeAllData} setView={setView} personnel={personnelData} juniorData={juniorData} />}
+                            {view === 'data_utilities' && <DataUtilitiesView clearData={clearData} wipeAllData={wipeAllData} setView={setView} personnel={personnelData} />}
                         </main>
                     </div>
                     {/* Render the Drill Down Modal */}
@@ -8175,9 +7812,9 @@
         console.log(`Market Harborough Sea Cadets Training Dashboard`);
         console.log(`Version ${DATA_VERSION}`);
         console.log(`===========================================`);
+        console.log(`🌩️  Cloud Storage: ENABLED (Supabase)`);
         console.log(`Key Features:`);
         console.log(`✓ Junior Sea Cadets module tracking (341 modules)`);
-        console.log(`✓ Bulk module recording from progress chart`);
         console.log(`✓ SCC/RMC training progression`);
         console.log(`✓ Bulk upload with validation`);
         console.log(`✓ Individual PDF reports`);

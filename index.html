@@ -94,7 +94,7 @@
         // Market Harborough Sea Cadets Training Dashboard
         // Version 3.0.0
         
-        const { useState, useEffect, useMemo, useCallback, Component } = React;
+        const { useState, useEffect, useMemo, useCallback, useRef, Component } = React;
         
         // ═══════════════════════════════════════════════════════════════════════════
         // SUPABASE CLIENT
@@ -104,19 +104,11 @@
         
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         
-        // Get or create anonymous user ID
-        let currentUserId = localStorage.getItem('supabase_user_id');
-        if (!currentUserId) {
-            currentUserId = 'anon_' + Math.random().toString(36).substring(2, 15);
-            localStorage.setItem('supabase_user_id', currentUserId);
-        }
-        console.log('🔑 User ID:', currentUserId);
-        
         // ═══════════════════════════════════════════════════════════════════════════
         // CONSTANTS & DATA
         // ═══════════════════════════════════════════════════════════════════════════
         
-        const DATA_VERSION = "3.4.5-SUPABASE"; // FEATURE: Cloud storage with Supabase (personnel, quals, junior modules)
+        const DATA_VERSION = "3.5.5-AUTH"; // FEATURE: Email authentication + NO auth listener (nuclear fix)
  
         // Badge & Rank Image Maps
         const RANK_IMG_MAP = {
@@ -1373,7 +1365,6 @@
                 
                 // Transform to Supabase format
                 const records = data.moduleCompletions.map(mod => ({
-                    user_id: currentUserId,
                     p_number: mod.pNumber,
                     section: mod.section,
                     module_code: mod.moduleCode,
@@ -1393,7 +1384,7 @@
                 console.log(`💾 Syncing ${uniqueRecords.length} junior modules to Supabase...`);
                 
                 // Delete existing data
-                await supabase.from('junior_modules').delete().eq('user_id', currentUserId);
+                await supabase.from('junior_modules').delete();
                 
                 if (uniqueRecords.length > 0) {
                     // Batch insert in groups of 500 (Supabase limit is 1000)
@@ -1434,7 +1425,7 @@
                 const { data, error } = await supabase
                     .from('junior_modules')
                     .select('*')
-                    .eq('user_id', currentUserId);
+                    ;
                 
                 if (error) {
                     console.error("❌ Supabase error loading junior data:", error);
@@ -7535,19 +7526,198 @@
             );
         };
         
+        // ============================================================================
+        // LOGIN SCREEN COMPONENT
+        // ============================================================================
+        
+        const LoginScreen = () => {
+            const [email, setEmail] = useState('');
+            const [password, setPassword] = useState('');
+            const [loading, setLoading] = useState(false);
+            const [error, setError] = useState('');
+            const [message, setMessage] = useState('');
+
+            const handleLogin = async (e) => {
+                e.preventDefault();
+                setLoading(true);
+                setError('');
+                setMessage('');
+
+                try {
+                    const { data, error } = await supabase.auth.signInWithPassword({
+                        email,
+                        password,
+                    });
+
+                    if (error) throw error;
+
+                    console.log('✓ Login successful:', data.user.email);
+                    setMessage('Login successful! Redirecting...');
+                    
+                    // Reload page to trigger auth check and load dashboard
+                    setTimeout(() => window.location.reload(), 1000);
+                } catch (err) {
+                    console.error('Login error:', err);
+                    setError(err.message || 'Login failed');
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            return (
+                <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-800 to-slate-900 flex items-center justify-center p-4">
+                    <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md">
+                        <div className="text-center mb-8">
+                            <div className="inline-block p-4 bg-blue-100 rounded-full mb-4">
+                                <svg className="w-12 h-12 text-blue-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                                </svg>
+                            </div>
+                            <h1 className="text-3xl font-bold text-slate-900 mb-2">TS Dashboard</h1>
+                            <p className="text-slate-600">Sign in to access your unit data</p>
+                        </div>
+
+                        <form onSubmit={handleLogin} className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-semibold text-slate-700 mb-2">Email</label>
+                                <input
+                                    type="email"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    placeholder="your.email@mhseacadets.org"
+                                    required
+                                    disabled={loading}
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-semibold text-slate-700 mb-2">Password</label>
+                                <input
+                                    type="password"
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    placeholder="••••••••"
+                                    required
+                                    disabled={loading}
+                                />
+                            </div>
+
+                            {error && (
+                                <div className="p-3 bg-red-50 border-l-4 border-red-500 text-red-700 text-sm rounded">
+                                    {error}
+                                </div>
+                            )}
+
+                            {message && (
+                                <div className="p-3 bg-green-50 border-l-4 border-green-500 text-green-700 text-sm rounded">
+                                    {message}
+                                </div>
+                            )}
+
+                            <button
+                                type="submit"
+                                disabled={loading}
+                                className="w-full bg-blue-700 hover:bg-blue-800 text-white font-bold py-3 px-4 rounded-lg transition-colors disabled:bg-slate-400 disabled:cursor-not-allowed"
+                            >
+                                {loading ? 'Signing in...' : 'Sign In'}
+                            </button>
+                        </form>
+
+                        <div className="mt-6 text-center text-sm text-slate-500">
+                            <p>Contact your admin if you need access</p>
+                        </div>
+
+                        <div className="mt-8 pt-6 border-t border-slate-200 text-center text-xs text-slate-400">
+                            <p>v{DATA_VERSION} | Secure Authentication</p>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+
         const App = () => {
+            const [isAuthenticated, setIsAuthenticated] = useState(false);
+            const [authLoading, setAuthLoading] = useState(true);
+            const [currentUser, setCurrentUser] = useState(null);
             const [view, setView] = useState('upload'); 
             const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
             const [personnelData, setPersonnelData] = useState([]);
             const [qualsData, setQualsData] = useState([]);
             // NEW STATE for Drill Down Feature
             const [drillDownInfo, setDrillDownInfo] = useState(null); 
+            
+            // Ref to prevent multiple data loads
+            const dataLoadedRef = useRef(false);
+
+            // Check authentication on mount
+            useEffect(() => {
+                const checkAuth = async () => {
+                    try {
+                        const { data: { session }, error } = await supabase.auth.getSession();
+                        
+                        if (error) {
+                            console.error('Error getting session:', error);
+                            setIsAuthenticated(false);
+                            setAuthLoading(false);
+                            return;
+                        }
+                        
+                        if (session) {
+                            console.log('✓ Authenticated:', session.user.email);
+                            setCurrentUser(session.user);
+                            setIsAuthenticated(true);
+                        } else {
+                            console.log('No active session - showing login');
+                            setIsAuthenticated(false);
+                        }
+                        setAuthLoading(false);
+                    } catch (err) {
+                        console.error('Auth check failed:', err);
+                        setIsAuthenticated(false);
+                        setAuthLoading(false);
+                    }
+                };
+                
+                checkAuth();
+            }, []); // Only run once on mount
+
+            // Show login screen if not authenticated
+            if (authLoading) {
+                return (
+                    <div className="min-h-screen flex items-center justify-center bg-slate-100">
+                        <div className="text-center">
+                            <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-700"></div>
+                            <p className="mt-4 text-slate-600">Loading...</p>
+                        </div>
+                    </div>
+                );
+            }
+
+            if (!isAuthenticated) {
+                return <LoginScreen />;
+            }
+
+            // Logout function
+            const handleLogout = async () => {
+                if (confirm('Sign out?')) {
+                    await supabase.auth.signOut();
+                    window.location.reload(); // Reload to show login screen
+                }
+            };
 
             // Icon Render - run when view changes or sidebar collapses/expands
             useEffect(() => { lucide.createIcons(); }, [view, sidebarCollapsed]);
 
+            // Load data only once when authenticated
             useEffect(() => {
+                // Guard: only load if authenticated and not already loaded
+                if (!isAuthenticated ||  dataLoadedRef.current) return;
+                
                 const loadData = async () => {
+                    dataLoadedRef.current = true; // Mark as loading
                     console.log('📊 Loading data from Supabase...');
                     
                     try {
@@ -7555,7 +7725,7 @@
                         const { data: personnelRows, error: pError } = await supabase
                             .from('personnel')
                             .select('*')
-                            .eq('user_id', currentUserId);
+                            ;
                         
                         if (pError) throw pError;
                         
@@ -7563,7 +7733,7 @@
                         const { data: qualsRows, error: qError } = await supabase
                             .from('qualifications')
                             .select('*')
-                            .eq('user_id', currentUserId);
+                            ;
                         
                         if (qError) throw qError;
                         
@@ -7604,11 +7774,12 @@
                         }
                     } catch (e) {
                         console.error("Error loading data from Supabase:", e);
+                        dataLoadedRef.current = false; // Reset on error to allow retry
                     }
                 };
                 
                 loadData();
-            }, []);
+            }, [isAuthenticated]); // Only depends on auth status
 
             const handleDataLoaded = async (pData, qData) => {
                 console.log(`💾 Saving ${pData.length} personnel, ${qData.length} qualifications to Supabase...`);
@@ -7616,7 +7787,6 @@
                 try {
                     // Transform personnel to Supabase format (convert empty strings to null for dates)
                     const personnelRecords = pData.map(p => ({
-                        user_id: currentUserId,
                         p_number: p.pNumber,
                         rank: p.rank,
                         name: p.name,
@@ -7629,7 +7799,6 @@
                     
                     // Transform qualifications to Supabase format
                     const qualsRecords = qData.map(q => ({
-                        user_id: currentUserId,
                         p_number: q.pNumber,
                         module: q.module,
                         date_achieved: q.date ? q.date.toISOString().split('T')[0] : null,
@@ -7638,8 +7807,8 @@
                     }));
                     
                     // Delete existing data for this user
-                    await supabase.from('personnel').delete().eq('user_id', currentUserId);
-                    await supabase.from('qualifications').delete().eq('user_id', currentUserId);
+                    await supabase.from('personnel').delete();
+                    await supabase.from('qualifications').delete();
                     
                     // Batch insert personnel (allows duplicates for RMC staff)
                     const personnelBatchSize = 1000;
@@ -7680,8 +7849,8 @@
             const clearData = async () => {
                 // Clear cadet data from Supabase
                 try {
-                    await supabase.from('personnel').delete().eq('user_id', currentUserId);
-                    await supabase.from('qualifications').delete().eq('user_id', currentUserId);
+                    await supabase.from('personnel').delete();
+                    await supabase.from('qualifications').delete();
                     console.log('✓ Cleared cadet data from Supabase');
                 } catch (e) {
                     console.error('Error clearing Supabase data:', e);
@@ -7692,9 +7861,9 @@
             const wipeAllData = async () => {
                 // Clear everything from Supabase
                 try {
-                    await supabase.from('personnel').delete().eq('user_id', currentUserId);
-                    await supabase.from('qualifications').delete().eq('user_id', currentUserId);
-                    await supabase.from('junior_modules').delete().eq('user_id', currentUserId);
+                    await supabase.from('personnel').delete();
+                    await supabase.from('qualifications').delete();
+                    await supabase.from('junior_modules').delete();
                     console.log('✓ Wiped all data from Supabase');
                 } catch (e) {
                     console.error('Error wiping Supabase data:', e);
@@ -7780,9 +7949,29 @@
                             </nav>
                             <div className="p-3 border-t border-blue-800">
                                 {!sidebarCollapsed && (
-                                    <div>
-                                        <p className="text-[9px] text-blue-500 text-center">v{DATA_VERSION}</p>
+                                    <div className="space-y-2">
+                                        <div className="bg-blue-800/50 rounded p-2 mb-2">
+                                            <p className="text-xs text-blue-200 truncate">{currentUser?.email}</p>
+                                        </div>
+                                        <button
+                                            onClick={handleLogout}
+                                            className="w-full py-2 px-3 bg-red-600 hover:bg-red-700 text-white text-sm font-semibold rounded transition-colors"
+                                        >
+                                            Sign Out
+                                        </button>
+                                        <p className="text-[9px] text-blue-500 text-center pt-2">v{DATA_VERSION}</p>
                                     </div>
+                                )}
+                                {sidebarCollapsed && (
+                                    <button
+                                        onClick={handleLogout}
+                                        className="w-full py-2 text-red-400 hover:text-red-300 transition-colors"
+                                        title="Sign Out"
+                                    >
+                                        <svg className="w-5 h-5 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                                        </svg>
+                                    </button>
                                 )}
                             </div>
                         </aside>

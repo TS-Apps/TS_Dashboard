@@ -108,7 +108,7 @@
         // CONSTANTS & DATA
         // ═══════════════════════════════════════════════════════════════════════════
         
-        const DATA_VERSION = "3.6.5-WITH-LUCIDE"; // Testing lucide icons re-enabled (checking if this causes crash)
+        const DATA_VERSION = "3.6.6-HOOKS-FIX"; // Fixed React hooks order violation (lucide useEffect before conditional returns)
  
         // Badge & Rank Image Maps
         const RANK_IMG_MAP = {
@@ -6681,6 +6681,23 @@
                 checkAuth();
             }, []); // Only run once on mount
 
+            // Icon Render - MUST be before any conditional returns (React Rules of Hooks)
+            // Only runs when authenticated and view/sidebar changes
+            useEffect(() => { 
+                if (isAuthenticated && !authLoading) {
+                    console.log('🎨 useEffect[LUCIDE ICONS] running... view:', view, 'sidebarCollapsed:', sidebarCollapsed);
+                    lucide.createIcons(); 
+                }
+            }, [view, sidebarCollapsed, isAuthenticated, authLoading]);
+
+            // Logout function (defined before conditional returns)
+            const handleLogout = async () => {
+                if (confirm('Sign out?')) {
+                    await supabase.auth.signOut();
+                    window.location.reload(); // Reload to show login screen
+                }
+            };
+
             // Show login screen if not authenticated
             if (authLoading) {
                 return (
@@ -6706,20 +6723,6 @@
                     </>
                 );
             }
-
-            // Logout function
-            const handleLogout = async () => {
-                if (confirm('Sign out?')) {
-                    await supabase.auth.signOut();
-                    window.location.reload(); // Reload to show login screen
-                }
-            };
-
-            // Icon Render - run when view changes or sidebar collapses/expands
-            useEffect(() => { 
-                console.log('🎨 useEffect[LUCIDE ICONS] running... view:', view, 'sidebarCollapsed:', sidebarCollapsed);
-                lucide.createIcons(); 
-            }, [view, sidebarCollapsed]);
 
             // DISABLED FOR TESTING: Data loading useEffect
             // useEffect(() => {

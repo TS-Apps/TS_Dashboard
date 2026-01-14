@@ -6446,9 +6446,32 @@
         // SECTION 4: MAIN APP COMPONENT
         // ============================================================================
         
-        // --- GLOBAL IMPORT WARNINGS BANNER (DISABLED FOR TESTING) ---
+        // --- GLOBAL IMPORT WARNINGS BANNER ---
         const ImportWarningsBanner = () => {
-            return null; // Temporarily disabled to isolate crash
+            const [warnings, setWarnings] = useState(null);
+            
+            useEffect(() => {
+                try {
+                    const stored = localStorage.getItem('importWarnings');
+                    if (stored) {
+                        setWarnings(JSON.parse(stored));
+                    }
+                } catch (e) {
+                    console.error('Error loading warnings:', e);
+                }
+            }, []);
+            
+            if (!warnings || !warnings.warnings || warnings.warnings.length === 0) {
+                return null;
+            }
+            
+            return (
+                <div className="bg-amber-50 border-b-2 border-amber-300 p-2 text-center">
+                    <p className="text-sm text-amber-800">
+                        {warnings.warnings.length} warning{warnings.warnings.length !== 1 ? 's' : ''} from recent import
+                    </p>
+                </div>
+            );
         };
         
         const LoginScreen = () => {
@@ -6566,6 +6589,25 @@
             const renderNum = renderCount.current;
             console.log(`🔄 APP RENDER #${renderNum}`);
             
+            // Emergency stop at 100 renders
+            if (renderCount.current >= 100) {
+                return (
+                    <div className="min-h-screen bg-red-600 flex items-center justify-center p-8">
+                        <div className="bg-white rounded-lg shadow-2xl p-8 max-w-md">
+                            <h1 className="text-3xl font-bold text-red-600 mb-4">🚨 EMERGENCY STOP</h1>
+                            <p className="text-lg mb-4">Render loop detected: {renderCount.current} renders</p>
+                            <p className="text-sm text-slate-600">The app has been stopped to prevent browser crash.</p>
+                            <button 
+                                onClick={() => window.location.reload()} 
+                                className="mt-4 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+                            >
+                                Reload Page
+                            </button>
+                        </div>
+                    </div>
+                );
+            }
+            
             const [isAuthenticated, setIsAuthenticated] = useState(false);
             const [authLoading, setAuthLoading] = useState(true);
             const [currentUser, setCurrentUser] = useState(null);
@@ -6656,83 +6698,83 @@
                 }
             };
 
-            // DISABLED: Lucide icons useEffect (testing if this causes crash)
-            // useEffect(() => { 
-            //     console.log('🎨 useEffect[LUCIDE ICONS] running... view:', view, 'sidebarCollapsed:', sidebarCollapsed);
-            //     lucide.createIcons(); 
-            // }, [view, sidebarCollapsed]);
+            // Icon Render - run when view changes or sidebar collapses/expands
+            useEffect(() => { 
+                console.log('🎨 useEffect[LUCIDE ICONS] running... view:', view, 'sidebarCollapsed:', sidebarCollapsed);
+                lucide.createIcons(); 
+            }, [view, sidebarCollapsed]);
 
-// DISABLED:             // Load data only once when authenticated
-// DISABLED:             useEffect(() => {
-// DISABLED:                 console.log('📊 useEffect[DATA LOAD] running... isAuthenticated:', isAuthenticated, 'dataLoadedRef:', dataLoadedRef.current);
-// DISABLED:                 // Guard: only load if authenticated and not already loaded
-// DISABLED:                 if (!isAuthenticated ||  dataLoadedRef.current) return;
-// DISABLED:                 
-// DISABLED:                 const loadData = async () => {
-// DISABLED:                     dataLoadedRef.current = true; // Mark as loading
-// DISABLED:                     console.log('📊 Loading data from Supabase...');
-// DISABLED:                     
-// DISABLED:                     try {
-// DISABLED:                         // Load personnel for current user
-// DISABLED:                         const { data: personnelRows, error: pError } = await supabase
-// DISABLED:                             .from('personnel')
-// DISABLED:                             .select('*')
-// DISABLED:                             ;
-// DISABLED:                         
-// DISABLED:                         if (pError) throw pError;
-// DISABLED:                         
-// DISABLED:                         // Load qualifications for current user
-// DISABLED:                         const { data: qualsRows, error: qError } = await supabase
-// DISABLED:                             .from('qualifications')
-// DISABLED:                             .select('*')
-// DISABLED:                             ;
-// DISABLED:                         
-// DISABLED:                         if (qError) throw qError;
-// DISABLED:                         
-// DISABLED:                         // Load junior modules
-// DISABLED:                         await loadJuniorDataFromSupabase();
-// DISABLED:                         
-// DISABLED:                         if (personnelRows && personnelRows.length > 0) {
-// DISABLED:                             console.log(`✓ Loaded ${personnelRows.length} personnel, ${qualsRows?.length || 0} qualifications`);
-// DISABLED:                             
-// DISABLED:                             // Transform from Supabase format to app format
-// DISABLED:                             const parsedP = personnelRows.map(row => ({
-// DISABLED:                                 pNumber: row.p_number,
-// DISABLED:                                 rank: row.rank,
-// DISABLED:                                 name: row.name,
-// DISABLED:                                 unit: row.unit,
-// DISABLED:                                 dob: row.dob,
-// DISABLED:                                 tos: row.tos,
-// DISABLED:                                 rankDate: row.rank_date,
-// DISABLED:                                 cvqo: row.cvqo
-// DISABLED:                             }));
-// DISABLED:                             
-// DISABLED:                             const parsedQ = (qualsRows || []).map(row => ({
-// DISABLED:                                 pNumber: row.p_number,
-// DISABLED:                                 module: row.module,
-// DISABLED:                                 date: row.date_achieved ? new Date(row.date_achieved) : null,
-// DISABLED:                                 result: row.result,
-// DISABLED:                                 syllabus: row.syllabus
-// DISABLED:                             }));
-// DISABLED:                             
-// DISABLED:                             // Sort personnel alphabetically by name
-// DISABLED:                             parsedP.sort((a, b) => a.name.localeCompare(b.name));
-// DISABLED:                             
-// DISABLED:                             setPersonnelData(parsedP);
-// DISABLED:                             setQualsData(parsedQ);
-// DISABLED:                             console.log('🏠 Setting view to HOME from data load');
-// DISABLED:                             setView('home');
-// DISABLED:                         } else {
-// DISABLED:                             console.log('ℹ️ No data found in Supabase - showing upload screen');
-// DISABLED:                         }
-// DISABLED:                     } catch (e) {
-// DISABLED:                         console.error("Error loading data from Supabase:", e);
-// DISABLED:                         dataLoadedRef.current = false; // Reset on error to allow retry
-// DISABLED:                     }
-// DISABLED:                 };
-// DISABLED:                 
-// DISABLED:                 loadData();
-// DISABLED:             }, [isAuthenticated]); // Only depends on auth status
+            // Load data only once when authenticated
+            useEffect(() => {
+                console.log('📊 useEffect[DATA LOAD] running... isAuthenticated:', isAuthenticated, 'dataLoadedRef:', dataLoadedRef.current);
+                // Guard: only load if authenticated and not already loaded
+                if (!isAuthenticated ||  dataLoadedRef.current) return;
+                
+                const loadData = async () => {
+                    dataLoadedRef.current = true; // Mark as loading
+                    console.log('📊 Loading data from Supabase...');
+                    
+                    try {
+                        // Load personnel for current user
+                        const { data: personnelRows, error: pError } = await supabase
+                            .from('personnel')
+                            .select('*')
+                            ;
+                        
+                        if (pError) throw pError;
+                        
+                        // Load qualifications for current user
+                        const { data: qualsRows, error: qError } = await supabase
+                            .from('qualifications')
+                            .select('*')
+                            ;
+                        
+                        if (qError) throw qError;
+                        
+                        // Load junior modules
+                        await loadJuniorDataFromSupabase();
+                        
+                        if (personnelRows && personnelRows.length > 0) {
+                            console.log(`✓ Loaded ${personnelRows.length} personnel, ${qualsRows?.length || 0} qualifications`);
+                            
+                            // Transform from Supabase format to app format
+                            const parsedP = personnelRows.map(row => ({
+                                pNumber: row.p_number,
+                                rank: row.rank,
+                                name: row.name,
+                                unit: row.unit,
+                                dob: row.dob,
+                                tos: row.tos,
+                                rankDate: row.rank_date,
+                                cvqo: row.cvqo
+                            }));
+                            
+                            const parsedQ = (qualsRows || []).map(row => ({
+                                pNumber: row.p_number,
+                                module: row.module,
+                                date: row.date_achieved ? new Date(row.date_achieved) : null,
+                                result: row.result,
+                                syllabus: row.syllabus
+                            }));
+                            
+                            // Sort personnel alphabetically by name
+                            parsedP.sort((a, b) => a.name.localeCompare(b.name));
+                            
+                            setPersonnelData(parsedP);
+                            setQualsData(parsedQ);
+                            console.log('🏠 Setting view to HOME from data load');
+                            setView('home');
+                        } else {
+                            console.log('ℹ️ No data found in Supabase - showing upload screen');
+                        }
+                    } catch (e) {
+                        console.error("Error loading data from Supabase:", e);
+                        dataLoadedRef.current = false; // Reset on error to allow retry
+                    }
+                };
+                
+                loadData();
+            }, [isAuthenticated]); // Only depends on auth status
 
             const handleDataLoaded = async (pData, qData) => {
                 console.log(`💾 Saving ${pData.length} personnel, ${qData.length} qualifications to Supabase...`);
@@ -6833,7 +6875,8 @@
             };
 
             // Memoized progress calculation to prevent unnecessary recalculations
-            const getCadetProgress = useCallback((cadet) => {
+            // FIXED: Removed useCallback to prevent infinite loop
+            const getCadetProgress = (cadet) => {
                  const isRMC = RMC_RANK_ORDER.includes(cadet.rank);
                  const syllabus = isRMC ? RMC_SYLLABUS : SCC_SYLLABUS;
                  const currentRankSyllabus = syllabus[cadet.rank];
@@ -6844,7 +6887,7 @@
                      if(qualsData.some(q => q.pNumber === cadet.pNumber && q.module.includes(m.code))) passed++;
                  }));
                  return { percentage: total === 0 ? 100 : Math.round((passed/total)*100) };
-            }, [qualsData]);
+            };
 
             const NavItem = ({ id, icon, label }) => (
                 <button onClick={() => { setView(id); window.scrollTo(0, 0); }} className={`flex items-center gap-2 w-full p-2 rounded-lg transition-all text-sm ${view === id ? 'bg-blue-800 text-white' : 'text-blue-100 hover:bg-blue-800/50'}`}>

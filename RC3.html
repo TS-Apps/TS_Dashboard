@@ -108,7 +108,7 @@
         // CONSTANTS & DATA
         // ═══════════════════════════════════════════════════════════════════════════
         
-        const DATA_VERSION = "3.5.8-DEBUG"; // DEBUG: Added extensive logging to track infinite loop source
+        const DATA_VERSION = "3.5.8-DEBUG"; // Added render counter + useEffect logging to find loop
  
         // Badge & Rank Image Maps
         const RANK_IMG_MAP = {
@@ -6649,9 +6649,9 @@
 
 
         const App = () => {
-            // DEBUG: Track renders
+            // RENDER COUNTER
             const renderCount = useRef(0);
-            renderCount.current++;
+            renderCount.current += 1;
             console.log(`🔄 APP RENDER #${renderCount.current}`);
             
             const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -6666,13 +6666,10 @@
             
             // Ref to prevent multiple data loads
             const dataLoadedRef = useRef(false);
-            
-            // DEBUG: Log state on every render
-            console.log(`  Auth: ${isAuthenticated}, Loading: ${authLoading}, View: ${view}, Personnel: ${personnelData.length}, DataLoaded: ${dataLoadedRef.current}`);
 
             // Check authentication on mount
             useEffect(() => {
-                console.log('🔐 AUTH CHECK useEffect running...');
+                console.log('🔐 useEffect[AUTH CHECK] running...');
                 const checkAuth = async () => {
                     try {
                         const { data: { session }, error } = await supabase.auth.getSession();
@@ -6729,23 +6726,19 @@
 
             // Icon Render - run when view changes or sidebar collapses/expands
             useEffect(() => { 
-                console.log(`🎨 ICON useEffect running (view: ${view}, collapsed: ${sidebarCollapsed})`);
+                console.log('🎨 useEffect[LUCIDE ICONS] running... view:', view, 'sidebarCollapsed:', sidebarCollapsed);
                 lucide.createIcons(); 
             }, [view, sidebarCollapsed]);
 
             // Load data only once when authenticated
             useEffect(() => {
-                console.log(`📊 DATA LOAD useEffect triggered (auth: ${isAuthenticated}, dataLoaded: ${dataLoadedRef.current})`);
-                
+                console.log('📊 useEffect[DATA LOAD] running... isAuthenticated:', isAuthenticated, 'dataLoadedRef:', dataLoadedRef.current);
                 // Guard: only load if authenticated and not already loaded
-                if (!isAuthenticated ||  dataLoadedRef.current) {
-                    console.log(`  ⏭️  Skipping data load (auth: ${isAuthenticated}, already loaded: ${dataLoadedRef.current})`);
-                    return;
-                }
+                if (!isAuthenticated ||  dataLoadedRef.current) return;
                 
                 const loadData = async () => {
                     dataLoadedRef.current = true; // Mark as loading
-                    console.log('  📥 Starting data load from Supabase...');
+                    console.log('📊 Loading data from Supabase...');
                     
                     try {
                         // Load personnel for current user
@@ -6793,10 +6786,9 @@
                             // Sort personnel alphabetically by name
                             parsedP.sort((a, b) => a.name.localeCompare(b.name));
                             
-                            console.log(`  💾 Setting state with ${parsedP.length} personnel, ${parsedQ.length} quals`);
                             setPersonnelData(parsedP);
                             setQualsData(parsedQ);
-                            console.log(`  🏠 Setting view to 'home'`);
+                            console.log('🏠 Setting view to HOME from data load');
                             setView('home');
                         } else {
                             console.log('ℹ️ No data found in Supabase - showing upload screen');
@@ -6868,6 +6860,7 @@
                     
                     setPersonnelData(pData);
                     setQualsData(qData);
+                    console.log('🏠 Setting view to HOME from handleDataLoaded');
                     setView('home');
                 } catch (e) {
                     console.error("Error saving to Supabase:", e);

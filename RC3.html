@@ -108,7 +108,7 @@
         // CONSTANTS & DATA
         // ═══════════════════════════════════════════════════════════════════════════
         
-        const DATA_VERSION = "3.6.3-NO-LUCIDE"; // Disabled lucide & data loading useEffects - testing isolation
+        const DATA_VERSION = "3.6.4-WORKING"; // Fixed junior data pagination (1000+ records) + stable render loop
  
         // Badge & Rank Image Maps
         const RANK_IMG_MAP = {
@@ -1422,20 +1422,37 @@
         const loadJuniorDataFromSupabase = async () => {
             try {
                 console.log('📥 Loading junior data from Supabase...');
-                const { data, error } = await supabase
-                    .from('junior_modules')
-                    .select('*')
-                    ;
                 
-                if (error) {
-                    console.error("❌ Supabase error loading junior data:", error);
-                    return false;
+                // Fetch ALL records using pagination (1000 at a time)
+                let allData = [];
+                let from = 0;
+                const pageSize = 1000;
+                let hasMore = true;
+                
+                while (hasMore) {
+                    const { data, error } = await supabase
+                        .from('junior_modules')
+                        .select('*')
+                        .range(from, from + pageSize - 1);
+                    
+                    if (error) {
+                        console.error("❌ Supabase error loading junior data:", error);
+                        return false;
+                    }
+                    
+                    if (data && data.length > 0) {
+                        allData = allData.concat(data);
+                        from += pageSize;
+                        hasMore = data.length === pageSize; // Continue if we got a full page
+                    } else {
+                        hasMore = false;
+                    }
                 }
                 
-                console.log(`✓ Loaded ${data?.length || 0} junior module records`);
+                console.log(`✓ Loaded ${allData.length} junior module records`);
                 
                 // Transform to app format
-                const moduleCompletions = (data || []).map(row => ({
+                const moduleCompletions = allData.map(row => ({
                     pNumber: row.p_number,
                     section: row.section,
                     moduleCode: row.module_code,

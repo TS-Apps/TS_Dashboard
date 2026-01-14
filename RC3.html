@@ -108,7 +108,7 @@
         // CONSTANTS & DATA
         // ═══════════════════════════════════════════════════════════════════════════
         
-        const DATA_VERSION = "3.6.0-SAFE"; // DISABLED auto data loading useEffect - manual load only
+        const DATA_VERSION = "3.6.1-MINIMAL-USEEFFECT"; // Disabled data loading, lucide, and warnings useEffects - ONLY auth check active
  
         // Badge & Rank Image Maps
         const RANK_IMG_MAP = {
@@ -6446,20 +6446,10 @@
         // SECTION 4: MAIN APP COMPONENT
         // ============================================================================
         
-        // --- GLOBAL IMPORT WARNINGS BANNER ---
+        // --- GLOBAL IMPORT WARNINGS BANNER (DISABLED FOR TESTING) ---
         const ImportWarningsBanner = () => {
-            const [warnings, setWarnings] = useState(null);
-            
-            useEffect(() => {
-                const stored = localStorage.getItem('importWarnings');
-                if (stored) {
-                    try {
-                        setWarnings(JSON.parse(stored));
-                    } catch (e) {
-                        console.error('Error parsing import warnings', e);
-                    }
-                }
-            }, []);
+            return null; // Temporarily disabled to isolate crash
+        };
             
             const downloadWarnings = () => {
                 if (!warnings || !warnings.warnings) return;
@@ -6745,11 +6735,11 @@
                 }
             };
 
-            // Icon Render - run when view changes or sidebar collapses/expands
-            useEffect(() => { 
-                console.log('🎨 useEffect[LUCIDE ICONS] running... view:', view, 'sidebarCollapsed:', sidebarCollapsed);
-                lucide.createIcons(); 
-            }, [view, sidebarCollapsed]);
+            // DISABLED: Lucide icons useEffect (testing if this causes crash)
+            // useEffect(() => { 
+            //     console.log('🎨 useEffect[LUCIDE ICONS] running... view:', view, 'sidebarCollapsed:', sidebarCollapsed);
+            //     lucide.createIcons(); 
+            // }, [view, sidebarCollapsed]);
 
 // DISABLED:             // Load data only once when authenticated
 // DISABLED:             useEffect(() => {

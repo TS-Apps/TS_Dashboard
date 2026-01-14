@@ -173,6 +173,24 @@
             }
         };
         
+        const deleteJuniorModule = async (pNumber, section, moduleCode, dateCompleted) => {
+            try {
+                const { error } = await supabase
+                    .from('junior_module_completions')
+                    .delete()
+                    .eq('p_number', pNumber)
+                    .eq('section', section)
+                    .eq('module_code', moduleCode)
+                    .eq('date_completed', dateCompleted);
+                
+                if (error) throw error;
+                return true;
+            } catch (error) {
+                console.error("Error deleting junior module:", error);
+                return false;
+            }
+        };
+        
         // ═══════════════════════════════════════════════════════════════════════════
         // CONSTANTS & DATA
         // ═══════════════════════════════════════════════════════════════════════════
@@ -1407,141 +1425,6 @@
                 return `${months} month${months === 1 ? '' : 's'} ${days} day${days === 1 ? '' : 's'}`;
             }
         };
-        
-        // Get junior data from localStorage (synchronous for component use)
-        const getJuniorData = () => {
-            try {
-                const data = localStorage.getItem('scc_juniors');
-                return data ? JSON.parse(data) : {
-                    moduleCompletions: [],
-                    rankHistory: [],
-                    sectionBadges: []
-                };
-            } catch (e) {
-                console.error("Error loading junior data:", e);
-                return { moduleCompletions: [], rankHistory: [], sectionBadges: [] };
-            }
-        };
-        
-        // Save junior data to localStorage + sync to Supabase
-        const saveJuniorData = async (data) => {
-            try {
-                // Save to localStorage immediately (for synchronous access)
-                localStorage.setItem('scc_juniors', JSON.stringify(data));
-                
-                // Transform to Supabase format
-                const records = data.moduleCompletions.map(mod => ({
-                    p_number: mod.pNumber,
-                    section: mod.section,
-                    module_code: mod.moduleCode,
-                    module_name: mod.moduleName,
-                    date_completed: mod.dateCompleted,
-                    is_core: mod.isCore || false
-                }));
-                
-                // Deduplicate to prevent PostgreSQL error
-                const uniqueMap = new Map();
-                records.forEach(rec => {
-                    const key = `${rec.user_id}-${rec.p_number}-${rec.section}-${rec.module_code}`;
-                    uniqueMap.set(key, rec);
-                });
-                const uniqueRecords = Array.from(uniqueMap.values());
-                
-                console.log(`💾 Syncing ${uniqueRecords.length} junior modules to Supabase...`);
-                
-                // Delete existing data
-                await supabase.from('junior_modules').delete();
-                
-                if (uniqueRecords.length > 0) {
-                    // Batch insert in groups of 500 (Supabase limit is 1000)
-                    const batchSize = 500;
-                    let totalInserted = 0;
-                    
-                    for (let i = 0; i < uniqueRecords.length; i += batchSize) {
-                        const batch = uniqueRecords.slice(i, i + batchSize);
-                        console.log(`  📦 Inserting batch ${Math.floor(i/batchSize) + 1} (${batch.length} records)...`);
-                        
-                        const { error } = await supabase
-                            .from('junior_modules')
-                            .insert(batch);
-                        
-                        if (error) {
-                            console.error("❌ Supabase error saving batch:", error);
-                            console.error(`Failed at batch starting at index ${i}`);
-                            return false;
-                        }
-                        
-                        totalInserted += batch.length;
-                        console.log(`  ✓ Batch complete (${totalInserted}/${uniqueRecords.length})`);
-                    }
-                }
-                
-                console.log('✓ All junior modules synced to Supabase');
-                return true;
-            } catch (e) {
-                console.error("Error saving junior data:", e);
-                return false;
-            }
-        };
-        
-        // Load junior data from Supabase on app start
-        const loadJuniorDataFromSupabase = async () => {
-            try {
-                console.log('📥 Loading junior data from Supabase...');
-                
-                // Fetch ALL records using pagination (1000 at a time)
-                let allData = [];
-                let from = 0;
-                const pageSize = 1000;
-                let hasMore = true;
-                
-                while (hasMore) {
-                    const { data, error } = await supabase
-                        .from('junior_modules')
-                        .select('*')
-                        .range(from, from + pageSize - 1);
-                    
-                    if (error) {
-                        console.error("❌ Supabase error loading junior data:", error);
-                        return false;
-                    }
-                    
-                    if (data && data.length > 0) {
-                        allData = allData.concat(data);
-                        from += pageSize;
-                        hasMore = data.length === pageSize; // Continue if we got a full page
-                    } else {
-                        hasMore = false;
-                    }
-                }
-                
-                console.log(`✓ Loaded ${allData.length} junior module records`);
-                
-                // Transform to app format
-                const moduleCompletions = allData.map(row => ({
-                    pNumber: row.p_number,
-                    section: row.section,
-                    moduleCode: row.module_code,
-                    moduleName: row.module_name,
-                    dateCompleted: row.date_completed,
-                    isCore: row.is_core || false
-                }));
-                
-                const juniorData = {
-                    moduleCompletions,
-                    rankHistory: [],
-                    sectionBadges: []
-                };
-                
-                // Save to localStorage for synchronous access
-                localStorage.setItem('scc_juniors', JSON.stringify(juniorData));
-                return true;
-            } catch (e) {
-                console.error("Error loading junior data from Supabase:", e);
-                return false;
-            }
-        };
-
         
         // ═══════════════════════════════════════════════════════════════════════════
         // UI COMPONENTS
@@ -4612,7 +4495,9 @@
                         const imported = JSON.parse(event.target.result);
                         if (confirm('Import this data? This will replace all local junior data.')) {
                             setUploadStatus('Importing junior data...');
-                            const result = await saveJuniorData(imported);
+                            // Extract moduleCompletions from imported data
+                            const completions = imported.moduleCompletions || imported;
+                            const result = await saveJuniorData(completions);
                             if (result) {
                                 setUploadStatus('Import successful! Reloading...');
                                 setTimeout(() => window.location.reload(), 1000);
@@ -4902,15 +4787,17 @@
                                                 }
                                                 
                                                 if (confirm(`Import ${imported} module completions for ${juniors.length} juniors? This will ADD to existing data.`)) {
-                                                    const currentData = getJuniorData();
-                                                    const updatedData = {
-                                                        ...currentData,
-                                                        moduleCompletions: [...currentData.moduleCompletions, ...newCompletions]
-                                                    };
-                                                    
-                                                    if (saveJuniorData(updatedData)) {
-                                                        setUploadStatus(`Successfully imported ${imported} completions!`);
-                                                        setTimeout(() => window.location.reload(), 1500);
+                                                    try {
+                                                        const success = await saveJuniorData(newCompletions);
+                                                        if (success) {
+                                                            setUploadStatus(`Successfully imported ${imported} completions!`);
+                                                            setTimeout(() => window.location.reload(), 1500);
+                                                        } else {
+                                                            setUploadStatus('Error importing completions. Please try again.');
+                                                        }
+                                                    } catch (err) {
+                                                        console.error('Import error:', err);
+                                                        setUploadStatus('Error importing completions.');
                                                     }
                                                 }
                                             } catch (err) {
@@ -6450,20 +6337,21 @@
                     isCore: false
                 };
                 
-                const updatedData = {
-                    ...juniorData,
-                    moduleCompletions: [...juniorData.moduleCompletions, newModule]
-                };
-                
-                if (saveJuniorData(updatedData)) {
-                    setShowSuccess(true);
-                    setModuleCode('');
-                    setTimeout(() => {
-                        setShowSuccess(false);
-                        window.location.reload(); // Refresh to show new data
-                    }, 1500);
-                } else {
-                    alert("Error saving module completions");
+                try {
+                    const success = await saveJuniorData([newModule]);
+                    if (success) {
+                        setShowSuccess(true);
+                        setModuleCode('');
+                        setTimeout(() => {
+                            setShowSuccess(false);
+                            window.location.reload();
+                        }, 1500);
+                    } else {
+                        alert('Error saving module. Please try again.');
+                    }
+                } catch (error) {
+                    console.error('Error saving module:', error);
+                    alert('Error saving module. Please try again.');
                 }
             };
             
@@ -6475,32 +6363,18 @@
                 }
                 
                 try {
-                    // Filter out the module to delete
-                    const updatedCompletions = juniorData.moduleCompletions.filter(m => 
-                        !(m.pNumber === moduleToDelete.pNumber && 
-                          m.section === moduleToDelete.section && 
-                          m.moduleCode === moduleToDelete.moduleCode &&
-                          m.dateCompleted === moduleToDelete.dateCompleted)
+                    const result = await deleteJuniorModule(
+                        moduleToDelete.pNumber,
+                        moduleToDelete.section,
+                        moduleToDelete.moduleCode,
+                        moduleToDelete.dateCompleted
                     );
-                    
-                    const updatedData = {
-                        ...juniorData,
-                        moduleCompletions: updatedCompletions
-                    };
-                    
-                    // Show loading state
-                    const deleteBtn = event.target;
-                    const originalText = deleteBtn.textContent;
-                    deleteBtn.textContent = 'Deleting...';
-                    deleteBtn.disabled = true;
-                    
-                    const result = await saveJuniorData(updatedData);
                     
                     if (result) {
                         console.log('✓ Module deleted successfully');
-                        window.location.reload(); // Refresh to show updated data
+                        window.location.reload();
                     } else {
-                        throw new Error('Save function returned false');
+                        throw new Error('Delete function returned false');
                     }
                 } catch (error) {
                     console.error('Delete error:', error);

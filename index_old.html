@@ -108,7 +108,7 @@
         // CONSTANTS & DATA
         // ═══════════════════════════════════════════════════════════════════════════
         
-        const DATA_VERSION = "3.6.2-FIXED"; // Fixed useCallback infinite loop + re-enabled all features
+        const DATA_VERSION = "3.5.6-AUTH"; // FEATURE: Email auth + FIXED: Removed JuniorProgressView (grid) to get under 500KB Babel limit
  
         // Badge & Rank Image Maps
         const RANK_IMG_MAP = {
@@ -4449,6 +4449,69 @@
         };
 
         // Training Suggestions Component
+        const TrainingSuggestions = ({ personnel, getCadetProgress, qualsData }) => {
+            const [selectedRank, setSelectedRank] = useState(SCC_RANK_ORDER[0]);
+            const ALL_RANKS = [...SCC_RANK_ORDER, ...RMC_RANK_ORDER];
+            const cadetsAtRank = useMemo(() => personnel.filter(p => p.rank === selectedRank), [personnel, selectedRank]);
+            
+            const suggestions = useMemo(() => {
+                if (!cadetsAtRank.length) return [];
+                const isRMC = RMC_RANK_ORDER.includes(selectedRank);
+                const syllabus = isRMC ? RMC_SYLLABUS : SCC_SYLLABUS;
+                const currentSyllabus = syllabus[selectedRank];
+                if (!currentSyllabus) return [];
+                
+                const demandMap = new Map();
+                const hasPassed = (c, code) => qualsData.some(q => q.pNumber === c.pNumber && q.module.includes(code));
+                
+                cadetsAtRank.forEach(c => {
+                    Object.values(currentSyllabus).forEach(cat => {
+                        cat.forEach((mod, idx) => {
+                            if (!hasPassed(c, mod.code)) {
+                                // Simple prereq check: needs previous module in category
+                                if (idx === 0 || hasPassed(c, cat[idx-1].code)) {
+                                    const entry = demandMap.get(mod.code) || { ...mod, count: 0, students: [] };
+                                    entry.count++;
+                                    entry.students.push(c.name);
+                                    demandMap.set(mod.code, entry);
+                                }
+                            }
+                        });
+                    });
+                });
+                return Array.from(demandMap.values()).sort((a,b) => b.count - a.count).slice(0, 12);
+            }, [cadetsAtRank, qualsData, selectedRank]);
+
+            return (
+                <div className="space-y-6">
+                    <div className="bg-white rounded-lg shadow-xl p-6 border-l-4 border-purple-500">
+                        <div className="flex items-center gap-4 mb-4">
+                            <div className="p-3 bg-purple-100 rounded-full">
+                                <Icon name="Lightbulb" className="w-8 h-8 text-purple-700" />
+                            </div>
+                            <div>
+                                <h2 className="text-3xl font-extrabold text-slate-900">Training Plan</h2>
+                                <p className="text-slate-600">12 most-needed modules for selected rank</p>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-4">
+                            <label className="text-sm font-semibold text-slate-700">Target Rank:</label>
+                            <select value={selectedRank} onChange={(e) => setSelectedRank(e.target.value)} className="p-2 border border-slate-300 rounded-lg shadow-sm text-sm">{ALL_RANKS.map(r => <option key={r} value={r}>{r}</option>)}</select>
+                        </div>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        {suggestions.length === 0 ? <div className="col-span-full text-center py-12 bg-white rounded border border-dashed text-slate-400">No suggestions.</div> : suggestions.map(mod => (
+                            <div key={mod.code} className="bg-white p-4 rounded shadow border-l-4 border-purple-500">
+                                <div className="flex justify-between mb-2"><h3 className="font-bold">{mod.code}</h3><span className="bg-purple-100 text-purple-800 text-xs font-bold px-2 py-1 rounded-full">{mod.count} Cadets</span></div>
+                                <p className="text-sm text-slate-600 truncate mb-2">{mod.title}</p>
+                                <div className="text-[10px] text-slate-400">Ready: {mod.students.slice(0,3).map(s=>s.split(',')[0]).join(', ')}{mod.students.length>3 && '...'}</div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            );
+        };
+
         // --- JUNIOR PROGRESS VIEW (Grid Chart) ---
 
 
@@ -6451,28 +6514,94 @@
             const [warnings, setWarnings] = useState(null);
             
             useEffect(() => {
-                try {
-                    const stored = localStorage.getItem('importWarnings');
-                    if (stored) {
+                const stored = localStorage.getItem('importWarnings');
+                if (stored) {
+                    try {
                         setWarnings(JSON.parse(stored));
+                    } catch (e) {
+                        console.error('Error parsing import warnings', e);
                     }
-                } catch (e) {
-                    console.error('Error loading warnings:', e);
                 }
             }, []);
+            
+            const downloadWarnings = () => {
+                if (!warnings || !warnings.warnings) return;
+                
+                const csvContent = "data:text/csv;charset=utf-8," 
+                    + "Row,Warning\n"
+                    + warnings.warnings.map(err => {
+                        const match = err.match(/Row (\d+): (.+)/);
+                        if (match) {
+                            return `${match[1]},"${match[2].replace(/"/g, '""')}"`;
+                        }
+                        return `,"${err.replace(/"/g, '""')}"`;
+                    }).join("\n");
+                
+                const encodedUri = encodeURI(csvContent);
+                const link = document.createElement("a");
+                link.setAttribute("href", encodedUri);
+                link.setAttribute("download", `validation_warnings_${new Date().toISOString().split('T')[0]}.csv`);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            };
+            
+            const dismiss = () => {
+                localStorage.removeItem('importWarnings');
+                setWarnings(null);
+            };
             
             if (!warnings || !warnings.warnings || warnings.warnings.length === 0) {
                 return null;
             }
             
             return (
-                <div className="bg-amber-50 border-b-2 border-amber-300 p-2 text-center">
-                    <p className="text-sm text-amber-800">
-                        {warnings.warnings.length} warning{warnings.warnings.length !== 1 ? 's' : ''} from recent import
-                    </p>
+                <div className="fixed top-0 left-0 right-0 z-50 bg-amber-50 border-b-4 border-amber-500 shadow-lg">
+                    <div className="max-w-7xl mx-auto p-4">
+                        <div className="flex justify-between items-start">
+                            <div className="flex-1">
+                                <p className="font-bold text-amber-900 flex items-center gap-2 mb-2">
+                                    <Icon name="AlertTriangle" className="w-5 h-5" />
+                                    {warnings.warnings.length} Validation Warning{warnings.warnings.length !== 1 ? 's' : ''} from Recent Import
+                                </p>
+                                <div className="text-sm text-amber-800 max-h-32 overflow-y-auto space-y-1 mb-2">
+                                    {warnings.warnings.slice(0, 5).map((err, idx) => (
+                                        <div key={idx} className="pl-2 border-l-2 border-amber-300">• {err}</div>
+                                    ))}
+                                    {warnings.warnings.length > 5 && (
+                                        <p className="font-semibold">...and {warnings.warnings.length - 5} more warnings</p>
+                                    )}
+                                </div>
+                                <p className="text-xs text-amber-700">
+                                    Imported {warnings.personnelCount} personnel and {warnings.qualsCount} qualifications with some data quality issues.
+                                </p>
+                            </div>
+                            <div className="flex gap-2 ml-4">
+                                <button 
+                                    onClick={downloadWarnings}
+                                    className="text-amber-700 hover:text-amber-900 flex items-center gap-1 text-sm font-semibold px-3 py-1 bg-amber-100 rounded hover:bg-amber-200"
+                                    title="Download warnings as CSV"
+                                >
+                                    <Icon name="Download" className="w-4 h-4" />
+                                    Download CSV
+                                </button>
+                                <button 
+                                    onClick={dismiss} 
+                                    className="text-amber-600 hover:text-amber-800"
+                                    title="Dismiss warnings"
+                                >
+                                    <Icon name="X" className="w-5 h-5" />
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             );
         };
+        
+        // ============================================================================
+        // LOGIN SCREEN COMPONENT
+        // ============================================================================
         
         const LoginScreen = () => {
             const [email, setEmail] = useState('');
@@ -6583,31 +6712,6 @@
 
 
         const App = () => {
-            // RENDER COUNTER - VISUAL DEBUG
-            const renderCount = useRef(0);
-            renderCount.current += 1;
-            const renderNum = renderCount.current;
-            console.log(`🔄 APP RENDER #${renderNum}`);
-            
-            // Emergency stop at 100 renders
-            if (renderCount.current >= 100) {
-                return (
-                    <div className="min-h-screen bg-red-600 flex items-center justify-center p-8">
-                        <div className="bg-white rounded-lg shadow-2xl p-8 max-w-md">
-                            <h1 className="text-3xl font-bold text-red-600 mb-4">🚨 EMERGENCY STOP</h1>
-                            <p className="text-lg mb-4">Render loop detected: {renderCount.current} renders</p>
-                            <p className="text-sm text-slate-600">The app has been stopped to prevent browser crash.</p>
-                            <button 
-                                onClick={() => window.location.reload()} 
-                                className="mt-4 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-                            >
-                                Reload Page
-                            </button>
-                        </div>
-                    </div>
-                );
-            }
-            
             const [isAuthenticated, setIsAuthenticated] = useState(false);
             const [authLoading, setAuthLoading] = useState(true);
             const [currentUser, setCurrentUser] = useState(null);
@@ -6620,20 +6724,9 @@
             
             // Ref to prevent multiple data loads
             const dataLoadedRef = useRef(false);
-            
-            // EMERGENCY STOP - if renders exceed 100, force stop
-            if (renderNum > 100) {
-                return (
-                    <div style={{padding: '50px', backgroundColor: 'red', color: 'white', fontSize: '24px'}}>
-                        🚨 EMERGENCY STOP: Too many renders ({renderNum})
-                        <br/>Check console for details.
-                    </div>
-                );
-            }
 
             // Check authentication on mount
             useEffect(() => {
-                console.log('🔐 useEffect[AUTH CHECK] running...');
                 const checkAuth = async () => {
                     try {
                         const { data: { session }, error } = await supabase.auth.getSession();
@@ -6668,9 +6761,6 @@
             if (authLoading) {
                 return (
                     <div className="min-h-screen flex items-center justify-center bg-slate-100">
-                        <div style={{position: 'fixed', top: 0, left: 0, right: 0, backgroundColor: 'yellow', color: 'black', padding: '10px', fontSize: '20px', fontWeight: 'bold', zIndex: 9999, textAlign: 'center'}}>
-                            🔄 RENDER #{renderNum}
-                        </div>
                         <div className="text-center">
                             <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-700"></div>
                             <p className="mt-4 text-slate-600">Loading...</p>
@@ -6680,14 +6770,7 @@
             }
 
             if (!isAuthenticated) {
-                return (
-                    <>
-                        <div style={{position: 'fixed', top: 0, left: 0, right: 0, backgroundColor: 'yellow', color: 'black', padding: '10px', fontSize: '20px', fontWeight: 'bold', zIndex: 9999, textAlign: 'center'}}>
-                            🔄 RENDER #{renderNum}
-                        </div>
-                        <LoginScreen />
-                    </>
-                );
+                return <LoginScreen />;
             }
 
             // Logout function
@@ -6699,14 +6782,10 @@
             };
 
             // Icon Render - run when view changes or sidebar collapses/expands
-            useEffect(() => { 
-                console.log('🎨 useEffect[LUCIDE ICONS] running... view:', view, 'sidebarCollapsed:', sidebarCollapsed);
-                lucide.createIcons(); 
-            }, [view, sidebarCollapsed]);
+            useEffect(() => { lucide.createIcons(); }, [view, sidebarCollapsed]);
 
             // Load data only once when authenticated
             useEffect(() => {
-                console.log('📊 useEffect[DATA LOAD] running... isAuthenticated:', isAuthenticated, 'dataLoadedRef:', dataLoadedRef.current);
                 // Guard: only load if authenticated and not already loaded
                 if (!isAuthenticated ||  dataLoadedRef.current) return;
                 
@@ -6762,7 +6841,6 @@
                             
                             setPersonnelData(parsedP);
                             setQualsData(parsedQ);
-                            console.log('🏠 Setting view to HOME from data load');
                             setView('home');
                         } else {
                             console.log('ℹ️ No data found in Supabase - showing upload screen');
@@ -6834,7 +6912,6 @@
                     
                     setPersonnelData(pData);
                     setQualsData(qData);
-                    console.log('🏠 Setting view to HOME from handleDataLoaded');
                     setView('home');
                 } catch (e) {
                     console.error("Error saving to Supabase:", e);
@@ -6875,8 +6952,7 @@
             };
 
             // Memoized progress calculation to prevent unnecessary recalculations
-            // FIXED: Removed useCallback to prevent infinite loop
-            const getCadetProgress = (cadet) => {
+            const getCadetProgress = useCallback((cadet) => {
                  const isRMC = RMC_RANK_ORDER.includes(cadet.rank);
                  const syllabus = isRMC ? RMC_SYLLABUS : SCC_SYLLABUS;
                  const currentRankSyllabus = syllabus[cadet.rank];
@@ -6887,7 +6963,7 @@
                      if(qualsData.some(q => q.pNumber === cadet.pNumber && q.module.includes(m.code))) passed++;
                  }));
                  return { percentage: total === 0 ? 100 : Math.round((passed/total)*100) };
-            };
+            }, [qualsData]);
 
             const NavItem = ({ id, icon, label }) => (
                 <button onClick={() => { setView(id); window.scrollTo(0, 0); }} className={`flex items-center gap-2 w-full p-2 rounded-lg transition-all text-sm ${view === id ? 'bg-blue-800 text-white' : 'text-blue-100 hover:bg-blue-800/50'}`}>
@@ -6918,9 +6994,6 @@
 
             return (
                 <ErrorBoundary>
-                    <div style={{position: 'fixed', top: 0, left: 0, right: 0, backgroundColor: 'yellow', color: 'black', padding: '10px', fontSize: '20px', fontWeight: 'bold', zIndex: 9999, textAlign: 'center'}}>
-                        🔄 RENDER #{renderNum}
-                    </div>
                     <ImportWarningsBanner />
                     <div className="min-h-screen bg-slate-100 flex font-sans text-slate-900">
                         <aside className={`${sidebarCollapsed ? 'w-20' : 'w-64'} bg-blue-900 text-white flex flex-col shadow-2xl fixed h-full z-10 transition-all duration-300`}>
@@ -6943,6 +7016,7 @@
                                 <NavItem id="rmc_planner" icon="Target" label="RMC CTS Progress" />
                                 <NavItem id="waterborne" icon="Anchor" label="Waterborne" />
                                 <NavItem id="awards" icon="Award" label="Awards" />
+                                <NavItem id="suggestions" icon="ChartGantt" label="Training Plan" />
                                 <NavItem id="data_utilities" icon="Database" label="Data / Utilities" />
                             </nav>
                             <div className="p-3 border-t border-blue-800">
@@ -6981,6 +7055,7 @@
                             {(view === 'waterborne') && <WaterborneView personnel={personnelData} qualsData={qualsData} />}
                             {(view === 'planner') && <TrainingPlanner personnel={personnelData} getCadetProgress={getCadetProgress} qualsData={qualsData} title="SCC CTP Progress" rankOrder={SCC_RANK_ORDER} syllabus={SCC_SYLLABUS} iconName="ShipWheel" onModuleClick={handleModuleDrillDown} />}
                             {(view === 'rmc_planner') && <TrainingPlanner personnel={personnelData} getCadetProgress={getCadetProgress} qualsData={qualsData} title="RMC CTS Progress" rankOrder={RMC_RANK_ORDER} syllabus={RMC_SYLLABUS} colorTheme="green" iconName="Target" onModuleClick={handleModuleDrillDown} />}
+                            {(view === 'suggestions') && <TrainingSuggestions personnel={personnelData} getCadetProgress={getCadetProgress} qualsData={qualsData} />}
                             {view === 'data_utilities' && <DataUtilitiesView clearData={clearData} wipeAllData={wipeAllData} setView={setView} personnel={personnelData} />}
                         </main>
                     </div>

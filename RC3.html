@@ -108,7 +108,7 @@
         // CONSTANTS & DATA
         // ═══════════════════════════════════════════════════════════════════════════
         
-        const DATA_VERSION = "3.6.1-MINIMAL-USEEFFECT"; // Disabled data loading, lucide, and warnings useEffects - ONLY auth check active
+        const DATA_VERSION = "3.6.3-NO-LUCIDE"; // Disabled lucide & data loading useEffects - testing isolation
  
         // Badge & Rank Image Maps
         const RANK_IMG_MAP = {
@@ -6698,83 +6698,83 @@
                 }
             };
 
-            // Icon Render - run when view changes or sidebar collapses/expands
-            useEffect(() => { 
-                console.log('🎨 useEffect[LUCIDE ICONS] running... view:', view, 'sidebarCollapsed:', sidebarCollapsed);
-                lucide.createIcons(); 
-            }, [view, sidebarCollapsed]);
+            // DISABLED FOR TESTING: Lucide icons useEffect
+            // useEffect(() => { 
+            //     console.log('🎨 useEffect[LUCIDE ICONS] running... view:', view, 'sidebarCollapsed:', sidebarCollapsed);
+            //     lucide.createIcons(); 
+            // }, [view, sidebarCollapsed]);
 
-            // Load data only once when authenticated
-            useEffect(() => {
-                console.log('📊 useEffect[DATA LOAD] running... isAuthenticated:', isAuthenticated, 'dataLoadedRef:', dataLoadedRef.current);
-                // Guard: only load if authenticated and not already loaded
-                if (!isAuthenticated ||  dataLoadedRef.current) return;
-                
-                const loadData = async () => {
-                    dataLoadedRef.current = true; // Mark as loading
-                    console.log('📊 Loading data from Supabase...');
-                    
-                    try {
-                        // Load personnel for current user
-                        const { data: personnelRows, error: pError } = await supabase
-                            .from('personnel')
-                            .select('*')
-                            ;
-                        
-                        if (pError) throw pError;
-                        
-                        // Load qualifications for current user
-                        const { data: qualsRows, error: qError } = await supabase
-                            .from('qualifications')
-                            .select('*')
-                            ;
-                        
-                        if (qError) throw qError;
-                        
-                        // Load junior modules
-                        await loadJuniorDataFromSupabase();
-                        
-                        if (personnelRows && personnelRows.length > 0) {
-                            console.log(`✓ Loaded ${personnelRows.length} personnel, ${qualsRows?.length || 0} qualifications`);
-                            
-                            // Transform from Supabase format to app format
-                            const parsedP = personnelRows.map(row => ({
-                                pNumber: row.p_number,
-                                rank: row.rank,
-                                name: row.name,
-                                unit: row.unit,
-                                dob: row.dob,
-                                tos: row.tos,
-                                rankDate: row.rank_date,
-                                cvqo: row.cvqo
-                            }));
-                            
-                            const parsedQ = (qualsRows || []).map(row => ({
-                                pNumber: row.p_number,
-                                module: row.module,
-                                date: row.date_achieved ? new Date(row.date_achieved) : null,
-                                result: row.result,
-                                syllabus: row.syllabus
-                            }));
-                            
-                            // Sort personnel alphabetically by name
-                            parsedP.sort((a, b) => a.name.localeCompare(b.name));
-                            
-                            setPersonnelData(parsedP);
-                            setQualsData(parsedQ);
-                            console.log('🏠 Setting view to HOME from data load');
-                            setView('home');
-                        } else {
-                            console.log('ℹ️ No data found in Supabase - showing upload screen');
-                        }
-                    } catch (e) {
-                        console.error("Error loading data from Supabase:", e);
-                        dataLoadedRef.current = false; // Reset on error to allow retry
-                    }
-                };
-                
-                loadData();
-            }, [isAuthenticated]); // Only depends on auth status
+            // DISABLED FOR TESTING: Data loading useEffect
+            // useEffect(() => {
+//                 console.log('📊 useEffect[DATA LOAD] running... isAuthenticated:', isAuthenticated, 'dataLoadedRef:', dataLoadedRef.current);
+//                 // Guard: only load if authenticated and not already loaded
+//                 if (!isAuthenticated ||  dataLoadedRef.current) return;
+//                 
+//                 const loadData = async () => {
+//                     dataLoadedRef.current = true; // Mark as loading
+//                     console.log('📊 Loading data from Supabase...');
+//                     
+//                     try {
+//                         // Load personnel for current user
+//                         const { data: personnelRows, error: pError } = await supabase
+//                             .from('personnel')
+//                             .select('*')
+//                             ;
+//                         
+//                         if (pError) throw pError;
+//                         
+//                         // Load qualifications for current user
+//                         const { data: qualsRows, error: qError } = await supabase
+//                             .from('qualifications')
+//                             .select('*')
+//                             ;
+//                         
+//                         if (qError) throw qError;
+//                         
+//                         // Load junior modules
+//                         await loadJuniorDataFromSupabase();
+//                         
+//                         if (personnelRows && personnelRows.length > 0) {
+//                             console.log(`✓ Loaded ${personnelRows.length} personnel, ${qualsRows?.length || 0} qualifications`);
+//                             
+//                             // Transform from Supabase format to app format
+//                             const parsedP = personnelRows.map(row => ({
+//                                 pNumber: row.p_number,
+//                                 rank: row.rank,
+//                                 name: row.name,
+//                                 unit: row.unit,
+//                                 dob: row.dob,
+//                                 tos: row.tos,
+//                                 rankDate: row.rank_date,
+//                                 cvqo: row.cvqo
+//                             }));
+//                             
+//                             const parsedQ = (qualsRows || []).map(row => ({
+//                                 pNumber: row.p_number,
+//                                 module: row.module,
+//                                 date: row.date_achieved ? new Date(row.date_achieved) : null,
+//                                 result: row.result,
+//                                 syllabus: row.syllabus
+//                             }));
+//                             
+//                             // Sort personnel alphabetically by name
+//                             parsedP.sort((a, b) => a.name.localeCompare(b.name));
+//                             
+//                             setPersonnelData(parsedP);
+//                             setQualsData(parsedQ);
+//                             console.log('🏠 Setting view to HOME from data load');
+//                             setView('home');
+//                         } else {
+//                             console.log('ℹ️ No data found in Supabase - showing upload screen');
+//                         }
+//                     } catch (e) {
+//                         console.error("Error loading data from Supabase:", e);
+//                         dataLoadedRef.current = false; // Reset on error to allow retry
+//                     }
+//                 };
+//                 
+//                 loadData();
+//             }, [isAuthenticated]); // Only depends on auth status
 
             const handleDataLoaded = async (pData, qData) => {
                 console.log(`💾 Saving ${pData.length} personnel, ${qData.length} qualifications to Supabase...`);

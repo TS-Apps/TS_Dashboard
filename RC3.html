@@ -108,7 +108,7 @@
         // CONSTANTS & DATA
         // ═══════════════════════════════════════════════════════════════════════════
         
-        const DATA_VERSION = "3.5.8-DEBUG"; // Added render counter + useEffect logging to find loop
+        const DATA_VERSION = "3.5.9-VISUAL-DEBUG"; // Added VISUAL render counter on screen + emergency stop at 100 renders
  
         // Badge & Rank Image Maps
         const RANK_IMG_MAP = {
@@ -6649,10 +6649,11 @@
 
 
         const App = () => {
-            // RENDER COUNTER
+            // RENDER COUNTER - VISUAL DEBUG
             const renderCount = useRef(0);
             renderCount.current += 1;
-            console.log(`🔄 APP RENDER #${renderCount.current}`);
+            const renderNum = renderCount.current;
+            console.log(`🔄 APP RENDER #${renderNum}`);
             
             const [isAuthenticated, setIsAuthenticated] = useState(false);
             const [authLoading, setAuthLoading] = useState(true);
@@ -6666,6 +6667,16 @@
             
             // Ref to prevent multiple data loads
             const dataLoadedRef = useRef(false);
+            
+            // EMERGENCY STOP - if renders exceed 100, force stop
+            if (renderNum > 100) {
+                return (
+                    <div style={{padding: '50px', backgroundColor: 'red', color: 'white', fontSize: '24px'}}>
+                        🚨 EMERGENCY STOP: Too many renders ({renderNum})
+                        <br/>Check console for details.
+                    </div>
+                );
+            }
 
             // Check authentication on mount
             useEffect(() => {
@@ -6704,6 +6715,9 @@
             if (authLoading) {
                 return (
                     <div className="min-h-screen flex items-center justify-center bg-slate-100">
+                        <div style={{position: 'fixed', top: 0, left: 0, right: 0, backgroundColor: 'yellow', color: 'black', padding: '10px', fontSize: '20px', fontWeight: 'bold', zIndex: 9999, textAlign: 'center'}}>
+                            🔄 RENDER #{renderNum}
+                        </div>
                         <div className="text-center">
                             <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-700"></div>
                             <p className="mt-4 text-slate-600">Loading...</p>
@@ -6713,7 +6727,14 @@
             }
 
             if (!isAuthenticated) {
-                return <LoginScreen />;
+                return (
+                    <>
+                        <div style={{position: 'fixed', top: 0, left: 0, right: 0, backgroundColor: 'yellow', color: 'black', padding: '10px', fontSize: '20px', fontWeight: 'bold', zIndex: 9999, textAlign: 'center'}}>
+                            🔄 RENDER #{renderNum}
+                        </div>
+                        <LoginScreen />
+                    </>
+                );
             }
 
             // Logout function
@@ -6943,6 +6964,9 @@
 
             return (
                 <ErrorBoundary>
+                    <div style={{position: 'fixed', top: 0, left: 0, right: 0, backgroundColor: 'yellow', color: 'black', padding: '10px', fontSize: '20px', fontWeight: 'bold', zIndex: 9999, textAlign: 'center'}}>
+                        🔄 RENDER #{renderNum}
+                    </div>
                     <ImportWarningsBanner />
                     <div className="min-h-screen bg-slate-100 flex font-sans text-slate-900">
                         <aside className={`${sidebarCollapsed ? 'w-20' : 'w-64'} bg-blue-900 text-white flex flex-col shadow-2xl fixed h-full z-10 transition-all duration-300`}>

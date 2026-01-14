@@ -108,7 +108,7 @@
         // CONSTANTS & DATA
         // ═══════════════════════════════════════════════════════════════════════════
         
-        const DATA_VERSION = "3.6.4-WORKING"; // Fixed junior data pagination (1000+ records) + stable render loop
+        const DATA_VERSION = "3.6.5-WITH-LUCIDE"; // Testing lucide icons re-enabled (checking if this causes crash)
  
         // Badge & Rank Image Maps
         const RANK_IMG_MAP = {
@@ -6715,11 +6715,11 @@
                 }
             };
 
-            // DISABLED FOR TESTING: Lucide icons useEffect
-            // useEffect(() => { 
-            //     console.log('🎨 useEffect[LUCIDE ICONS] running... view:', view, 'sidebarCollapsed:', sidebarCollapsed);
-            //     lucide.createIcons(); 
-            // }, [view, sidebarCollapsed]);
+            // Icon Render - run when view changes or sidebar collapses/expands
+            useEffect(() => { 
+                console.log('🎨 useEffect[LUCIDE ICONS] running... view:', view, 'sidebarCollapsed:', sidebarCollapsed);
+                lucide.createIcons(); 
+            }, [view, sidebarCollapsed]);
 
             // DISABLED FOR TESTING: Data loading useEffect
             // useEffect(() => {

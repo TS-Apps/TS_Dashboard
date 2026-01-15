@@ -1297,8 +1297,7 @@
             // For 12-year-olds, check if they have junior modules or junior rank
             if (age === 12 && pNumber) {
                 const juniorData = getJuniorDataSync();
-                const hasJuniorModules = juniorData.moduleCompletions && 
-                    juniorData.moduleCompletions.some(m => m.pNumber === pNumber);
+                const hasJuniorModules = juniorData?.moduleCompletions?.some(m => m.pNumber === pNumber) || false;
                 
                 // Check if they have a junior rank (passed as parameter)
                 const hasJuniorRank = rank && (
@@ -5095,7 +5094,7 @@
             };
             
             const hasModule = (pNumber, section, code) => {
-                return juniorData.moduleCompletions.find(m => 
+                return juniorData?.moduleCompletions?.find(m => 
                     m.pNumber === pNumber && m.section === section && m.moduleCode === code
                 );
             };
@@ -5255,9 +5254,9 @@
                 doc.setFont("helvetica", "normal");
                 doc.setFontSize(7);
                 juniors.forEach((junior, idx) => {
-                    const moduleCount = juniorData.moduleCompletions.filter(m => 
+                    const moduleCount = juniorData?.moduleCompletions?.filter(m => 
                         m.pNumber === junior.pNumber && m.section === selectedSection
-                    ).length;
+                    ).length || 0;
                     const shortName = junior.name.split(',')[0];
                     doc.text(`${shortName}: ${moduleCount}/${filteredModules.length}`, 7 + (idx * 40), currentY);
                     if ((idx + 1) % 7 === 0) currentY += 4;
@@ -5364,9 +5363,9 @@
                                         </th>
                                         {juniors.map(junior => {
                                             // Calculate module count for this junior in the selected section
-                                            const moduleCount = juniorData.moduleCompletions.filter(m => 
+                                            const moduleCount = juniorData?.moduleCompletions?.filter(m => 
                                                 m.pNumber === junior.pNumber && m.section === selectedSection
-                                            ).length;
+                                            ).length || 0;
                                             return (
                                             <th key={junior.pNumber} className="px-1 py-2 text-center font-semibold text-slate-700 border-r last:border-r-0 relative bg-slate-100" style={{width: '30px'}}>
                                                 <div className="flex items-center justify-center" style={{height: '140px'}}>
@@ -5617,7 +5616,7 @@
                         
                         <div className="bg-blue-100 p-4 rounded-lg">
                             <p className="text-sm text-blue-900">
-                                <strong>Current data:</strong> {juniorData.moduleCompletions.length} module completions tracked
+                                <strong>Current data:</strong> {juniorData?.moduleCompletions?.length || 0} module completions tracked
                             </p>
                         </div>
                     </div>
@@ -5688,11 +5687,11 @@
                                         
                                         // For each junior, check if they've completed this module
                                         const cells = juniors.map(junior => {
-                                            const hasCompleted = juniorData.moduleCompletions.some(comp => 
+                                            const hasCompleted = juniorData?.moduleCompletions?.some(comp => 
                                                 comp.pNumber === junior.pNumber &&
                                                 comp.section === section &&
                                                 comp.moduleCode === moduleCode
-                                            );
+                                            ) || false;
                                             return hasCompleted ? "X" : "";
                                         });
                                         
@@ -6112,7 +6111,7 @@
                             </div>
                             <div>
                                 <p className="text-slate-600 font-semibold">Junior Completions</p>
-                                <p className="text-slate-900">{juniorData.moduleCompletions.length} records</p>
+                                <p className="text-slate-900">{juniorData?.moduleCompletions?.length || 0} records</p>
                             </div>
                             <div>
                                 <p className="text-slate-600 font-semibold">Storage Used</p>
@@ -6180,7 +6179,7 @@
                                     >
                                         {juniors.map(junior => {
                                             // Calculate progress for this junior
-                                            const juniorMods = juniorData.moduleCompletions.filter(m => m.pNumber === junior.pNumber);
+                                            const juniorMods = juniorData?.moduleCompletions?.filter(m => m.pNumber === junior.pNumber) || [];
                                             const redCount = juniorMods.filter(m => m.section === 'red').length;
                                             const blueCount = juniorMods.filter(m => m.section === 'blue').length;
                                             const greenCount = juniorMods.filter(m => m.section === 'green').length;
@@ -6211,7 +6210,7 @@
                                             const age = calculateAge(selectedJunior.dob);
                                             const timeTo12 = timeTo12thBirthday(selectedJunior.dob);
                                             const currentRank = selectedJunior.rank || "Junior Cadet";
-                                            const juniorModules = juniorData.moduleCompletions.filter(m => m.pNumber === selectedJunior.pNumber);
+                                            const juniorModules = juniorData?.moduleCompletions?.filter(m => m.pNumber === selectedJunior.pNumber) || [];
                                             const redModules = juniorModules.filter(m => m.section === 'red').length;
                                             const blueModules = juniorModules.filter(m => m.section === 'blue').length;
                                             const greenModules = juniorModules.filter(m => m.section === 'green').length;
@@ -6404,7 +6403,7 @@
                             
                             // For juniors, check junior rank requirements
                             if (isJunior(cadet.dob, cadet.pNumber, cadet.rank)) {
-                                const juniorMods = juniorData.moduleCompletions.filter(m => m.pNumber === cadet.pNumber);
+                                const juniorMods = juniorData?.moduleCompletions?.filter(m => m.pNumber === cadet.pNumber) || [];
                                 const redCount = juniorMods.filter(m => m.section === 'red').length;
                                 const blueCount = juniorMods.filter(m => m.section === 'blue').length;
                                 const greenCount = juniorMods.filter(m => m.section === 'green').length;
@@ -6514,7 +6513,7 @@
                     {/* Progress Alert Summary */}
                     {(() => {
                         const juniorsWithAlerts = juniors.filter(junior => {
-                            const juniorMods = juniorData.moduleCompletions.filter(m => m.pNumber === junior.pNumber);
+                            const juniorMods = juniorData?.moduleCompletions?.filter(m => m.pNumber === junior.pNumber) || [];
                             const counts = [
                                 juniorMods.filter(m => m.section === 'red').length,
                                 juniorMods.filter(m => m.section === 'blue').length,
@@ -6561,7 +6560,7 @@
             const timeTo12 = timeTo12thBirthday(junior.dob);
             
             // Get this junior's completed modules
-            const juniorModules = juniorData.moduleCompletions.filter(m => m.pNumber === junior.pNumber);
+            const juniorModules = juniorData?.moduleCompletions?.filter(m => m.pNumber === junior.pNumber) || [];
             
             // Get section progress
             const redModules = juniorModules.filter(m => m.section === 'red').length;
@@ -6593,7 +6592,7 @@
             const countProficiencies = (pNumber) => {
                 if (!qualifications || qualifications.length === 0) return 0;
                 const juniorQuals = qualifications.filter(q => q.pNumber === pNumber);
-                const juniorMods = juniorData.moduleCompletions.filter(m => m.pNumber === pNumber);
+                const juniorMods = juniorData?.moduleCompletions?.filter(m => m.pNumber === pNumber) || [];
                 
                 let count = 0;
                 
@@ -6786,7 +6785,7 @@
                 
                 const updatedData = {
                     ...juniorData,
-                    moduleCompletions: [...juniorData.moduleCompletions, newModule]
+                    moduleCompletions: [...(juniorData?.moduleCompletions || []), newModule]
                 };
                 
                 if (saveJuniorData(updatedData)) {
@@ -6809,7 +6808,7 @@
                 }
                 
                 // Filter out the module to delete
-                const updatedCompletions = juniorData.moduleCompletions.filter(m => 
+                const updatedCompletions = (juniorData?.moduleCompletions || []).filter(m => 
                     !(m.pNumber === moduleToDelete.pNumber && 
                       m.section === moduleToDelete.section && 
                       m.moduleCode === moduleToDelete.moduleCode &&

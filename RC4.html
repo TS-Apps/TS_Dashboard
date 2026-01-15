@@ -7686,6 +7686,17 @@
 
             const handleDataLoaded = async (pData, qData) => {
                 try {
+                    console.log('🔄 Starting data save...');
+                    
+                    // Check for duplicate P numbers in source data
+                    const pNumbers = pData.map(p => p.pNumber);
+                    const uniquePNumbers = new Set(pNumbers);
+                    if (pNumbers.length !== uniquePNumbers.size) {
+                        const duplicates = pNumbers.filter((p, index) => pNumbers.indexOf(p) !== index);
+                        console.warn('⚠️ Duplicate P numbers found in upload:', [...new Set(duplicates)]);
+                        alert(`Warning: Duplicate P numbers found in your data: ${[...new Set(duplicates)].join(', ')}. This may cause issues.`);
+                    }
+                    
                     // Transform personnel data for Supabase
                     const personnelRecords = pData.map(p => ({
                         user_id: user.id,
@@ -7706,27 +7717,57 @@
                         syllabus: q.syllabus
                     }));
                     
-                    // Delete existing data for this user
-                    await supabase.from('personnel').delete().eq('user_id', user.id);
-                    await supabase.from('qualifications').delete().eq('user_id', user.id);
+                    // Delete existing data for this user - CHECK FOR ERRORS
+                    console.log('🗑️ Clearing existing data...');
+                    const { error: delPersonnelError } = await supabase
+                        .from('personnel')
+                        .delete()
+                        .eq('user_id', user.id);
+                    
+                    if (delPersonnelError) {
+                        console.error('Error deleting personnel:', delPersonnelError);
+                        throw delPersonnelError;
+                    }
+                    
+                    const { error: delQualsError } = await supabase
+                        .from('qualifications')
+                        .delete()
+                        .eq('user_id', user.id);
+                    
+                    if (delQualsError) {
+                        console.error('Error deleting qualifications:', delQualsError);
+                        throw delQualsError;
+                    }
+                    
+                    console.log('✓ Old data cleared');
                     
                     // Batch insert personnel
+                    console.log(`📥 Inserting ${personnelRecords.length} personnel records...`);
                     const personnelBatchSize = 1000;
                     for (let i = 0; i < personnelRecords.length; i += personnelBatchSize) {
                         const batch = personnelRecords.slice(i, i + personnelBatchSize);
                         const { error: pError } = await supabase.from('personnel').insert(batch);
-                        if (pError) throw pError;
+                        if (pError) {
+                            console.error('Error inserting personnel batch:', pError);
+                            throw pError;
+                        }
                     }
+                    console.log('✓ Personnel records saved');
                     
                     // Batch insert qualifications
+                    console.log(`📥 Inserting ${qualsRecords.length} qualification records...`);
                     const qualsBatchSize = 1000;
                     for (let i = 0; i < qualsRecords.length; i += qualsBatchSize) {
                         const batch = qualsRecords.slice(i, i + qualsBatchSize);
                         const { error: qError } = await supabase.from('qualifications').insert(batch);
-                        if (qError) throw qError;
+                        if (qError) {
+                            console.error('Error inserting qualifications batch:', qError);
+                            throw qError;
+                        }
                     }
+                    console.log('✓ Qualification records saved');
                     
-                    console.log('✓ Data saved to Supabase');
+                    console.log('✅ All data saved to Supabase successfully!');
                     
                     // Sort and update state
                     pData.sort((a, b) => a.name.localeCompare(b.name));
@@ -7741,23 +7782,35 @@
 
             const clearData = async () => {
                 try {
-                    await supabase.from('personnel').delete().eq('user_id', user.id);
-                    await supabase.from('qualifications').delete().eq('user_id', user.id);
+                    const { error: pError } = await supabase.from('personnel').delete().eq('user_id', user.id);
+                    if (pError) throw pError;
+                    
+                    const { error: qError } = await supabase.from('qualifications').delete().eq('user_id', user.id);
+                    if (qError) throw qError;
+                    
                     console.log('✓ Cleared data from Supabase');
                 } catch (error) {
                     console.error('Error clearing data:', error);
+                    alert('Error clearing data. Check console for details.');
                 }
                 window.location.reload();
             };
 
             const wipeAllData = async () => {
                 try {
-                    await supabase.from('personnel').delete().eq('user_id', user.id);
-                    await supabase.from('qualifications').delete().eq('user_id', user.id);
-                    await supabase.from('junior_module_completions').delete().eq('user_id', user.id);
+                    const { error: pError } = await supabase.from('personnel').delete().eq('user_id', user.id);
+                    if (pError) throw pError;
+                    
+                    const { error: qError } = await supabase.from('qualifications').delete().eq('user_id', user.id);
+                    if (qError) throw qError;
+                    
+                    const { error: jError } = await supabase.from('junior_module_completions').delete().eq('user_id', user.id);
+                    if (jError) throw jError;
+                    
                     console.log('✓ Wiped all data from Supabase');
                 } catch (error) {
                     console.error('Error wiping data:', error);
+                    alert('Error wiping data. Check console for details.');
                 }
                 localStorage.clear(); // Also clear any local settings like logos
                 window.location.reload();

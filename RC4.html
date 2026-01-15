@@ -115,7 +115,7 @@
         // CONSTANTS & DATA
         // ═══════════════════════════════════════════════════════════════════════════
         
-        const DATA_VERSION = "4.0.4-cloud"; // Fixed: Junior import delete-before-insert with proper error handling
+        const DATA_VERSION = "4.0.5-cloud"; // Added deduplication to junior import to handle duplicate entries
  
         // Badge & Rank Image Maps
         const RANK_IMG_MAP = {
@@ -1443,10 +1443,27 @@
                         is_core: mc.isCore || false
                     }));
                     
-                    console.log(`💾 Inserting ${records.length} new records...`);
+                    // Deduplicate based on unique constraint: (user_id, p_number, module_code)
+                    const uniqueRecords = [];
+                    const seen = new Set();
+                    
+                    for (const record of records) {
+                        const key = `${record.user_id}|${record.p_number}|${record.module_code}`;
+                        if (!seen.has(key)) {
+                            seen.add(key);
+                            uniqueRecords.push(record);
+                        }
+                    }
+                    
+                    const duplicatesRemoved = records.length - uniqueRecords.length;
+                    if (duplicatesRemoved > 0) {
+                        console.log(`⚠️  Removed ${duplicatesRemoved} duplicate entries from import`);
+                    }
+                    
+                    console.log(`💾 Inserting ${uniqueRecords.length} unique records...`);
                     const { error } = await supabase
                         .from('junior_module_completions')
-                        .insert(records);
+                        .insert(uniqueRecords);
                     
                     if (error) throw error;
                     console.log('✅ Insert completed successfully');

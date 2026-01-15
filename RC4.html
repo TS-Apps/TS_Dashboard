@@ -115,7 +115,7 @@
         // CONSTANTS & DATA
         // ═══════════════════════════════════════════════════════════════════════════
         
-        const DATA_VERSION = "4.0.2-cloud"; // Cloud edition - DOB now saves to Supabase (fixes junior visibility)
+        const DATA_VERSION = "4.0.3-cloud"; // Fixed: Junior import now saves to Supabase + Pagination loads ALL qualifications
  
         // Badge & Rank Image Maps
         const RANK_IMG_MAP = {
@@ -5669,14 +5669,32 @@
                 const file = e.target.files[0];
                 if (!file) return;
                 const reader = new FileReader();
-                reader.onload = (event) => {
+                reader.onload = async (event) => {
                     try {
                         const imported = JSON.parse(event.target.result);
-                        if (confirm('Import this data? This will replace all local junior data.')) {
-                            saveJuniorData(imported);
-                            window.location.reload();
+                        console.log(`📦 Junior import: ${imported.moduleCompletions?.length || 0} completions found`);
+                        
+                        if (confirm(`Import ${imported.moduleCompletions?.length || 0} junior module completions? This will replace all junior data in Supabase.`)) {
+                            // Get current user from Supabase session
+                            const { data: { user } } = await supabase.auth.getUser();
+                            if (!user) {
+                                alert('Error: Not logged in. Please refresh and try again.');
+                                return;
+                            }
+                            
+                            console.log(`💾 Saving to Supabase for user: ${user.id}`);
+                            const success = await saveJuniorData(user.id, imported);
+                            if (success) {
+                                console.log('✅ Junior data saved to Supabase successfully!');
+                                alert('Junior data imported successfully to Supabase!');
+                                window.location.reload();
+                            } else {
+                                console.error('❌ Failed to save junior data to Supabase');
+                                alert('Error saving junior data to Supabase. Check console for details.');
+                            }
                         }
                     } catch (e) {
+                        console.error('Error importing junior data:', e);
                         alert('Error parsing JSON file: ' + e.message);
                     }
                 };
@@ -7817,13 +7835,31 @@
                         
                         if (pError) throw pError;
                         
-                        // Load qualifications
-                        const { data: qualsRows, error: qError } = await supabase
-                            .from('qualifications')
-                            .select('*')
-                            .eq('user_id', user.id);
+                        // Load qualifications (with pagination to get all records)
+                        let qualsRows = [];
+                        const pageSize = 1000;
+                        let page = 0;
+                        let hasMore = true;
                         
-                        if (qError) throw qError;
+                        while (hasMore) {
+                            const { data: batch, error: qError } = await supabase
+                                .from('qualifications')
+                                .select('*')
+                                .eq('user_id', user.id)
+                                .range(page * pageSize, (page + 1) * pageSize - 1);
+                            
+                            if (qError) throw qError;
+                            
+                            if (batch && batch.length > 0) {
+                                qualsRows = [...qualsRows, ...batch];
+                                page++;
+                                hasMore = batch.length === pageSize; // Continue if we got a full page
+                            } else {
+                                hasMore = false;
+                            }
+                        }
+                        
+                        console.log(`✓ Loaded ${qualsRows.length} qualification records from Supabase`);
                         
                         // Load junior data (populates cache)
                         await getJuniorData(user.id);

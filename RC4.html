@@ -115,7 +115,7 @@
         // CONSTANTS & DATA
         // ═══════════════════════════════════════════════════════════════════════════
         
-        const DATA_VERSION = "4.0.7-cloud"; // Show deduplication details before page reload
+        const DATA_VERSION = "4.0.8-cloud"; // CRITICAL FIX: Deduplication key now includes section field
  
         // Badge & Rank Image Maps
         const RANK_IMG_MAP = {
@@ -1447,13 +1447,13 @@
                     
                     console.log(`✓ Transformed ${records.length} records`);
                     
-                    // Deduplicate based on unique constraint: (user_id, p_number, module_code)
+                    // Deduplicate based on unique constraint: (user_id, p_number, section, module_code)
                     const uniqueRecords = [];
                     const seen = new Set();
                     const duplicateKeys = [];
                     
                     for (const record of records) {
-                        const key = `${record.user_id}|${record.p_number}|${record.module_code}`;
+                        const key = `${record.user_id}|${record.p_number}|${record.section}|${record.module_code}`;
                         if (!seen.has(key)) {
                             seen.add(key);
                             uniqueRecords.push(record);

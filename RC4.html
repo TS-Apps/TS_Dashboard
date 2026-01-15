@@ -1296,8 +1296,9 @@
             
             // For 12-year-olds, check if they have junior modules or junior rank
             if (age === 12 && pNumber) {
-                const juniorData = getJuniorData();
-                const hasJuniorModules = juniorData.moduleCompletions.some(m => m.pNumber === pNumber);
+                const juniorData = getJuniorDataSync();
+                const hasJuniorModules = juniorData.moduleCompletions && 
+                    juniorData.moduleCompletions.some(m => m.pNumber === pNumber);
                 
                 // Check if they have a junior rank (passed as parameter)
                 const hasJuniorRank = rank && (
@@ -1354,7 +1355,15 @@
         // SUPABASE DATABASE FUNCTIONS - JUNIOR DATA
         // ═══════════════════════════════════════════════════════════════════════════
         
+        // Cache for junior data (so synchronous functions can access it)
+        let cachedJuniorData = { moduleCompletions: [], rankHistory: [], sectionBadges: [] };
+        
         const getJuniorData = async (userId) => {
+            if (!userId) {
+                console.warn('getJuniorData called without userId, returning cached data');
+                return cachedJuniorData;
+            }
+            
             try {
                 const { data, error } = await supabase
                     .from('junior_module_completions')
@@ -1373,15 +1382,22 @@
                     isCore: row.is_core
                 }));
                 
-                return { 
+                cachedJuniorData = { 
                     moduleCompletions,
                     rankHistory: [], // Not implemented yet
                     sectionBadges: [] // Not implemented yet
                 };
+                
+                return cachedJuniorData;
             } catch (error) {
                 console.error("Error loading junior data:", error);
-                return { moduleCompletions: [], rankHistory: [], sectionBadges: [] };
+                return cachedJuniorData; // Return cache on error
             }
+        };
+        
+        // Synchronous version for legacy code that can't be easily made async
+        const getJuniorDataSync = () => {
+            return cachedJuniorData;
         };
         
         // Save junior data to Supabase
@@ -1411,6 +1427,9 @@
                     
                     if (error) throw error;
                 }
+                
+                // Update cache
+                cachedJuniorData = data;
                 
                 return true;
             } catch (error) {
@@ -7649,6 +7668,9 @@
                             .eq('user_id', user.id);
                         
                         if (qError) throw qError;
+                        
+                        // Load junior data (populates cache)
+                        await getJuniorData(user.id);
                         
                         // Transform data to match app format
                         if (personnelRows && personnelRows.length > 0) {

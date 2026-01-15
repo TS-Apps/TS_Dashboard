@@ -7689,12 +7689,29 @@
                     console.log('🔄 Starting data save...');
                     
                     // Check for duplicate P numbers in source data
+                    // BUT: RMC staff legitimately appear twice (SCC role + RMC volunteer)
                     const pNumbers = pData.map(p => p.pNumber);
                     const uniquePNumbers = new Set(pNumbers);
                     if (pNumbers.length !== uniquePNumbers.size) {
                         const duplicates = pNumbers.filter((p, index) => pNumbers.indexOf(p) !== index);
-                        console.warn('⚠️ Duplicate P numbers found in upload:', [...new Set(duplicates)]);
-                        alert(`Warning: Duplicate P numbers found in your data: ${[...new Set(duplicates)].join(', ')}. This may cause issues.`);
+                        const uniqueDuplicates = [...new Set(duplicates)];
+                        
+                        // Check if duplicates are RMC staff (different sections)
+                        const problematicDuplicates = uniqueDuplicates.filter(pNum => {
+                            const records = pData.filter(p => p.pNumber === pNum);
+                            // If all duplicates have different sections, it's OK (dual-role staff)
+                            const sections = records.map(r => r.section);
+                            const uniqueSections = new Set(sections);
+                            return sections.length !== uniqueSections.size; // Problem if same section appears twice
+                        });
+                        
+                        if (problematicDuplicates.length > 0) {
+                            console.warn('⚠️ Problematic duplicate P numbers (same section):', problematicDuplicates);
+                            alert(`Warning: Duplicate P numbers in same section: ${problematicDuplicates.join(', ')}. This will cause issues.`);
+                        } else if (uniqueDuplicates.length > 0) {
+                            console.info('ℹ️ Dual-role staff detected (RMC + SCC):', uniqueDuplicates);
+                            // This is OK - don't alert
+                        }
                     }
                     
                     // Transform personnel data for Supabase

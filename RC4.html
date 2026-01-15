@@ -115,7 +115,7 @@
         // CONSTANTS & DATA
         // ═══════════════════════════════════════════════════════════════════════════
         
-        const DATA_VERSION = "4.0.8-cloud"; // CRITICAL FIX: Deduplication key now includes section field
+        const DATA_VERSION = "4.0.9-cloud"; // Fixed: Junior views now properly load data from Supabase with userId
  
         // Badge & Rank Image Maps
         const RANK_IMG_MAP = {
@@ -4715,8 +4715,34 @@
             const [selectedSection, setSelectedSection] = useState('red');
             const [recordingMode, setRecordingMode] = useState(false);
             const [selectedModules, setSelectedModules] = useState(new Set());
-            const juniorData = getJuniorData();
+            const [juniorData, setJuniorData] = useState({ moduleCompletions: [], rankHistory: [], sectionBadges: [] });
+            const [loading, setLoading] = useState(true);
+            
+            // Load junior data from Supabase on mount
+            useEffect(() => {
+                const loadData = async () => {
+                    const { data: { user } } = await supabase.auth.getUser();
+                    if (user) {
+                        const data = await getJuniorData(user.id);
+                        setJuniorData(data);
+                    }
+                    setLoading(false);
+                };
+                loadData();
+            }, []);
+            
             const juniors = personnel.filter(c => isJunior(c.dob, c.pNumber, c.rank));
+            
+            if (loading) {
+                return (
+                    <div className="p-8">
+                        <div className="bg-white rounded-lg shadow p-8 text-center">
+                            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-700 mx-auto mb-4"></div>
+                            <p className="text-slate-600">Loading junior progress data...</p>
+                        </div>
+                    </div>
+                );
+            }
             
             if (juniors.length === 0) {
                 return (
@@ -6350,12 +6376,37 @@
         // ============================================================================
         
         const JuniorsView = ({ personnel, qualifications }) => {
-            const juniorData = getJuniorData();
+            const [juniorData, setJuniorData] = useState({ moduleCompletions: [], rankHistory: [], sectionBadges: [] });
+            const [loading, setLoading] = useState(true);
+            
+            // Load junior data from Supabase on mount
+            useEffect(() => {
+                const loadData = async () => {
+                    const { data: { user } } = await supabase.auth.getUser();
+                    if (user) {
+                        const data = await getJuniorData(user.id);
+                        setJuniorData(data);
+                    }
+                    setLoading(false);
+                };
+                loadData();
+            }, []);
             
             // Filter personnel to only juniors (under 12 or 12 with junior modules/rank)
             const juniors = personnel.filter(cadet => isJunior(cadet.dob, cadet.pNumber, cadet.rank));
             
             const [selectedJuniorPNum, setSelectedJuniorPNum] = useState(juniors.length > 0 ? juniors[0].pNumber : "");
+            
+            if (loading) {
+                return (
+                    <div className="p-8">
+                        <div className="bg-white rounded-lg shadow p-8 text-center">
+                            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-700 mx-auto mb-4"></div>
+                            <p className="text-slate-600">Loading junior data...</p>
+                        </div>
+                    </div>
+                );
+            }
             
             if (juniors.length === 0) {
                 return (

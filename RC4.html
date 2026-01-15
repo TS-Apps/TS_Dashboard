@@ -115,7 +115,7 @@
         // CONSTANTS & DATA
         // ═══════════════════════════════════════════════════════════════════════════
         
-        const DATA_VERSION = "4.0.10-cloud"; // Fixed: Record Modules and Add Module now properly save to Supabase with userId
+        const DATA_VERSION = "4.0.11-cloud"; // CRITICAL FIX: New addJuniorModules() function for incremental saves (no more delete-all-and-reinsert)
  
         // Badge & Rank Image Maps
         const RANK_IMG_MAP = {
@@ -1478,6 +1478,60 @@
                     console.log('✅ Insert completed successfully');
                     
                     // Update cache with proper structure validation
+                    cachedJuniorData = {
+                        moduleCompletions: data.moduleCompletions || [],
+                        rankHistory: data.rankHistory || [],
+                        sectionBadges: data.sectionBadges || []
+                    };
+                }
+                
+                return true;
+            } catch (error) {
+                console.error("❌ Error saving junior data:", error);
+                return false;
+            }
+        };
+        
+        // NEW: Add junior modules incrementally without deleting existing data
+        const addJuniorModules = async (userId, newModules) => {
+            try {
+                console.log(`➕ Adding ${newModules.length} new junior module(s)...`);
+                
+                const records = newModules.map(mc => ({
+                    user_id: userId,
+                    p_number: mc.pNumber,
+                    section: mc.section,
+                    module_code: mc.moduleCode,
+                    module_name: mc.moduleName,
+                    date_completed: mc.dateCompleted,
+                    is_core: mc.isCore || false
+                }));
+                
+                console.log('📋 Records to insert:', records);
+                
+                const { data, error } = await supabase
+                    .from('junior_module_completions')
+                    .insert(records)
+                    .select();
+                
+                if (error) {
+                    console.error('❌ Insert error:', error);
+                    throw error;
+                }
+                
+                console.log(`✅ Successfully added ${data.length} module(s)`);
+                
+                // Update cache
+                if (cachedJuniorData && cachedJuniorData.moduleCompletions) {
+                    cachedJuniorData.moduleCompletions.push(...newModules);
+                }
+                
+                return true;
+            } catch (error) {
+                console.error("❌ Error adding junior modules:", error);
+                return false;
+            }
+        };
                     cachedJuniorData = {
                         moduleCompletions: data?.moduleCompletions || [],
                         rankHistory: data?.rankHistory || [],
@@ -5290,8 +5344,6 @@
                         return;
                     }
                     
-                    // Get current data from Supabase
-                    const currentData = await getJuniorData(user.id);
                     const today = new Date().toISOString().split('T')[0];
                     const newCompletions = [];
                     
@@ -5309,13 +5361,8 @@
                         });
                     });
                     
-                    const updatedData = {
-                        ...currentData,
-                        moduleCompletions: [...currentData.moduleCompletions, ...newCompletions]
-                    };
-                    
-                    // Save to Supabase with userId
-                    const success = await saveJuniorData(user.id, updatedData);
+                    // Use the new incremental add function
+                    const success = await addJuniorModules(user.id, newCompletions);
                     
                     if (success) {
                         alert(`Successfully recorded ${selectedModules.size} module completion${selectedModules.size !== 1 ? 's' : ''}!`);
@@ -5323,7 +5370,7 @@
                         setRecordingMode(false);
                         window.location.reload(); // Refresh to show new completions
                     } else {
-                        alert('Error saving module completions. Please try again.');
+                        alert('Error saving module completions. Please check console for details.');
                     }
                 } catch (error) {
                     console.error('Error saving modules:', error);
@@ -7080,13 +7127,8 @@
                         isCore: false
                     };
                     
-                    const updatedData = {
-                        ...juniorData,
-                        moduleCompletions: [...(juniorData?.moduleCompletions || []), newModule]
-                    };
-                    
-                    // Save to Supabase with userId
-                    const success = await saveJuniorData(user.id, updatedData);
+                    // Use the new incremental add function
+                    const success = await addJuniorModules(user.id, [newModule]);
                     
                     if (success) {
                         setShowSuccess(true);
@@ -7096,7 +7138,7 @@
                             window.location.reload(); // Refresh to show new data
                         }, 1500);
                     } else {
-                        alert("Error saving module completions");
+                        alert("Error saving module completion. Please check console for details.");
                     }
                 } catch (error) {
                     console.error('Error saving module:', error);

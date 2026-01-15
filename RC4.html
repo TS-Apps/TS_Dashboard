@@ -1428,8 +1428,12 @@
                     if (error) throw error;
                 }
                 
-                // Update cache
-                cachedJuniorData = data;
+                // Update cache with proper structure validation
+                cachedJuniorData = {
+                    moduleCompletions: data?.moduleCompletions || [],
+                    rankHistory: data?.rankHistory || [],
+                    sectionBadges: data?.sectionBadges || []
+                };
                 
                 return true;
             } catch (error) {
@@ -2448,7 +2452,7 @@
                 
                 cadets.forEach(junior => {
                     const juniorData = getJuniorData();
-                    const juniorModules = juniorData.moduleCompletions.filter(m => m.pNumber === junior.pNumber);
+                    const juniorModules = juniorData?.moduleCompletions?.filter(m => m.pNumber === junior.pNumber) || [];
                     
                     const redCount = juniorModules.filter(m => m.section === 'red').length;
                     const blueCount = juniorModules.filter(m => m.section === 'blue').length;

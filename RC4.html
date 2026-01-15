@@ -1435,9 +1435,37 @@
         
         // Utility Components
 
-        const Icon = ({ name, className }) => {
-            return <i data-lucide={name.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase()} className={className}></i>;
-        };
+        const Icon = React.memo(({ name, className }) => {
+            const ref = useRef(null);
+            const iconName = name.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase();
+            
+            useEffect(() => {
+                const element = ref.current;
+                if (!element || !window.lucide) return;
+                
+                // Only initialize if not already initialized
+                if (!element.querySelector('svg')) {
+                    element.setAttribute('data-lucide', iconName);
+                    
+                    // Use requestAnimationFrame to ensure DOM is ready
+                    requestAnimationFrame(() => {
+                        try {
+                            window.lucide.createIcons({
+                                attrs: {
+                                    'stroke-width': 2,
+                                    width: 24,
+                                    height: 24
+                                }
+                            });
+                        } catch (e) {
+                            // Ignore errors - icon just won't render
+                        }
+                    });
+                }
+            }, []); // Empty deps - only run once on mount
+            
+            return <i ref={ref} className={className} data-lucide={iconName}></i>;
+        });
         
         const BadgeImage = ({ name, fallbackIcon, className }) => {
             const [error, setError] = useState(false);
@@ -7192,21 +7220,8 @@
                 checkAuth();
             }, []); // Only run once on mount
 
-            // Icon Render - MUST be before any conditional returns (React Rules of Hooks)
-            // Only runs when authenticated and view/sidebar changes
-            useEffect(() => { 
-                if (isAuthenticated && !authLoading) {
-                    console.log('🎨 useEffect[LUCIDE ICONS] running... view:', view, 'sidebarCollapsed:', sidebarCollapsed);
-                    // Use setTimeout to ensure DOM has settled after React render
-                    setTimeout(() => {
-                        try {
-                            lucide.createIcons();
-                        } catch (error) {
-                            console.warn('Lucide icon rendering warning:', error);
-                        }
-                    }, 0);
-                }
-            }, [view, sidebarCollapsed, isAuthenticated, authLoading]);
+            // Icon components now manage their own rendering via useEffect
+            // No global lucide.createIcons() needed
 
             // Logout function (defined before conditional returns)
             const handleLogout = async () => {

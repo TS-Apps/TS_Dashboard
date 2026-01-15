@@ -115,7 +115,7 @@
         // CONSTANTS & DATA
         // ═══════════════════════════════════════════════════════════════════════════
         
-        const DATA_VERSION = "4.0.6-cloud"; // Enhanced logging for deduplication debugging
+        const DATA_VERSION = "4.0.7-cloud"; // Show deduplication details before page reload
  
         // Badge & Rank Image Maps
         const RANK_IMG_MAP = {
@@ -1465,7 +1465,8 @@
                     const duplicatesRemoved = records.length - uniqueRecords.length;
                     if (duplicatesRemoved > 0) {
                         console.log(`⚠️  Removed ${duplicatesRemoved} duplicate entries:`);
-                        console.log(`   First 5 duplicates: ${duplicateKeys.slice(0, 5).join(', ')}`);
+                        console.log(`   First 10 duplicates: ${duplicateKeys.slice(0, 10).join(', ')}`);
+                        console.log(`   All duplicates:`, duplicateKeys);
                     }
                     
                     console.log(`💾 Inserting ${uniqueRecords.length} unique records into Supabase...`);
@@ -1475,19 +1476,27 @@
                     
                     if (error) throw error;
                     console.log('✅ Insert completed successfully');
+                    
+                    // Update cache with proper structure validation
+                    cachedJuniorData = {
+                        moduleCompletions: data?.moduleCompletions || [],
+                        rankHistory: data?.rankHistory || [],
+                        sectionBadges: data?.sectionBadges || []
+                    };
+                    
+                    return {
+                        success: true,
+                        totalRecords: records.length,
+                        duplicatesRemoved: duplicatesRemoved,
+                        insertedRecords: uniqueRecords.length,
+                        duplicateExamples: duplicateKeys.slice(0, 10).join(', ')
+                    };
                 }
                 
-                // Update cache with proper structure validation
-                cachedJuniorData = {
-                    moduleCompletions: data?.moduleCompletions || [],
-                    rankHistory: data?.rankHistory || [],
-                    sectionBadges: data?.sectionBadges || []
-                };
-                
-                return true;
+                return { success: true, totalRecords: 0, duplicatesRemoved: 0, insertedRecords: 0 };
             } catch (error) {
                 console.error("❌ Error saving junior data:", error);
-                return false;
+                return { success: false, error: error.message };
             }
         };
 
@@ -5717,10 +5726,18 @@
                             }
                             
                             console.log(`💾 Saving to Supabase for user: ${user.id}`);
-                            const success = await saveJuniorData(user.id, imported);
-                            if (success) {
+                            const result = await saveJuniorData(user.id, imported);
+                            
+                            if (result.success) {
                                 console.log('✅ Junior data saved to Supabase successfully!');
-                                alert('Junior data imported successfully to Supabase!');
+                                const msg = `Import complete!\n\n` +
+                                    `Total records: ${result.totalRecords}\n` +
+                                    `Duplicates removed: ${result.duplicatesRemoved}\n` +
+                                    `Records inserted: ${result.insertedRecords}\n\n` +
+                                    (result.duplicateExamples ? `Example duplicates:\n${result.duplicateExamples}\n\n` : '') +
+                                    `Check console for full details.\n\n` +
+                                    `Click OK to reload the page.`;
+                                alert(msg);
                                 window.location.reload();
                             } else {
                                 console.error('❌ Failed to save junior data to Supabase');

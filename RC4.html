@@ -115,7 +115,7 @@
         // CONSTANTS & DATA
         // ═══════════════════════════════════════════════════════════════════════════
         
-        const DATA_VERSION = "4.0.9-cloud"; // Fixed: Junior views now properly load data from Supabase with userId
+        const DATA_VERSION = "4.0.10-cloud"; // Fixed: Record Modules and Add Module now properly save to Supabase with userId
  
         // Badge & Rank Image Maps
         const RANK_IMG_MAP = {
@@ -5273,7 +5273,7 @@
                 setSelectedModules(new Set());
             };
             
-            const saveModules = () => {
+            const saveModules = async () => {
                 if (selectedModules.size === 0) {
                     alert('No modules selected. Please select modules to record.');
                     return;
@@ -5282,36 +5282,52 @@
                 const confirmMsg = `Record ${selectedModules.size} module completion${selectedModules.size !== 1 ? 's' : ''}?\n\nThis will mark them as completed with today's date.`;
                 if (!confirm(confirmMsg)) return;
                 
-                const currentData = getJuniorData();
-                const today = new Date().toISOString().split('T')[0];
-                const newCompletions = [];
-                
-                selectedModules.forEach(key => {
-                    const [pNumber, section, code] = key.split('-');
-                    const module = allModules.find(m => m.s === section && m.c === code);
+                try {
+                    // Get user ID from Supabase auth
+                    const { data: { user }, error: authError } = await supabase.auth.getUser();
+                    if (authError || !user) {
+                        alert('Authentication error. Please refresh and try again.');
+                        return;
+                    }
                     
-                    newCompletions.push({
-                        pNumber: pNumber,
-                        section: section,
-                        moduleCode: code,
-                        moduleName: module ? module.n : code,
-                        dateCompleted: today,
-                        isCore: module?.core || false
+                    // Get current data from Supabase
+                    const currentData = await getJuniorData(user.id);
+                    const today = new Date().toISOString().split('T')[0];
+                    const newCompletions = [];
+                    
+                    selectedModules.forEach(key => {
+                        const [pNumber, section, code] = key.split('-');
+                        const module = allModules.find(m => m.s === section && m.c === code);
+                        
+                        newCompletions.push({
+                            pNumber: pNumber,
+                            section: section,
+                            moduleCode: code,
+                            moduleName: module ? module.n : code,
+                            dateCompleted: today,
+                            isCore: module?.core || false
+                        });
                     });
-                });
-                
-                const updatedData = {
-                    ...currentData,
-                    moduleCompletions: [...currentData.moduleCompletions, ...newCompletions]
-                };
-                
-                if (saveJuniorData(updatedData)) {
-                    alert(`Successfully recorded ${selectedModules.size} module completion${selectedModules.size !== 1 ? 's' : ''}!`);
-                    setSelectedModules(new Set());
-                    setRecordingMode(false);
-                    window.location.reload(); // Refresh to show new completions
-                } else {
-                    alert('Error saving module completions. Please try again.');
+                    
+                    const updatedData = {
+                        ...currentData,
+                        moduleCompletions: [...currentData.moduleCompletions, ...newCompletions]
+                    };
+                    
+                    // Save to Supabase with userId
+                    const success = await saveJuniorData(user.id, updatedData);
+                    
+                    if (success) {
+                        alert(`Successfully recorded ${selectedModules.size} module completion${selectedModules.size !== 1 ? 's' : ''}!`);
+                        setSelectedModules(new Set());
+                        setRecordingMode(false);
+                        window.location.reload(); // Refresh to show new completions
+                    } else {
+                        alert('Error saving module completions. Please try again.');
+                    }
+                } catch (error) {
+                    console.error('Error saving modules:', error);
+                    alert('Error saving module completions: ' + error.message);
                 }
             };
             
@@ -7022,7 +7038,7 @@
                 }
             }
             
-            const handleModuleSubmit = () => {
+            const handleModuleSubmit = async () => {
                 if (!moduleCode.trim()) {
                     alert("Please enter a module code");
                     return;
@@ -7046,30 +7062,45 @@
                     }
                 }
                 
-                // Create module object
-                const newModule = {
-                    pNumber: junior.pNumber,
-                    section: section,
-                    moduleCode: code.toUpperCase(),
-                    moduleName: `${section.toUpperCase()} ${code}`,
-                    dateCompleted: dateCompleted,
-                    isCore: false
-                };
-                
-                const updatedData = {
-                    ...juniorData,
-                    moduleCompletions: [...(juniorData?.moduleCompletions || []), newModule]
-                };
-                
-                if (saveJuniorData(updatedData)) {
-                    setShowSuccess(true);
-                    setModuleCode('');
-                    setTimeout(() => {
-                        setShowSuccess(false);
-                        window.location.reload(); // Refresh to show new data
-                    }, 1500);
-                } else {
-                    alert("Error saving module completions");
+                try {
+                    // Get user ID from Supabase auth
+                    const { data: { user }, error: authError } = await supabase.auth.getUser();
+                    if (authError || !user) {
+                        alert('Authentication error. Please refresh and try again.');
+                        return;
+                    }
+                    
+                    // Create module object
+                    const newModule = {
+                        pNumber: junior.pNumber,
+                        section: section,
+                        moduleCode: code.toUpperCase(),
+                        moduleName: `${section.toUpperCase()} ${code}`,
+                        dateCompleted: dateCompleted,
+                        isCore: false
+                    };
+                    
+                    const updatedData = {
+                        ...juniorData,
+                        moduleCompletions: [...(juniorData?.moduleCompletions || []), newModule]
+                    };
+                    
+                    // Save to Supabase with userId
+                    const success = await saveJuniorData(user.id, updatedData);
+                    
+                    if (success) {
+                        setShowSuccess(true);
+                        setModuleCode('');
+                        setTimeout(() => {
+                            setShowSuccess(false);
+                            window.location.reload(); // Refresh to show new data
+                        }, 1500);
+                    } else {
+                        alert("Error saving module completions");
+                    }
+                } catch (error) {
+                    console.error('Error saving module:', error);
+                    alert("Error saving module: " + error.message);
                 }
             };
             

@@ -115,7 +115,7 @@
         // CONSTANTS & DATA
         // ═══════════════════════════════════════════════════════════════════════════
         
-        const DATA_VERSION = "4.0.5-cloud"; // Added deduplication to junior import to handle duplicate entries
+        const DATA_VERSION = "4.0.6-cloud"; // Enhanced logging for deduplication debugging
  
         // Badge & Rank Image Maps
         const RANK_IMG_MAP = {
@@ -1433,6 +1433,8 @@
                 
                 // Transform and insert new data
                 if (data.moduleCompletions && data.moduleCompletions.length > 0) {
+                    console.log(`📋 Processing ${data.moduleCompletions.length} records from import...`);
+                    
                     const records = data.moduleCompletions.map(mc => ({
                         user_id: userId,
                         p_number: mc.pNumber,
@@ -1443,24 +1445,30 @@
                         is_core: mc.isCore || false
                     }));
                     
+                    console.log(`✓ Transformed ${records.length} records`);
+                    
                     // Deduplicate based on unique constraint: (user_id, p_number, module_code)
                     const uniqueRecords = [];
                     const seen = new Set();
+                    const duplicateKeys = [];
                     
                     for (const record of records) {
                         const key = `${record.user_id}|${record.p_number}|${record.module_code}`;
                         if (!seen.has(key)) {
                             seen.add(key);
                             uniqueRecords.push(record);
+                        } else {
+                            duplicateKeys.push(`${record.p_number} ${record.section} ${record.module_code}`);
                         }
                     }
                     
                     const duplicatesRemoved = records.length - uniqueRecords.length;
                     if (duplicatesRemoved > 0) {
-                        console.log(`⚠️  Removed ${duplicatesRemoved} duplicate entries from import`);
+                        console.log(`⚠️  Removed ${duplicatesRemoved} duplicate entries:`);
+                        console.log(`   First 5 duplicates: ${duplicateKeys.slice(0, 5).join(', ')}`);
                     }
                     
-                    console.log(`💾 Inserting ${uniqueRecords.length} unique records...`);
+                    console.log(`💾 Inserting ${uniqueRecords.length} unique records into Supabase...`);
                     const { error } = await supabase
                         .from('junior_module_completions')
                         .insert(uniqueRecords);

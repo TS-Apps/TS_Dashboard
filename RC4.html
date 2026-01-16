@@ -115,7 +115,7 @@
         // CONSTANTS & DATA
         // ═══════════════════════════════════════════════════════════════════════════
         
-        const DATA_VERSION = "4.0.12-cloud"; // Fixed syntax error from orphaned code
+        const DATA_VERSION = "4.0.14-cloud"; // CRITICAL FIX: Added pagination to getJuniorData (was only loading 1,000 of 1,205 records)
  
         // Badge & Rank Image Maps
         const RANK_IMG_MAP = {
@@ -1380,15 +1380,37 @@
             }
             
             try {
-                const { data, error } = await supabase
-                    .from('junior_module_completions')
-                    .select('*')
-                    .eq('user_id', userId);
+                console.log('📥 Loading junior module completions from Supabase...');
                 
-                if (error) throw error;
+                // Fetch ALL records with pagination (Supabase default limit is 1000)
+                let allData = [];
+                let from = 0;
+                const pageSize = 1000;
+                let hasMore = true;
+                
+                while (hasMore) {
+                    const { data, error, count } = await supabase
+                        .from('junior_module_completions')
+                        .select('*', { count: 'exact' })
+                        .eq('user_id', userId)
+                        .range(from, from + pageSize - 1);
+                    
+                    if (error) throw error;
+                    
+                    if (data && data.length > 0) {
+                        allData = allData.concat(data);
+                        console.log(`   Loaded ${data.length} records (${allData.length} total so far)...`);
+                        from += pageSize;
+                        hasMore = data.length === pageSize;
+                    } else {
+                        hasMore = false;
+                    }
+                }
+                
+                console.log(`✓ Loaded ${allData.length} junior module completion records from Supabase`);
                 
                 // Transform DB rows into the format expected by the app
-                const moduleCompletions = (data || []).map(row => ({
+                const moduleCompletions = (allData || []).map(row => ({
                     pNumber: row.p_number,
                     section: row.section,
                     moduleCode: row.module_code,
@@ -1516,6 +1538,15 @@
                 
                 if (error) {
                     console.error('❌ Insert error:', error);
+                    
+                    // If duplicate error, provide more context
+                    if (error.code === '23505') {
+                        console.error('⚠️ Duplicate key constraint violation - these modules already exist:');
+                        records.forEach(r => {
+                            console.error(`   - ${r.p_number} ${r.section.toUpperCase()} ${r.module_code}`);
+                        });
+                    }
+                    
                     throw error;
                 }
                 
@@ -5325,9 +5356,19 @@
                     
                     const today = new Date().toISOString().split('T')[0];
                     const newCompletions = [];
+                    const alreadyCompleted = [];
                     
+                    // Check each selected module against current data
                     selectedModules.forEach(key => {
                         const [pNumber, section, code] = key.split('-');
+                        
+                        // Double-check if module is already completed
+                        const exists = hasModule(pNumber, section, code);
+                        if (exists) {
+                            alreadyCompleted.push(`${pNumber} - ${section.toUpperCase()} ${code}`);
+                            return; // Skip this module
+                        }
+                        
                         const module = allModules.find(m => m.s === section && m.c === code);
                         
                         newCompletions.push({
@@ -5340,11 +5381,21 @@
                         });
                     });
                     
+                    // Alert if any duplicates were found
+                    if (alreadyCompleted.length > 0) {
+                        alert(`⚠️ Skipping ${alreadyCompleted.length} module(s) that are already completed:\n\n${alreadyCompleted.join('\n')}\n\nWill only add ${newCompletions.length} new module(s).`);
+                        
+                        if (newCompletions.length === 0) {
+                            setSelectedModules(new Set());
+                            return; // Nothing to add
+                        }
+                    }
+                    
                     // Use the new incremental add function
                     const success = await addJuniorModules(user.id, newCompletions);
                     
                     if (success) {
-                        alert(`Successfully recorded ${selectedModules.size} module completion${selectedModules.size !== 1 ? 's' : ''}!`);
+                        alert(`Successfully recorded ${newCompletions.length} module completion${newCompletions.length !== 1 ? 's' : ''}!`);
                         setSelectedModules(new Set());
                         setRecordingMode(false);
                         window.location.reload(); // Refresh to show new completions
@@ -5353,7 +5404,13 @@
                     }
                 } catch (error) {
                     console.error('Error saving modules:', error);
-                    alert('Error saving module completions: ' + error.message);
+                    
+                    // Better error message for duplicate constraint
+                    if (error.code === '23505') {
+                        alert('⚠️ Duplicate Error: One or more selected modules are already completed in the database.\n\nThis can happen if data was recently updated. Please refresh the page and try again.');
+                    } else {
+                        alert('Error saving module completions: ' + error.message);
+                    }
                 }
             };
             

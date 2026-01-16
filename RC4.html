@@ -115,7 +115,7 @@
         // CONSTANTS & DATA
         // ═══════════════════════════════════════════════════════════════════════════
         
-        const DATA_VERSION = "4.0.14-cloud"; // CRITICAL FIX: Added pagination to getJuniorData (was only loading 1,000 of 1,205 records)
+        const DATA_VERSION = "4.0.15-cloud"; // Fixed delete functionality - now properly removes from Supabase
  
         // Badge & Rank Image Maps
         const RANK_IMG_MAP = {
@@ -1510,6 +1510,44 @@
                 return true;
             } catch (error) {
                 console.error("❌ Error saving junior data:", error);
+                return false;
+            }
+        };
+        
+        // NEW: Delete a specific junior module from Supabase
+        const deleteJuniorModule = async (userId, pNumber, section, moduleCode, dateCompleted) => {
+            try {
+                console.log(`🗑️ Deleting junior module: ${pNumber} - ${section.toUpperCase()} ${moduleCode}`);
+                
+                const { error } = await supabase
+                    .from('junior_module_completions')
+                    .delete()
+                    .eq('user_id', userId)
+                    .eq('p_number', pNumber)
+                    .eq('section', section)
+                    .eq('module_code', moduleCode)
+                    .eq('date_completed', dateCompleted);
+                
+                if (error) {
+                    console.error('❌ Delete error:', error);
+                    throw error;
+                }
+                
+                console.log('✅ Module deleted successfully');
+                
+                // Update cache - remove the deleted module
+                if (cachedJuniorData && cachedJuniorData.moduleCompletions) {
+                    cachedJuniorData.moduleCompletions = cachedJuniorData.moduleCompletions.filter(m => 
+                        !(m.pNumber === pNumber && 
+                          m.section === section && 
+                          m.moduleCode === moduleCode &&
+                          m.dateCompleted === dateCompleted)
+                    );
+                }
+                
+                return true;
+            } catch (error) {
+                console.error("❌ Error deleting junior module:", error);
                 return false;
             }
         };
@@ -7182,31 +7220,39 @@
                 }
             };
             
-            const handleModuleDelete = (moduleToDelete) => {
+            const handleModuleDelete = async (moduleToDelete) => {
                 const confirmMessage = `Are you sure you want to delete this module?\n\n${moduleToDelete.section.toUpperCase()} ${moduleToDelete.moduleCode}: ${moduleToDelete.moduleName}\nCompleted: ${formatDate(moduleToDelete.dateCompleted)}\n\nThis action cannot be undone.`;
                 
                 if (!confirm(confirmMessage)) {
                     return;
                 }
                 
-                // Filter out the module to delete
-                const updatedCompletions = (juniorData?.moduleCompletions || []).filter(m => 
-                    !(m.pNumber === moduleToDelete.pNumber && 
-                      m.section === moduleToDelete.section && 
-                      m.moduleCode === moduleToDelete.moduleCode &&
-                      m.dateCompleted === moduleToDelete.dateCompleted)
-                );
-                
-                const updatedData = {
-                    ...juniorData,
-                    moduleCompletions: updatedCompletions
-                };
-                
-                if (saveJuniorData(updatedData)) {
-                    alert("Module deleted successfully");
-                    window.location.reload(); // Refresh to show updated data
-                } else {
-                    alert("Error deleting module");
+                try {
+                    // Get user ID from Supabase auth
+                    const { data: { user }, error: authError } = await supabase.auth.getUser();
+                    if (authError || !user) {
+                        alert('Authentication error. Please refresh and try again.');
+                        return;
+                    }
+                    
+                    // Delete from Supabase
+                    const success = await deleteJuniorModule(
+                        user.id, 
+                        moduleToDelete.pNumber, 
+                        moduleToDelete.section, 
+                        moduleToDelete.moduleCode,
+                        moduleToDelete.dateCompleted
+                    );
+                    
+                    if (success) {
+                        alert("Module deleted successfully");
+                        window.location.reload(); // Refresh to show updated data
+                    } else {
+                        alert("Error deleting module. Please check console for details.");
+                    }
+                } catch (error) {
+                    console.error('Error deleting module:', error);
+                    alert("Error deleting module: " + error.message);
                 }
             };
             

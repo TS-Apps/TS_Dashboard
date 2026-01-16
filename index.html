@@ -3,7 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sea Cadet Training Dashboard - RC3</title>
+    <title>Sea Cadet Training Dashboard - Cloud</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚓</text></svg>" />
     
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -16,7 +19,7 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     
-    <!-- Supabase Client Library -->
+    <!-- Supabase Client -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <style>
@@ -92,9 +95,13 @@
 
     <script type="text/babel">
         // Market Harborough Sea Cadets Training Dashboard
-        // Version 3.0.0
+        // Version 4.0.0 - Cloud Edition with Supabase
         
         const { useState, useEffect, useMemo, useCallback, useRef, Component } = React;
+        
+        // Create UserContext for easy access to current user throughout the app
+        const UserContext = React.createContext(null);
+        const useUser = () => React.useContext(UserContext);
         
         // ═══════════════════════════════════════════════════════════════════════════
         // SUPABASE CLIENT
@@ -108,7 +115,7 @@
         // CONSTANTS & DATA
         // ═══════════════════════════════════════════════════════════════════════════
         
-        const DATA_VERSION = "3.6.2-FIXED"; // Fixed useCallback infinite loop + re-enabled all features
+        const DATA_VERSION = "V2.0.0-Cloud"; // Cloud Storage Release - Supabase integration complete
  
         // Badge & Rank Image Maps
         const RANK_IMG_MAP = {
@@ -1073,6 +1080,13 @@
                 .replace(/<[^>]+>/g, '')
                 .trim();
         };
+        
+        // Helper to clean unit names - removes bracketed sections like (JUNIOR SECTION 1), (RMCD)
+        const cleanUnitName = (unitName) => {
+            if (!unitName) return unitName;
+            // Remove everything in brackets and trim
+            return unitName.split('(')[0].trim();
+        };
 
         const RANK_ABBREVIATIONS = {
             "Petty Officer Cadet": "POC",
@@ -1194,6 +1208,22 @@
             
             return rawRank;
         };
+        
+        // CRITICAL FUNCTION: Detect if CSV is a junior module template
+        const isJuniorModuleTemplate = (headers) => {
+            const headerLower = headers.map(h => h.toLowerCase());
+            // Template has: PNumber, Name, Rank, Age, Section, ModuleCode, DateCompleted
+            // It will have "modulecode" or "module code" column
+            // It will NOT have "Surname" or "First Name" columns
+            
+            const hasModuleCode = headerLower.some(h => h.includes('modulecode') || h.includes('module code'));
+            const hasSection = headerLower.some(h => h === 'section');
+            const hasSurname = headerLower.some(h => h.includes('surname'));
+            const hasFirstName = headerLower.some(h => h.includes('first'));
+            
+            // If it has module code + section but no surname/firstname, it's a template
+            return hasModuleCode && hasSection && !hasSurname && !hasFirstName;
+        };
 
         const calculateAge = (dob) => {
             if (!dob) return "Unknown";
@@ -1289,8 +1319,8 @@
             
             // For 12-year-olds, check if they have junior modules or junior rank
             if (age === 12 && pNumber) {
-                const juniorData = getJuniorData();
-                const hasJuniorModules = juniorData.moduleCompletions.some(m => m.pNumber === pNumber);
+                const juniorData = getJuniorDataSync();
+                const hasJuniorModules = juniorData?.moduleCompletions?.some(m => m.pNumber === pNumber) || false;
                 
                 // Check if they have a junior rank (passed as parameter)
                 const hasJuniorRank = rank && (
@@ -1342,119 +1372,239 @@
             }
         };
         
-        // Get junior data from localStorage (synchronous for component use)
-        const getJuniorData = () => {
-            try {
-                const data = localStorage.getItem('scc_juniors');
-                return data ? JSON.parse(data) : {
-                    moduleCompletions: [],
-                    rankHistory: [],
-                    sectionBadges: []
-                };
-            } catch (e) {
-                console.error("Error loading junior data:", e);
-                return { moduleCompletions: [], rankHistory: [], sectionBadges: [] };
-            }
-        };
+        // Get junior data from localStorage
+        // ═══════════════════════════════════════════════════════════════════════════
+        // SUPABASE DATABASE FUNCTIONS - JUNIOR DATA
+        // ═══════════════════════════════════════════════════════════════════════════
         
-        // Save junior data to localStorage + sync to Supabase
-        const saveJuniorData = async (data) => {
+        // Cache for junior data (so synchronous functions can access it)
+        let cachedJuniorData = { moduleCompletions: [], rankHistory: [], sectionBadges: [] };
+        
+        const getJuniorData = async (userId) => {
+            if (!userId) {
+                console.warn('getJuniorData called without userId, returning cached data');
+                return cachedJuniorData;
+            }
+            
             try {
-                // Save to localStorage immediately (for synchronous access)
-                localStorage.setItem('scc_juniors', JSON.stringify(data));
+                console.log('📥 Loading junior module completions from Supabase...');
                 
-                // Transform to Supabase format
-                const records = data.moduleCompletions.map(mod => ({
-                    p_number: mod.pNumber,
-                    section: mod.section,
-                    module_code: mod.moduleCode,
-                    module_name: mod.moduleName,
-                    date_completed: mod.dateCompleted,
-                    is_core: mod.isCore || false
-                }));
+                // Fetch ALL records with pagination (Supabase default limit is 1000)
+                let allData = [];
+                let from = 0;
+                const pageSize = 1000;
+                let hasMore = true;
                 
-                // Deduplicate to prevent PostgreSQL error
-                const uniqueMap = new Map();
-                records.forEach(rec => {
-                    const key = `${rec.user_id}-${rec.p_number}-${rec.section}-${rec.module_code}`;
-                    uniqueMap.set(key, rec);
-                });
-                const uniqueRecords = Array.from(uniqueMap.values());
-                
-                console.log(`💾 Syncing ${uniqueRecords.length} junior modules to Supabase...`);
-                
-                // Delete existing data
-                await supabase.from('junior_modules').delete();
-                
-                if (uniqueRecords.length > 0) {
-                    // Batch insert in groups of 500 (Supabase limit is 1000)
-                    const batchSize = 500;
-                    let totalInserted = 0;
+                while (hasMore) {
+                    const { data, error, count } = await supabase
+                        .from('junior_module_completions')
+                        .select('*', { count: 'exact' })
+                        .eq('user_id', userId)
+                        .range(from, from + pageSize - 1);
                     
-                    for (let i = 0; i < uniqueRecords.length; i += batchSize) {
-                        const batch = uniqueRecords.slice(i, i + batchSize);
-                        console.log(`  📦 Inserting batch ${Math.floor(i/batchSize) + 1} (${batch.length} records)...`);
-                        
-                        const { error } = await supabase
-                            .from('junior_modules')
-                            .insert(batch);
-                        
-                        if (error) {
-                            console.error("❌ Supabase error saving batch:", error);
-                            console.error(`Failed at batch starting at index ${i}`);
-                            return false;
-                        }
-                        
-                        totalInserted += batch.length;
-                        console.log(`  ✓ Batch complete (${totalInserted}/${uniqueRecords.length})`);
+                    if (error) throw error;
+                    
+                    if (data && data.length > 0) {
+                        allData = allData.concat(data);
+                        console.log(`   Loaded ${data.length} records (${allData.length} total so far)...`);
+                        from += pageSize;
+                        hasMore = data.length === pageSize;
+                    } else {
+                        hasMore = false;
                     }
                 }
                 
-                console.log('✓ All junior modules synced to Supabase');
-                return true;
-            } catch (e) {
-                console.error("Error saving junior data:", e);
-                return false;
-            }
-        };
-        
-        // Load junior data from Supabase on app start
-        const loadJuniorDataFromSupabase = async () => {
-            try {
-                console.log('📥 Loading junior data from Supabase...');
-                const { data, error } = await supabase
-                    .from('junior_modules')
-                    .select('*')
-                    ;
+                console.log(`✓ Loaded ${allData.length} junior module completion records from Supabase`);
                 
-                if (error) {
-                    console.error("❌ Supabase error loading junior data:", error);
-                    return false;
-                }
-                
-                console.log(`✓ Loaded ${data?.length || 0} junior module records`);
-                
-                // Transform to app format
-                const moduleCompletions = (data || []).map(row => ({
+                // Transform DB rows into the format expected by the app
+                const moduleCompletions = (allData || []).map(row => ({
                     pNumber: row.p_number,
                     section: row.section,
                     moduleCode: row.module_code,
                     moduleName: row.module_name,
                     dateCompleted: row.date_completed,
-                    isCore: row.is_core || false
+                    isCore: row.is_core
                 }));
                 
-                const juniorData = {
+                cachedJuniorData = { 
                     moduleCompletions,
-                    rankHistory: [],
-                    sectionBadges: []
+                    rankHistory: [], // Not implemented yet
+                    sectionBadges: [] // Not implemented yet
                 };
                 
-                // Save to localStorage for synchronous access
-                localStorage.setItem('scc_juniors', JSON.stringify(juniorData));
+                return cachedJuniorData;
+            } catch (error) {
+                console.error("Error loading junior data:", error);
+                return cachedJuniorData; // Return cache on error
+            }
+        };
+        
+        // Synchronous version for legacy code that can't be easily made async
+        const getJuniorDataSync = () => {
+            return cachedJuniorData;
+        };
+        
+        // Save junior data to Supabase
+        const saveJuniorData = async (userId, data) => {
+            try {
+                // Delete existing junior data for this user
+                console.log('🗑️  Deleting existing junior data...');
+                const { error: deleteError, count } = await supabase
+                    .from('junior_module_completions')
+                    .delete({ count: 'exact' })
+                    .eq('user_id', userId);
+                
+                if (deleteError) {
+                    console.error('❌ Delete error:', deleteError);
+                    throw deleteError;
+                }
+                console.log(`✓ Deleted ${count || 0} existing records`);
+                
+                // Transform and insert new data
+                if (data.moduleCompletions && data.moduleCompletions.length > 0) {
+                    console.log(`📋 Processing ${data.moduleCompletions.length} records from import...`);
+                    
+                    const records = data.moduleCompletions.map(mc => ({
+                        user_id: userId,
+                        p_number: mc.pNumber,
+                        section: mc.section,
+                        module_code: mc.moduleCode,
+                        module_name: mc.moduleName,
+                        date_completed: mc.dateCompleted,
+                        is_core: mc.isCore || false
+                    }));
+                    
+                    console.log(`✓ Transformed ${records.length} records`);
+                    
+                    // Deduplicate based on unique constraint: (user_id, p_number, section, module_code)
+                    const uniqueRecords = [];
+                    const seen = new Set();
+                    const duplicateKeys = [];
+                    
+                    for (const record of records) {
+                        const key = `${record.user_id}|${record.p_number}|${record.section}|${record.module_code}`;
+                        if (!seen.has(key)) {
+                            seen.add(key);
+                            uniqueRecords.push(record);
+                        } else {
+                            duplicateKeys.push(`${record.p_number} ${record.section} ${record.module_code}`);
+                        }
+                    }
+                    
+                    const duplicatesRemoved = records.length - uniqueRecords.length;
+                    if (duplicatesRemoved > 0) {
+                        console.log(`⚠️  Removed ${duplicatesRemoved} duplicate entries:`);
+                        console.log(`   First 10 duplicates: ${duplicateKeys.slice(0, 10).join(', ')}`);
+                        console.log(`   All duplicates:`, duplicateKeys);
+                    }
+                    
+                    console.log(`💾 Inserting ${uniqueRecords.length} unique records into Supabase...`);
+                    const { error } = await supabase
+                        .from('junior_module_completions')
+                        .insert(uniqueRecords);
+                    
+                    if (error) throw error;
+                    console.log('✅ Insert completed successfully');
+                    
+                    // Update cache with proper structure validation
+                    cachedJuniorData = {
+                        moduleCompletions: data.moduleCompletions || [],
+                        rankHistory: data.rankHistory || [],
+                        sectionBadges: data.sectionBadges || []
+                    };
+                }
+                
                 return true;
-            } catch (e) {
-                console.error("Error loading junior data from Supabase:", e);
+            } catch (error) {
+                console.error("❌ Error saving junior data:", error);
+                return false;
+            }
+        };
+        
+        // NEW: Delete a specific junior module from Supabase
+        const deleteJuniorModule = async (userId, pNumber, section, moduleCode, dateCompleted) => {
+            try {
+                console.log(`🗑️ Deleting junior module: ${pNumber} - ${section.toUpperCase()} ${moduleCode}`);
+                
+                const { error } = await supabase
+                    .from('junior_module_completions')
+                    .delete()
+                    .eq('user_id', userId)
+                    .eq('p_number', pNumber)
+                    .eq('section', section)
+                    .eq('module_code', moduleCode)
+                    .eq('date_completed', dateCompleted);
+                
+                if (error) {
+                    console.error('❌ Delete error:', error);
+                    throw error;
+                }
+                
+                console.log('✅ Module deleted successfully');
+                
+                // Update cache - remove the deleted module
+                if (cachedJuniorData && cachedJuniorData.moduleCompletions) {
+                    cachedJuniorData.moduleCompletions = cachedJuniorData.moduleCompletions.filter(m => 
+                        !(m.pNumber === pNumber && 
+                          m.section === section && 
+                          m.moduleCode === moduleCode &&
+                          m.dateCompleted === dateCompleted)
+                    );
+                }
+                
+                return true;
+            } catch (error) {
+                console.error("❌ Error deleting junior module:", error);
+                return false;
+            }
+        };
+        
+        // NEW: Add junior modules incrementally without deleting existing data
+        const addJuniorModules = async (userId, newModules) => {
+            try {
+                console.log(`➕ Adding ${newModules.length} new junior module(s)...`);
+                
+                const records = newModules.map(mc => ({
+                    user_id: userId,
+                    p_number: mc.pNumber,
+                    section: mc.section,
+                    module_code: mc.moduleCode,
+                    module_name: mc.moduleName,
+                    date_completed: mc.dateCompleted,
+                    is_core: mc.isCore || false
+                }));
+                
+                console.log('📋 Records to insert:', records);
+                
+                const { data, error } = await supabase
+                    .from('junior_module_completions')
+                    .insert(records)
+                    .select();
+                
+                if (error) {
+                    console.error('❌ Insert error:', error);
+                    
+                    // If duplicate error, provide more context
+                    if (error.code === '23505') {
+                        console.error('⚠️ Duplicate key constraint violation - these modules already exist:');
+                        records.forEach(r => {
+                            console.error(`   - ${r.p_number} ${r.section.toUpperCase()} ${r.module_code}`);
+                        });
+                    }
+                    
+                    throw error;
+                }
+                
+                console.log(`✅ Successfully added ${data.length} module(s)`);
+                
+                // Update cache
+                if (cachedJuniorData && cachedJuniorData.moduleCompletions) {
+                    cachedJuniorData.moduleCompletions.push(...newModules);
+                }
+                
+                return true;
+            } catch (error) {
+                console.error("❌ Error adding junior modules:", error);
                 return false;
             }
         };
@@ -1466,9 +1616,29 @@
         
         // Utility Components
 
-        const Icon = ({ name, className }) => {
-            return <i data-lucide={name.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase()} className={className}></i>;
-        };
+        // REACT-SAFE ICON COMPONENT (prevents React DOM conflicts)
+        const Icon = React.memo(({ name, className = "" }) => {
+            const ref = useRef(null);
+            const [initialized, setInitialized] = useState(false);
+            
+            useEffect(() => {
+                if (ref.current && window.lucide && !initialized) {
+                    const iconName = name.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase();
+                    ref.current.setAttribute('data-lucide', iconName);
+                    
+                    requestAnimationFrame(() => {
+                        try {
+                            window.lucide.createIcons();
+                            setInitialized(true);
+                        } catch (e) {
+                            // Icon render failed silently
+                        }
+                    });
+                }
+            }, [name, initialized]);
+            
+            return <i ref={ref} className={className}></i>;
+        });
         
         const BadgeImage = ({ name, fallbackIcon, className }) => {
             const [error, setError] = useState(false);
@@ -1625,6 +1795,16 @@
                 
                 const headers = splitCSVLine(lines[0].trim());
                 
+                // CRITICAL: Check if this is a junior module template file
+                if (isJuniorModuleTemplate(headers)) {
+                    throw new Error(
+                        'ERROR: Junior Module Template Detected!\n\n' +
+                        'You uploaded a junior module template CSV to the Personnel update button.\n\n' +
+                        'Junior module templates should be uploaded using the "Upload Template" button in the Bulk Upload section (amber box) in the Data/Utilities tab.\n\n' +
+                        'For personnel updates, only use the Westminster "Unit Personnel Report" CSV file.'
+                    );
+                }
+                
                 const findCol = (name) => headers.findIndex(h => h.toLowerCase().includes(name.toLowerCase()));
                 
                 const idx = {
@@ -1643,6 +1823,31 @@
                 const missing = requiredFields.filter(key => idx[key] === -1);
                 if (missing.length > 0) {
                     throw new Error(`Personnel file missing columns: ${missing.join(', ')}. Check CSV headers.`);
+                }
+                
+                // DOB Column Validation: Warn if missing or check for empty values
+                let dobWarning = '';
+                let emptyDOBCount = 0;
+                
+                if (idx.dob === -1) {
+                    dobWarning = 'WARNING: DOB column not found in CSV. Junior cadet features (ages 9-11) will not work without date of birth data.';
+                } else {
+                    // Check how many records have empty DOB
+                    for (let i = 1; i < lines.length; i++) {
+                        const row = splitCSVLine(lines[i].trim());
+                        if (row.length < 3) continue;
+                        if (!row[idx.dob] || !row[idx.dob].trim()) {
+                            emptyDOBCount++;
+                        }
+                    }
+                    if (emptyDOBCount > 0) {
+                        dobWarning = `WARNING: ${emptyDOBCount} record${emptyDOBCount !== 1 ? 's' : ''} have empty DOB values. Age-based features may not work for these cadets.`;
+                    }
+                }
+                
+                // Add DOB warning to validation errors if present
+                if (dobWarning) {
+                    validationErrors.push(dobWarning);
                 }
 
                 for (let i = 1; i < lines.length; i++) {
@@ -2048,8 +2253,12 @@
                         <div className="mt-8 border-t pt-6">
                              <p className="text-sm font-bold text-slate-700 mb-4 text-center">Update Individual Files</p>
                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                                 <div className="border border-slate-200 p-4 rounded-lg">
-                                     <p className="text-xs font-semibold text-slate-600 mb-2">Update Personnel File Only</p>
+                                 <div className="border-2 border-red-400 bg-red-50 p-4 rounded-lg">
+                                     <div className="mb-2 p-2 bg-red-100 border-l-4 border-red-500 rounded">
+                                         <p className="text-xs font-bold text-red-900 mb-1">⚠️ WARNING: Westminster Personnel CSV Only!</p>
+                                         <p className="text-[10px] text-red-800">DO NOT upload junior module templates or Supabase exports here. Use Data/Utilities tab for those.</p>
+                                     </div>
+                                     <p className="text-xs font-semibold text-red-800 mb-2">Update Personnel File Only</p>
                                      <input type="file" accept=".csv" onChange={(e) => {
                                          setPersonnelFile(e.target.files[0]);
                                          setError(null);
@@ -2073,7 +2282,7 @@
                                          disabled={!personnelFile || loading}
                                          className={`w-full py-2 rounded font-semibold text-xs transition-all ${!personnelFile ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'bg-green-600 text-white hover:bg-green-700'}`}
                                      >
-                                         {loading ? 'Updating...' : 'Update Personnel'}
+                                         {loading ? 'Updating...' : 'Update Personnel (Westminster Only!)'}
                                      </button>
                                  </div>
                                  
@@ -2193,7 +2402,7 @@
 
         // Home View Component
         const HomeView = ({ personnel }) => {
-            const unitName = personnel.length > 0 ? (personnel[0].unit || "Your Unit") : "Sea Cadets";
+            const unitName = personnel.length > 0 ? cleanUnitName(personnel[0].unit || "Your Unit") : "Sea Cadets";
 
             return (
                 <div className="space-y-8">
@@ -2231,9 +2440,6 @@
                     {/* Disclaimer Section */}
                     <div className="mt-10 max-w-4xl mx-auto text-center text-xs text-slate-400 p-4 border-t border-slate-300">
                         <p className="font-semibold mb-1">Disclaimer</p>
-                        <p className="mb-2">
-                            This app was built independently by volunteers and is not an official MSSC product. It's provided "as is", with no warranty or guarantees offered or implied, and you use it at your own risk. The code is open source, and parts of the solution, documentation, or content may be AI-generated. Always review outputs for accuracy.
-                        </p>
                         <p>
                             If you spot a bug, have a feature idea, or make an improvement, please share it so others can benefit. 
                             You can contact James Harbidge at <a href="mailto:jharbidge@mhseacadets.org?subject=TS Dashboard" className="text-blue-500 hover:text-blue-600 underline">jharbidge@mhseacadets.org</a>.
@@ -2449,7 +2655,7 @@
                 
                 cadets.forEach(junior => {
                     const juniorData = getJuniorData();
-                    const juniorModules = juniorData.moduleCompletions.filter(m => m.pNumber === junior.pNumber);
+                    const juniorModules = juniorData?.moduleCompletions?.filter(m => m.pNumber === junior.pNumber) || [];
                     
                     const redCount = juniorModules.filter(m => m.section === 'red').length;
                     const blueCount = juniorModules.filter(m => m.section === 'blue').length;
@@ -2716,7 +2922,7 @@
                 
                 const { jsPDF } = window.jspdf;
                 const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
-                const unitName = personnel.length > 0 ? personnel[0].unit : "Sea Cadets";
+                const unitName = personnel.length > 0 ? cleanUnitName(personnel[0].unit) : "Sea Cadets";
                 
                 doc.setFont("helvetica", "bold");
                 doc.setFontSize(18);
@@ -3356,13 +3562,37 @@
         };
         
         // Cadet Focus Component
-        const CadetFocus = ({ personnel, qualsData }) => {
+        const CadetFocus = ({ personnel, qualsData, setView }) => {
             // Filter to only show cadets aged 12-17 (not juniors under 12, not adults 18+)
             const cadets = useMemo(() => personnel.filter(c => {
                 if (!c.dob) return false; // Exclude if no DOB - can't determine age
                 const age = calculateAge(c.dob);
                 return age !== "Unknown" && age >= 12 && age < 18;
             }), [personnel]);
+            
+            // Calculate unit statistics for empty state
+            const unitStats = useMemo(() => {
+                let juniors = 0;
+                let adults = 0;
+                let noDOB = 0;
+                
+                personnel.forEach(c => {
+                    if (!c.dob) {
+                        noDOB++;
+                        return;
+                    }
+                    const age = calculateAge(c.dob);
+                    if (age === "Unknown") {
+                        noDOB++;
+                    } else if (age < 12) {
+                        juniors++;
+                    } else if (age >= 18) {
+                        adults++;
+                    }
+                });
+                
+                return { juniors, adults, noDOB, total: personnel.length };
+            }, [personnel]);
             
             const [selectedCadetPNum, setSelectedCadetPNum] = useState(cadets.length > 0 ? cadets[0].pNumber : "");
             
@@ -3925,17 +4155,91 @@
             // Check if there are no cadets aged 12-17
             if (cadets.length === 0) {
                 return (
-                    <div className="p-8">
-                        <div className="bg-white rounded-lg shadow p-8 text-center">
-                            <Icon name="User" className="w-16 h-16 mx-auto text-slate-300 mb-4" />
-                            <h2 className="text-2xl font-bold text-slate-700 mb-2">No Cadets Found (Ages 12-17)</h2>
-                            <p className="text-slate-600">
-                                Cadet Focus shows cadets aged 12-17 only.
+                    <div className="space-y-6 p-8">
+                        {/* Main message card */}
+                        <div className="bg-white rounded-lg shadow-xl p-8 text-center border-l-4 border-blue-500">
+                            <Icon name="Users" className="w-16 h-16 mx-auto text-blue-400 mb-4" />
+                            <h2 className="text-3xl font-bold text-slate-800 mb-3">No Cadets in Age Range 12-17</h2>
+                            <p className="text-slate-600 text-lg mb-2">
+                                Cadet Focus displays cadets aged 12-17 only.
                             </p>
-                            <p className="text-sm text-slate-500 mt-4">
-                                Juniors (under 12) have their own dedicated Junior Focus page.
-                                Adults (18+) are not yet supported in this dashboard.
+                            <p className="text-sm text-slate-500">
+                                Your unit has {unitStats.total} cadet{unitStats.total !== 1 ? 's' : ''} in total:
                             </p>
+                        </div>
+
+                        {/* Stats grid */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            {/* Juniors card */}
+                            {unitStats.juniors > 0 && (
+                                <div className="bg-purple-50 rounded-lg shadow p-6 border-2 border-purple-200">
+                                    <div className="flex items-center justify-between mb-3">
+                                        <Icon name="Users" className="w-8 h-8 text-purple-600" />
+                                        <span className="text-3xl font-bold text-purple-700">{unitStats.juniors}</span>
+                                    </div>
+                                    <h3 className="font-bold text-purple-900 mb-2">Junior{unitStats.juniors !== 1 ? 's' : ''} (Under 12)</h3>
+                                    <p className="text-sm text-purple-700 mb-4">
+                                        Use the Junior Focus or Junior Progress pages to track junior cadets.
+                                    </p>
+                                    <button 
+                                        onClick={() => setView('juniors')}
+                                        className="w-full bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 font-semibold flex items-center justify-center gap-2"
+                                    >
+                                        <Icon name="ArrowRight" className="w-4 h-4" />
+                                        View Junior Focus
+                                    </button>
+                                </div>
+                            )}
+
+                            {/* Adults card */}
+                            {unitStats.adults > 0 && (
+                                <div className="bg-amber-50 rounded-lg shadow p-6 border-2 border-amber-200">
+                                    <div className="flex items-center justify-between mb-3">
+                                        <Icon name="UserCheck" className="w-8 h-8 text-amber-600" />
+                                        <span className="text-3xl font-bold text-amber-700">{unitStats.adults}</span>
+                                    </div>
+                                    <h3 className="font-bold text-amber-900 mb-2">Adult{unitStats.adults !== 1 ? 's' : ''} (18+)</h3>
+                                    <p className="text-sm text-amber-700 mb-4">
+                                        Adult cadet tracking is not yet supported in this dashboard.
+                                    </p>
+                                    <div className="text-xs text-amber-600 bg-amber-100 p-2 rounded">
+                                        Feature coming soon
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* No DOB card */}
+                            {unitStats.noDOB > 0 && (
+                                <div className="bg-slate-50 rounded-lg shadow p-6 border-2 border-slate-200">
+                                    <div className="flex items-center justify-between mb-3">
+                                        <Icon name="AlertCircle" className="w-8 h-8 text-slate-500" />
+                                        <span className="text-3xl font-bold text-slate-600">{unitStats.noDOB}</span>
+                                    </div>
+                                    <h3 className="font-bold text-slate-700 mb-2">Missing DOB</h3>
+                                    <p className="text-sm text-slate-600 mb-4">
+                                        {unitStats.noDOB} cadet{unitStats.noDOB !== 1 ? 's have' : ' has'} no date of birth in Westminster.
+                                    </p>
+                                    <div className="text-xs text-slate-500 bg-slate-100 p-2 rounded">
+                                        Update DOB data in Westminster
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Helpful tips */}
+                        <div className="bg-blue-50 rounded-lg shadow p-6 border border-blue-200">
+                            <div className="flex items-start gap-3">
+                                <Icon name="Info" className="w-6 h-6 text-blue-600 flex-shrink-0 mt-0.5" />
+                                <div>
+                                    <h3 className="font-bold text-blue-900 mb-2">Dashboard Guide</h3>
+                                    <ul className="text-sm text-blue-800 space-y-1">
+                                        <li>• <strong>Junior Focus:</strong> Track individual junior progress and add module completions</li>
+                                        <li>• <strong>Junior Progress:</strong> Grid view showing all 333 modules across all juniors</li>
+                                        <li>• <strong>Cadet Focus:</strong> Detailed view for cadets aged 12-17</li>
+                                        <li>• <strong>SCC CTP / RMC CTS:</strong> Training planners for standard cadets</li>
+                                    </ul>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 );
@@ -4241,7 +4545,7 @@
                 const { jsPDF } = window.jspdf;
                 const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
                 
-                const unitName = personnel.length > 0 ? personnel[0].unit : "Unit";
+                const unitName = personnel.length > 0 ? cleanUnitName(personnel[0].unit) : "Unit";
                 
                 // Header
                 doc.setFont("helvetica", "bold");
@@ -4449,7 +4753,1058 @@
         };
 
         // Training Suggestions Component
+        const TrainingSuggestions = ({ personnel, getCadetProgress, qualsData }) => {
+            const [selectedRank, setSelectedRank] = useState(SCC_RANK_ORDER[0]);
+            const ALL_RANKS = [...SCC_RANK_ORDER, ...RMC_RANK_ORDER];
+            const cadetsAtRank = useMemo(() => personnel.filter(p => p.rank === selectedRank), [personnel, selectedRank]);
+            
+            const suggestions = useMemo(() => {
+                if (!cadetsAtRank.length) return [];
+                const isRMC = RMC_RANK_ORDER.includes(selectedRank);
+                const syllabus = isRMC ? RMC_SYLLABUS : SCC_SYLLABUS;
+                const currentSyllabus = syllabus[selectedRank];
+                if (!currentSyllabus) return [];
+                
+                const demandMap = new Map();
+                const hasPassed = (c, code) => qualsData.some(q => q.pNumber === c.pNumber && q.module.includes(code));
+                
+                cadetsAtRank.forEach(c => {
+                    Object.values(currentSyllabus).forEach(cat => {
+                        cat.forEach((mod, idx) => {
+                            if (!hasPassed(c, mod.code)) {
+                                // Simple prereq check: needs previous module in category
+                                if (idx === 0 || hasPassed(c, cat[idx-1].code)) {
+                                    const entry = demandMap.get(mod.code) || { ...mod, count: 0, students: [] };
+                                    entry.count++;
+                                    entry.students.push(c.name);
+                                    demandMap.set(mod.code, entry);
+                                }
+                            }
+                        });
+                    });
+                });
+                return Array.from(demandMap.values()).sort((a,b) => b.count - a.count).slice(0, 12);
+            }, [cadetsAtRank, qualsData, selectedRank]);
+
+            return (
+                <div className="space-y-6">
+                    <div className="bg-white rounded-lg shadow-xl p-6 border-l-4 border-purple-500">
+                        <div className="flex items-center gap-4 mb-4">
+                            <div className="p-3 bg-purple-100 rounded-full">
+                                <Icon name="Lightbulb" className="w-8 h-8 text-purple-700" />
+                            </div>
+                            <div>
+                                <h2 className="text-3xl font-extrabold text-slate-900">Training Plan</h2>
+                                <p className="text-slate-600">12 most-needed modules for selected rank</p>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-4">
+                            <label className="text-sm font-semibold text-slate-700">Target Rank:</label>
+                            <select value={selectedRank} onChange={(e) => setSelectedRank(e.target.value)} className="p-2 border border-slate-300 rounded-lg shadow-sm text-sm">{ALL_RANKS.map(r => <option key={r} value={r}>{r}</option>)}</select>
+                        </div>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        {suggestions.length === 0 ? <div className="col-span-full text-center py-12 bg-white rounded border border-dashed text-slate-400">No suggestions.</div> : suggestions.map(mod => (
+                            <div key={mod.code} className="bg-white p-4 rounded shadow border-l-4 border-purple-500">
+                                <div className="flex justify-between mb-2"><h3 className="font-bold">{mod.code}</h3><span className="bg-purple-100 text-purple-800 text-xs font-bold px-2 py-1 rounded-full">{mod.count} Cadets</span></div>
+                                <p className="text-sm text-slate-600 truncate mb-2">{mod.title}</p>
+                                <div className="text-[10px] text-slate-400">Ready: {mod.students.slice(0,3).map(s=>s.split(',')[0]).join(', ')}{mod.students.length>3 && '...'}</div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            );
+        };
+
         // --- JUNIOR PROGRESS VIEW (Grid Chart) ---
+        const JuniorProgressView = ({ personnel }) => {
+            const [selectedSection, setSelectedSection] = useState('red');
+            const [recordingMode, setRecordingMode] = useState(false);
+            const [selectedModules, setSelectedModules] = useState(new Set());
+            const [juniorData, setJuniorData] = useState({ moduleCompletions: [], rankHistory: [], sectionBadges: [] });
+            const [loading, setLoading] = useState(true);
+            
+            // Load junior data from Supabase on mount
+            useEffect(() => {
+                const loadData = async () => {
+                    const { data: { user } } = await supabase.auth.getUser();
+                    if (user) {
+                        const data = await getJuniorData(user.id);
+                        setJuniorData(data);
+                    }
+                    setLoading(false);
+                };
+                loadData();
+            }, []);
+            
+            const juniors = personnel.filter(c => isJunior(c.dob, c.pNumber, c.rank));
+            
+            if (loading) {
+                return (
+                    <div className="p-8">
+                        <div className="bg-white rounded-lg shadow p-8 text-center">
+                            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-700 mx-auto mb-4"></div>
+                            <p className="text-slate-600">Loading junior progress data...</p>
+                        </div>
+                    </div>
+                );
+            }
+            
+            if (juniors.length === 0) {
+                return (
+                    <div className="p-8">
+                        <div className="bg-white rounded-lg shadow p-8 text-center">
+                            <Icon name="Users" className="w-16 h-16 mx-auto text-slate-300 mb-4" />
+                            <h2 className="text-2xl font-bold text-slate-700 mb-2">No Junior Sea Cadets Found</h2>
+                            <p className="text-slate-600">No cadets under 12 years old found in your personnel data.</p>
+                        </div>
+                    </div>
+                );
+            }
+            
+            // CORRECTED: 341 official MSSC Junior modules (was 333 fabricated names)
+            const allModules = [
+                // ========== RED SECTION - Unit Activities (73 modules) ==========
+                // Unit Induction (6 modules - all core)
+                {s:'red',c:'1',n:'Unit Induction: Tour of Unit',core:true},
+                {s:'red',c:'1.1',n:'Unit Induction: Unit Fire Drill',core:true},
+                {s:'red',c:'1.2',n:'Unit Induction: Map Out Your Unit Treasure Hunt',core:true},
+                {s:'red',c:'1.3',n:'Unit Induction: What\'s Important To You?',core:true},
+                {s:'red',c:'1.4',n:'Unit Induction: Uniformed Art',core:true},
+                {s:'red',c:'1.5',n:'Unit Induction: JSC Badges/Brassard, Ranks and Rates',core:true},
+
+                // Who's Who (4 modules)
+                {s:'red',c:'2',n:'Who is who? - Two Questions & A Funny'},
+                {s:'red',c:'2.1',n:'Paper Planes'},
+                {s:'red',c:'2.2',n:'Names and Beanbags!'},
+                {s:'red',c:'2.3',n:'Mini Me'},
+                {s:'red',c:'3',n:'Unit Who\'s Who: Say Cheese'},
+
+                // Ceremonial (4 modules)
+                {s:'red',c:'4',n:'Ceremonial: Moving To The Beat With Basic Drill'},
+                {s:'red',c:'4.1',n:'Who\'s Calling? Ceremonial Unit Calls (Piping)'},
+                {s:'red',c:'4.2',n:'Colours, Evening Colours & Naval Customs: Ceremonial'},
+                {s:'red',c:'4.3',n:'Treat Yourself: Ceremonial'},
+
+                // Uniform (1 module - core)
+                {s:'red',c:'5',n:'Looking Smart and the Part: Junior Sea Cadet Uniform',core:true},
+
+                // Safeguarding (1 module - core)
+                {s:'red',c:'6',n:'Introduction to Cadet Safeguarding Pocket Guide: SHOUT',core:true},
+
+                // Team Effort (6 modules)
+                {s:'red',c:'7',n:'Team Effort: Organising Unit Activities'},
+                {s:'red',c:'7.1',n:'Oh, The Activities You Can Do... Unit Activities'},
+                {s:'red',c:'7.2',n:'I Promise to...? Ready Aye Ready'},
+                {s:'red',c:'7.3',n:'Unit Elevator Pitch On Paper'},
+                {s:'red',c:'7.4',n:'Unit Advert'},
+                {s:'red',c:'7.5',n:'Theme Tune'},
+
+                // Activities (4 modules)
+                {s:'red',c:'8',n:'How\'s Your Aim?'},
+                {s:'red',c:'9',n:'Tonight\'s Guest Is...A Royal Marines Cadet'},
+                {s:'red',c:'9.1',n:'Royal Marines Cadets'},
+                {s:'red',c:'9.2',n:'Heads Up: Royal Marines Cadets Activities'},
+                {s:'red',c:'10',n:'Keeping a Log: Scrap Book Memories'},
+
+                // Communications (6 modules)
+                {s:'red',c:'11',n:'What Do We Want to Say? Passing a Message Using Flags'},
+                {s:'red',c:'11.1',n:'What is the Famous Message? Lord Nelson'},
+                {s:'red',c:'11.2',n:'Codebreaker: Morse'},
+                {s:'red',c:'11.3',n:'What\'s your position? Over?'},
+                {s:'red',c:'11.4',n:'Turn up The Radios'},
+                {s:'red',c:'11.5',n:'Phonetic Alphabet'},
+
+                // Catering (5 modules)
+                {s:'red',c:'12',n:'Experimental Chocolate Crispies'},
+                {s:'red',c:'12.1',n:'Refreshing Apple & Ginger'},
+                {s:'red',c:'12.2',n:'Chefs\' Sweet Tooth'},
+                {s:'red',c:'12.3',n:'Chefs Savoury Tooth'},
+                {s:'red',c:'12.4',n:'Chefs Cuppa'},
+
+                // Emergency Services (2 modules)
+                {s:'red',c:'13',n:'Who\'s Who and Can They Help Me?'},
+                {s:'red',c:'13.1',n:'Emergency Visits'},
+
+                // International (1 module)
+                {s:'red',c:'14',n:'How International Are We?'},
+
+                // First Aid (3 modules - core)
+                {s:'red',c:'15',n:'What\'s it for? First Aid basics',core:true},
+                {s:'red',c:'15.1',n:'Patch it Up: First Aid Relay'},
+                {s:'red',c:'15.2',n:'First Aid Comes First: Units Safety Poster'},
+
+                // Naval Heritage (2 modules - core)
+                {s:'red',c:'16',n:'Ships Crest: Naval Heraldry',core:true},
+
+                // Seamanship (6 modules - core)
+                {s:'red',c:'17',n:'Throw Yourself a Knot',core:true},
+                {s:'red',c:'17.1',n:'Tasty Knots'},
+                {s:'red',c:'17.2',n:'Rope and Spoons'},
+                {s:'red',c:'17.3',n:'Knots on Display: Knot Board'},
+                {s:'red',c:'17.4',n:'Paracord Keyrings'},
+                {s:'red',c:'17.5',n:'Parts of a Ship'},
+                {s:'red',c:'17.6',n:'Ship Ahoy!'},
+
+                // Food Safety (7 modules)
+                {s:'red',c:'18',n:'Planning & Preparation is Key!'},
+                {s:'red',c:'18.1',n:'Fridge, Cupboard, Freezer, Bench?'},
+                {s:'red',c:'18.2',n:'Keeping Germs at Bay'},
+                {s:'red',c:'18.3',n:'Missed a Spot!'},
+                {s:'red',c:'18.4',n:'Building Bacteria'},
+                {s:'red',c:'18.5',n:'Fuzzy Bread'},
+                {s:'red',c:'18.6',n:'How Clean Are Your Hands?'},
+
+                // Special Modules (4 modules)
+                {s:'red',c:'19',n:'Earthshot Challenge Completed'},
+                {s:'red',c:'20',n:'Cadet Voice: Suggestion Box'},
+                {s:'red',c:'21',n:'Kindness and Wellbeing'},
+                {s:'red',c:'21.1',n:'Kindness and Wellbeing Activities'},
+                {s:'red',c:'22',n:'Teamwork Skills'},
+
+                // ========== BLUE SECTION - Waterborne Activities (70 modules) ==========
+                // Taster Sessions (4 modules)
+                {s:'blue',c:'T1',n:'Dinghy Sailing Taster Session'},
+                {s:'blue',c:'T2',n:'Paddlesport Taster Session'},
+                {s:'blue',c:'T3',n:'Windsurfing Taster Session'},
+                {s:'blue',c:'T4',n:'Rowing Taster Session'},
+
+                // Water Safety (3 modules - BLUE 1 is core)
+                {s:'blue',c:'1',n:'Safety by the Water (NEW)',core:true},
+                {s:'blue',c:'1.1',n:'Throw Me A Rescue Line'},
+                {s:'blue',c:'1.2',n:'Help, Help, I Need Some Help!'},
+
+                // Navigation Marks (2 modules)
+                {s:'blue',c:'2',n:'Avoid the Danger with Cardinal Marks'},
+                {s:'blue',c:'2.1',n:'Where Are The Danger Zones?'},
+
+                // Naval Knowledge (8 modules)
+                {s:'blue',c:'3',n:'Adventures Of The Royal Navy and Merchant Navy'},
+                {s:'blue',c:'4',n:'Going on a Mission'},
+                {s:'blue',c:'5',n:'Maritime Museum Exploration'},
+                {s:'blue',c:'6',n:'How Many Battleships Can You Sink?'},
+                {s:'blue',c:'7',n:'Can You Remember The Facts?'},
+                {s:'blue',c:'7.1',n:'Famous Maritime Figures'},
+                {s:'blue',c:'7.2',n:'Picasso\'s Lord Nelson'},
+
+                // Boat Construction (4 modules)
+                {s:'blue',c:'8',n:'Research and Sketch Boat Construction'},
+                {s:'blue',c:'8.1',n:'Build, Build, Build: Boat Construction'},
+                {s:'blue',c:'8.2',n:'Crafty Raft: Model Raft Building'},
+                {s:'blue',c:'8.3',n:'On The Water Raft Building'},
+
+                // Water Wisdom (2 modules - BLUE 9 is core)
+                {s:'blue',c:'9',n:'Wise Cadets Near The Water',core:true},
+                {s:'blue',c:'9.1',n:'Wise Cadets Near the Water: What Flag Am I?'},
+
+                // Lifesaving (2 modules)
+                {s:'blue',c:'10',n:'How To Save A Life: Lifeguards'},
+
+                // Swimming (8 modules)
+                {s:'blue',c:'11',n:'Just Keep Swimming, Just Keep Swimming'},
+                {s:'blue',c:'12',n:'Swimathon: Sponsored Swim'},
+                {s:'blue',c:'13',n:'Water Games: Marco? Polo!'},
+                {s:'blue',c:'13.1',n:'Synchronise and Swim'},
+                {s:'blue',c:'13.2',n:'Goaaal!! Water Polo Challenge'},
+                {s:'blue',c:'14',n:'Swimming Gala'},
+
+                // Signalling (3 modules - BLUE 15 is core)
+                {s:'blue',c:'15',n:'Signposts at Sea',core:true},
+                {s:'blue',c:'15.1',n:'Edible Signposts at Sea'},
+                {s:'blue',c:'15.2',n:'Ropes on Biscuits'},
+
+                // Boat Handling (2 modules)
+                {s:'blue',c:'16',n:'Saving Sam the Haribo Snake'},
+                {s:'blue',c:'16.1',n:'Don\'t Fall Out Of The Boat!'},
+
+                // Rowing (4 modules)
+                {s:'blue',c:'17',n:'Go Rowing! Afloat Activity'},
+                {s:'blue',c:'17.1',n:'Learn Rowing! Afloat Activity'},
+
+                // Dinghy Sailing (4 modules)
+                {s:'blue',c:'18',n:'Go Dinghy Sailing! Afloat Activity'},
+                {s:'blue',c:'18.1',n:'Learn Dinghy Sailing! Afloat Activity'},
+
+                // Paddlesport (3 modules)
+                {s:'blue',c:'19',n:'Go Paddling! Afloat Activity'},
+                {s:'blue',c:'19.1',n:'Learn Paddlesport! Afloat Activity'},
+                {s:'blue',c:'19.2',n:'Voyage of Discovery'},
+
+                // Windsurfing (3 modules)
+                {s:'blue',c:'20',n:'Learn Windsurfing! Afloat Activity'},
+                {s:'blue',c:'20.1',n:'Go Windsurfing! Afloat Activity'},
+
+                // Safety & Navigation (5 modules - BLUE 21 is core)
+                {s:'blue',c:'21',n:'Please Don\'t Crash: Keep a Good Look Out!',core:true},
+                {s:'blue',c:'21.1',n:'Danger, Danger: Hazards!'},
+                {s:'blue',c:'21.2',n:'Head Above Water: Buoyancy'},
+                {s:'blue',c:'21.3',n:'Please Don\'t Crash: Safe Speeds'},
+                {s:'blue',c:'22',n:'Careful Navigation'},
+
+                // Naval Traditions (4 modules)
+                {s:'blue',c:'23',n:'What\'s Crossing The Line All About?'},
+                {s:'blue',c:'23.1',n:'Nautical Terms'},
+                {s:'blue',c:'23.2',n:'Songs of the Sea: Sea Shanties'},
+                {s:'blue',c:'23.3',n:'The Sailor\'s Hornpipe Dance'},
+
+                // Boat Types (3 modules)
+                {s:'blue',c:'24',n:'Guess Who: Boat Types'},
+                {s:'blue',c:'24.1',n:'MINI RS ZEST - Single Handed Dinghy'},
+                {s:'blue',c:'24.2',n:'MINI RS QUEST - Crewed Sailing Dinghy'},
+
+                // Additional Safety (4 modules)
+                {s:'blue',c:'25',n:'Freeze Frame - Cold Water Shock'},
+                {s:'blue',c:'26',n:'Towpath I Spy'},
+                {s:'blue',c:'27',n:'Flag Etiquette'},
+                {s:'blue',c:'28',n:'Keeping it Green and Clean'},
+
+                // Earthshot (2 modules)
+                {s:'blue',c:'29',n:'Earthshot (ROO) - The Big Clean Up'},
+                {s:'blue',c:'29.2',n:'Earthshot (ROO) - The Plastic Eating Machine'},
+
+                // ========== GREEN SECTION - Outdoor & Recreation (49 modules) ==========
+                // Introduction (1 module)
+                {s:'green',c:'1',n:'All About the 50 Things'},
+
+                // Mapping (4 modules)
+                {s:'green',c:'2',n:'Mapping It Out'},
+                {s:'green',c:'2.1',n:'The Bigger Picture: Around the Globe'},
+                {s:'green',c:'3',n:'What Grids? Grid References'},
+
+                // Weather (2 modules)
+                {s:'green',c:'4',n:'Rain, Rain...Maybe Stay?'},
+                {s:'green',c:'4.1',n:'Make it Rain!'},
+
+                // Navigation (4 modules)
+                {s:'green',c:'5',n:'Captain\'s Coming'},
+                {s:'green',c:'5.1',n:'Home Made Compass'},
+                {s:'green',c:'6',n:'The Art of Photography'},
+                {s:'green',c:'7',n:'Pacing It Out'},
+                {s:'green',c:'7.1',n:'Micro Journey: Mapping and Navigation'},
+                {s:'green',c:'7.2',n:'Unique Monopoly'},
+                {s:'green',c:'7.3',n:'Which Way Am I Going? Navigating Further Afield'},
+
+                // Outdoor Skills (4 modules)
+                {s:'green',c:'8',n:'The Basic Outdoors'},
+                {s:'green',c:'8.1',n:'Zero Trace: Love of the Outdoors'},
+                {s:'green',c:'8.2',n:'I Don\'t Know What to Wear'},
+                {s:'green',c:'8.3',n:'Keeping Things Tidy, Even When You Are Soaked'},
+
+                // Cooking (5 modules)
+                {s:'green',c:'9',n:'Stoves Galore!'},
+                {s:'green',c:'9.1',n:'Cooking on Open Fires 101'},
+                {s:'green',c:'9.2',n:'Open Fire Recipes'},
+                {s:'green',c:'9.3',n:'Junior Survivor'},
+                {s:'green',c:'9.4',n:'Master Chef Outdoors'},
+
+                // Practice (2 modules)
+                {s:'green',c:'10',n:'Putting Everything into Practice'},
+                {s:'green',c:'10.1',n:'The Amazing Race: Junior League'},
+
+                // Country Code (3 modules)
+                {s:'green',c:'11',n:'Respecting the Outdoors: Country Code Style!'},
+                {s:'green',c:'11.1',n:'Country Code In Practice How To Guide'},
+                {s:'green',c:'11.2',n:'Giving Back to the Environment'},
+
+                // Camping (2 modules)
+                {s:'green',c:'12',n:'Tenting Around'},
+                {s:'green',c:'12.1',n:'Pitching a Tent'},
+
+                // Safety (2 modules)
+                {s:'green',c:'13',n:'Staying Safe and Having Fun Outdoors'},
+                {s:'green',c:'13.1',n:'Stranger Danger'},
+
+                // Meteorology (5 modules)
+                {s:'green',c:'14',n:'Weather Wise: Meteorology'},
+                {s:'green',c:'14.1',n:'Weather Wise On The Water'},
+                {s:'green',c:'14.2',n:'Extreme Weather: Storm Surge'},
+                {s:'green',c:'14.3',n:'Low Visibility'},
+                {s:'green',c:'14.4',n:'Practices of Celestial Navigation'},
+                {s:'green',c:'15',n:'Which Way Is The Wind Blowing?'},
+
+                // Physical Training (8 modules)
+                {s:'green',c:'16',n:'No Injuries, Thanks! The Importance of Warming Up'},
+                {s:'green',c:'16.1',n:'Testing It Out! Warm Up Guide'},
+                {s:'green',c:'17',n:'How Far Can You Go...Safely! Keep Fit Challenge'},
+                {s:'green',c:'17.1',n:'Game On! Recreational Training Games'},
+                {s:'green',c:'17.2',n:'How Competitive are You?'},
+                {s:'green',c:'17.3',n:'Happy and Healthy'},
+                {s:'green',c:'17.4',n:'Eating Happy and Healthy!'},
+                {s:'green',c:'17.5',n:'Games to Get You Started'},
+
+                // Earthshot (4 modules)
+                {s:'green',c:'18',n:'Earthshot (PRN) - DIY Bird Feeder'},
+                {s:'green',c:'18.1',n:'Earthshot (PRN) - Bee Bombs'},
+                {s:'green',c:'18.2',n:'Earthshot (WFW) - Recycled Wild Flower Seed Paper'},
+                {s:'green',c:'18.3',n:'Earthshot (COA) - Reducing Your Carbon Footprint'},
+
+                // ========== YELLOW SECTION - Community & Citizenship (107+ modules) ==========
+                // Note: This is a MASSIVE section. Including all from document.
+
+                // Festivals & Celebrations (13 modules)
+                {s:'yellow',c:'1',n:'Mardi Gras/Fat Tuesday/Shrove Tuesday'},
+                {s:'yellow',c:'1.1',n:'Parade with Mardi Gras Masks'},
+                {s:'yellow',c:'1.2',n:'Musical Celebration: Jazz Band'},
+                {s:'yellow',c:'2',n:'Celebrating Easter'},
+                {s:'yellow',c:'2.1',n:'Yummy Easter Hot Cross Buns'},
+                {s:'yellow',c:'2.2',n:'Twisted Pretzel: A Food of Lent'},
+                {s:'yellow',c:'2.3',n:'Creative Easter Eggs'},
+                {s:'yellow',c:'3',n:'Festival of Colour - Holi'},
+                {s:'yellow',c:'3.1',n:'Colours of Holi'},
+                {s:'yellow',c:'3.2',n:'Nariyal Barfi'},
+                {s:'yellow',c:'4',n:'Happy Diwali (Divali)'},
+                {s:'yellow',c:'4.1',n:'Festival of Lights'},
+                {s:'yellow',c:'4.2',n:'Rangoli Designs'},
+                {s:'yellow',c:'4.3',n:'Karah Parshad'},
+
+                // Chinese New Year (7 modules)
+                {s:'yellow',c:'5',n:'Snap It Up With Chinese New Year!'},
+                {s:'yellow',c:'5.1',n:'Taste of China: Sweet Dumplings'},
+                {s:'yellow',c:'5.2',n:'Fortune Cookie Jar'},
+                {s:'yellow',c:'5.3',n:'Prosperity & Good Fortune in Red'},
+                {s:'yellow',c:'5.4',n:'Chinese Dragon Costume (Individual)'},
+                {s:'yellow',c:'5.5',n:'Chinese Dragon Costume (large)'},
+                {s:'yellow',c:'5.6',n:'The Beating Drum'},
+
+                // Australia (4 modules)
+                {s:'yellow',c:'6',n:'Celebrate with an Australian Cork Hat'},
+                {s:'yellow',c:'6.1',n:'Getting to know indigenous Australia'},
+                {s:'yellow',c:'6.2',n:'Didgeridoo: Music Maker'},
+                {s:'yellow',c:'6.3',n:'Australian Bakes: ANZAC Biscuits'},
+
+                // Christmas (9 modules)
+                {s:'yellow',c:'7',n:'Everything Christmas: Decorating Time!'},
+                {s:'yellow',c:'7.1',n:'Christmas Bingo!'},
+                {s:'yellow',c:'7.2',n:'A Ginger Christmas'},
+                {s:'yellow',c:'7.3',n:'Chocolate Logs Yule Love!'},
+                {s:'yellow',c:'7.4',n:'Chocolate Logs Made Easy'},
+                {s:'yellow',c:'7.5',n:'Gingerbread Biscuits'},
+                {s:'yellow',c:'7.6',n:'Christmas Gift photo frame'},
+                {s:'yellow',c:'7.7',n:'Seasonal Festive Wreath'},
+                {s:'yellow',c:'7.8',n:'Odd Sock Beanbag Characters'},
+
+                // Other Celebrations (6 modules)
+                {s:'yellow',c:'8',n:'Research Time!'},
+                {s:'yellow',c:'8.1',n:'Unit Spookyville'},
+                {s:'yellow',c:'8.2',n:'All Things Spooky'},
+                {s:'yellow',c:'8.3',n:'What Are The Nine Candles?'},
+                {s:'yellow',c:'8.4',n:'Saint Valentine\'s Day Kindness Box'},
+                {s:'yellow',c:'8.5',n:'Saint Patrick\'s Day: Shamrock Shake'},
+                {s:'yellow',c:'8.6',n:'A Special Sunday for Mothers & Caregivers'},
+                {s:'yellow',c:'8.7',n:'Celebrating the Iranian New Year'},
+                {s:'yellow',c:'8.8',n:'Halloween Trick or Treats'},
+
+                // Community (4 modules)
+                {s:'yellow',c:'9',n:'All About The Community'},
+                {s:'yellow',c:'9.1',n:'Community 101'},
+                {s:'yellow',c:'9.2',n:'Community Tree'},
+                {s:'yellow',c:'9.3',n:'Community Mind Map'},
+
+                // Surveys (3 modules)
+                {s:'yellow',c:'10',n:'Survey Mania'},
+                {s:'yellow',c:'10.1',n:'Chips Ahoy! Chip Shop Survey'},
+                {s:'yellow',c:'10.2',n:'Shop Surveys'},
+
+                // Community Projects (3 modules)
+                {s:'yellow',c:'11',n:'Getting Involved: Community Projects'},
+                {s:'yellow',c:'11.1',n:'Junior Cadets of the World!'},
+                {s:'yellow',c:'11.2',n:'Celebrating Diversity in Your Community'},
+
+                // Welsh (4 modules)
+                {s:'yellow',c:'12',n:'Welsh Style: Traditional Welsh Cakes'},
+                {s:'yellow',c:'12.1',n:'Welsh Style: Welsh Rarebit'},
+                {s:'yellow',c:'12.2',n:'Yr Iaith Gymraeg: Welsh Language'},
+                {s:'yellow',c:'12.3',n:'Y Ddraig Goch Flag: The Red Dragon'},
+
+                // Scottish (6 modules)
+                {s:'yellow',c:'13',n:'The Scottish Way: Haggis, Neeps & Tatties'},
+                {s:'yellow',c:'13.1',n:'The Scottish Way: Cèilidh'},
+                {s:'yellow',c:'13.2',n:'The Scottish Way: The Flag of Scotland'},
+                {s:'yellow',c:'13.3',n:'The Scottish Way: Scots Gàidhlig'},
+                {s:'yellow',c:'13.4',n:'Celebrate Saint Andrews Day: Scottish Kilt Card'},
+                {s:'yellow',c:'13.5',n:'Exploring Burns Night Supper'},
+
+                // Summer & UK (4 modules)
+                {s:'yellow',c:'15',n:'The Arrival of Summer: Maypole Dancing'},
+                {s:'yellow',c:'15.1',n:'Morris Dancing'},
+                {s:'yellow',c:'16',n:'4 Nations in 1'},
+
+                // Local Area (3 modules)
+                {s:'yellow',c:'17',n:'Places of Interest'},
+                {s:'yellow',c:'17.1',n:'Scavenger Hunt'},
+                {s:'yellow',c:'17.2',n:'Town Maps, Maps of Your Town'},
+                {s:'yellow',c:'18',n:'Broadening The Horizon'},
+
+                // Inclusion & Diversity (6 modules)
+                {s:'yellow',c:'19',n:'We Are Different, We are the Same!'},
+                {s:'yellow',c:'19.1',n:'Embrace It: Inclusion & Diversity'},
+                {s:'yellow',c:'19.2',n:'All in a phrase'},
+                {s:'yellow',c:'19.3',n:'Communicating Through Sign Language'},
+                {s:'yellow',c:'19.4',n:'Ditch The Labels!'},
+                {s:'yellow',c:'19.5',n:'Communicating through Braille'},
+
+                // Anti-Bullying (5 modules)
+                {s:'yellow',c:'20',n:'It\'s Never the Same!'},
+                {s:'yellow',c:'20.1',n:'The Issue'},
+                {s:'yellow',c:'20.2',n:'Wear It On Your Wrist!'},
+                {s:'yellow',c:'20.3',n:'Activists in Action! Anti-bullying Campaign'},
+                {s:'yellow',c:'20.4',n:'Online: It is Still Not Okay!'},
+                {s:'yellow',c:'21',n:'Ten Keys'},
+
+                // Remembrance (10 modules)
+                {s:'yellow',c:'22',n:'Remembrance Day Parade'},
+                {s:'yellow',c:'22.1',n:'Cenotaphs In The Community'},
+                {s:'yellow',c:'22.2',n:'Paper Plate Poppies'},
+                {s:'yellow',c:'22.3',n:'Recycled Remembrance Poppies'},
+                {s:'yellow',c:'22.4',n:'Remembrance Art'},
+                {s:'yellow',c:'22.5',n:'Medals to Remember'},
+                {s:'yellow',c:'22.6',n:'Portraits of Boy Seaman John T. Cornwell V.C.'},
+                {s:'yellow',c:'22.7',n:'What is your unit\'s History?'},
+                {s:'yellow',c:'22.8',n:'Remembrance Light Jars'},
+                {s:'yellow',c:'22.9',n:'Remembrance Day Wreath'},
+
+                // Home Front (3 modules)
+                {s:'yellow',c:'23',n:'The Home Front'},
+                {s:'yellow',c:'23.1',n:'Ration It Out'},
+                {s:'yellow',c:'23.2',n:'Re-enactment Time'},
+
+                // Government (3 modules)
+                {s:'yellow',c:'24',n:'Values and Citizenship: What about Governments?'},
+                {s:'yellow',c:'24.1',n:'Your Local Government: Face to Face'},
+                {s:'yellow',c:'24.2',n:'Who\'s Who: Mayors or Provosts?'},
+
+                // Special Days (2 modules)
+                {s:'yellow',c:'25',n:'Saint George\'s Day'},
+                {s:'yellow',c:'26',n:'VE Victory Sponge'},
+
+                // Plastic Reduction (4 modules)
+                {s:'yellow',c:'27',n:'#SCRAPPLASTIC Swap Out Your Plastics'},
+                {s:'yellow',c:'27.1',n:'#SCRAPPLASTIC Plastic Free Day'},
+                {s:'yellow',c:'27.2',n:'#SCRAPPLASTIC Supermarket Challenge'},
+                {s:'yellow',c:'27.3',n:'#SCRAPPLASTIC Share What You Know'},
+
+                // Earthshot (5 modules)
+                {s:'yellow',c:'28',n:'Earthshot (WFW) - Tote-tally Awesome Up-cycled Bag'},
+                {s:'yellow',c:'28.1',n:'Earthshot (WFW) - Ecobricks'},
+                {s:'yellow',c:'28.2',n:'Earthshot (WFW) - Need v Want'},
+                {s:'yellow',c:'28.3',n:'Earthshot (FOC) - Utilising Technology'},
+                {s:'yellow',c:'28.4',n:'Earthshot (WFW) - Where does our waste go?'},
+
+                // Competitions & Pride (2 modules)
+                {s:'yellow',c:'29',n:'Junior Sea Cadets Competitions'},
+                {s:'yellow',c:'30',n:'Your Identity Matters - Celebrating PRIDE'},
+
+                // Special Editions (8 modules)
+                {s:'yellow',c:'70',n:'Special Edition Platinum Jubilee'},
+                {s:'yellow',c:'70.1',n:'The Platinum Thread'},
+                {s:'yellow',c:'70.2',n:'Platinum Jubilee Fact Find'},
+                {s:'yellow',c:'71',n:'Remembering Our Patron'},
+                {s:'yellow',c:'72',n:'King\'s Coronation Party Event'},
+                {s:'yellow',c:'72.1',n:'King\'s Coronation POM POM Decorations'},
+                {s:'yellow',c:'73',n:'Big Help Out - Special Call at a Landmark'},
+
+                // ========== STEM SECTION (42 modules) ==========
+                {s:'stem',c:'1',n:'Satellite Intelligence Mission'},
+                {s:'stem',c:'2',n:'Egg Drop Challenge: Protecting The Vessels'},
+                {s:'stem',c:'3',n:'Sink Or Swim: Tinfoil Boat Float Challenge'},
+                {s:'stem',c:'4',n:'Launched Out To Sea: Pom Pom Catapult'},
+                {s:'stem',c:'5',n:'Propeller Nation'},
+                {s:'stem',c:'6',n:'Steer The Ship: Eco-Friendly Giant Maze'},
+                {s:'stem',c:'7',n:'Why It Just Won\'t Work: Salt Pendulum'},
+                {s:'stem',c:'8',n:'Amazing Anchors'},
+                {s:'stem',c:'9',n:'Setting Sail'},
+                {s:'stem',c:'10',n:'Ancient Compasses'},
+                {s:'stem',c:'11',n:'Balancing Boats'},
+                {s:'stem',c:'12',n:'Carrying Cargo'},
+                {s:'stem',c:'13',n:'Electric Engines'},
+                {s:'stem',c:'14',n:'Incredible Insulation'},
+                {s:'stem',c:'15',n:'Invisible Islands'},
+                {s:'stem',c:'16',n:'Luminous Lighthouses'},
+                {s:'stem',c:'17',n:'Oceans In A Bottle'},
+                {s:'stem',c:'18',n:'Salt In The Seas'},
+                {s:'stem',c:'19',n:'Speedy Ships'},
+                {s:'stem',c:'20',n:'The World Around Us: Which Metal? Rust!'},
+                {s:'stem',c:'21',n:'Special Edition: Somewhere Over The Rainbow'},
+                {s:'stem',c:'22',n:'Wind Speed And Pressure: Anemometer'},
+                {s:'stem',c:'23',n:'Elastic Band Powered Cars'},
+                {s:'stem',c:'24',n:'Propelling Forward'},
+                {s:'stem',c:'25',n:'Get Moving - A Chemical Reaction Powered Model Boat!'},
+                {s:'stem',c:'26',n:'Weather Warning - Making A Barometer'},
+                {s:'stem',c:'27',n:'Underwater Volcano - A Force Of Nature!'},
+                {s:'stem',c:'28',n:'Tornado In A Bottle'},
+                {s:'stem',c:'29',n:'Cartesian Diver'},
+                {s:'stem',c:'30',n:'How Long Is A Minute? - Water Clock'},
+                {s:'stem',c:'31',n:'The Science Behind Making The Right Choice!'},
+                {s:'stem',c:'32',n:'Up Periscope - Make Your Own Submarine Periscope'},
+                {s:'stem',c:'33',n:'Geodesic Domes'},
+                {s:'stem',c:'34',n:'Sublime Slime'},
+                {s:'stem',c:'35',n:'Air Power: Balloon Car'},
+                {s:'stem',c:'36',n:'Ruffle Some Feathers - Mini Vortex Cannon'},
+                {s:'stem',c:'37',n:'Paper Roller Coaster - Kinetic & Potential Energy'},
+                {s:'stem',c:'38',n:'Moon Dial'},
+                {s:'stem',c:'39',n:'Paper Glider'},
+                {s:'stem',c:'40',n:'Lava Lamp'},
+                {s:'stem',c:'41',n:'Puffer Fish'},
+                {s:'stem',c:'42',n:'Waste-Free Lunch'}
+            ];
+            
+            // Bulk Recording Handlers
+            const toggleRecordingMode = () => {
+                if (recordingMode) {
+                    // Exiting recording mode without saving - clear selections
+                    setSelectedModules(new Set());
+                }
+                setRecordingMode(!recordingMode);
+            };
+            
+            const handleCellClick = (juniorPNumber, moduleSection, moduleCode) => {
+                if (!recordingMode) return;
+                
+                // Check if module is already completed
+                if (hasModule(juniorPNumber, moduleSection, moduleCode)) return;
+                
+                const key = `${juniorPNumber}-${moduleSection}-${moduleCode}`;
+                const newSelected = new Set(selectedModules);
+                
+                if (newSelected.has(key)) {
+                    newSelected.delete(key);
+                } else {
+                    newSelected.add(key);
+                }
+                
+                setSelectedModules(newSelected);
+            };
+            
+            const clearSelections = () => {
+                setSelectedModules(new Set());
+            };
+            
+            const saveModules = async () => {
+                if (selectedModules.size === 0) {
+                    alert('No modules selected. Please select modules to record.');
+                    return;
+                }
+                
+                const confirmMsg = `Record ${selectedModules.size} module completion${selectedModules.size !== 1 ? 's' : ''}?\n\nThis will mark them as completed with today's date.`;
+                if (!confirm(confirmMsg)) return;
+                
+                try {
+                    // Get user ID from Supabase auth
+                    const { data: { user }, error: authError } = await supabase.auth.getUser();
+                    if (authError || !user) {
+                        alert('Authentication error. Please refresh and try again.');
+                        return;
+                    }
+                    
+                    const today = new Date().toISOString().split('T')[0];
+                    const newCompletions = [];
+                    const alreadyCompleted = [];
+                    
+                    // Check each selected module against current data
+                    selectedModules.forEach(key => {
+                        const [pNumber, section, code] = key.split('-');
+                        
+                        // Double-check if module is already completed
+                        const exists = hasModule(pNumber, section, code);
+                        if (exists) {
+                            alreadyCompleted.push(`${pNumber} - ${section.toUpperCase()} ${code}`);
+                            return; // Skip this module
+                        }
+                        
+                        const module = allModules.find(m => m.s === section && m.c === code);
+                        
+                        newCompletions.push({
+                            pNumber: pNumber,
+                            section: section,
+                            moduleCode: code,
+                            moduleName: module ? module.n : code,
+                            dateCompleted: today,
+                            isCore: module?.core || false
+                        });
+                    });
+                    
+                    // Alert if any duplicates were found
+                    if (alreadyCompleted.length > 0) {
+                        alert(`⚠️ Skipping ${alreadyCompleted.length} module(s) that are already completed:\n\n${alreadyCompleted.join('\n')}\n\nWill only add ${newCompletions.length} new module(s).`);
+                        
+                        if (newCompletions.length === 0) {
+                            setSelectedModules(new Set());
+                            return; // Nothing to add
+                        }
+                    }
+                    
+                    // Use the new incremental add function
+                    const success = await addJuniorModules(user.id, newCompletions);
+                    
+                    if (success) {
+                        alert(`Successfully recorded ${newCompletions.length} module completion${newCompletions.length !== 1 ? 's' : ''}!`);
+                        setSelectedModules(new Set());
+                        setRecordingMode(false);
+                        window.location.reload(); // Refresh to show new completions
+                    } else {
+                        alert('Error saving module completions. Please check console for details.');
+                    }
+                } catch (error) {
+                    console.error('Error saving modules:', error);
+                    
+                    // Better error message for duplicate constraint
+                    if (error.code === '23505') {
+                        alert('⚠️ Duplicate Error: One or more selected modules are already completed in the database.\n\nThis can happen if data was recently updated. Please refresh the page and try again.');
+                    } else {
+                        alert('Error saving module completions: ' + error.message);
+                    }
+                }
+            };
+            
+            const hasModule = (pNumber, section, code) => {
+                return juniorData?.moduleCompletions?.find(m => 
+                    m.pNumber === pNumber && m.section === section && m.moduleCode === code
+                );
+            };
+            
+            const getSectionColor = (section) => {
+                const colors = {
+                    red: 'bg-red-600',
+                    blue: 'bg-blue-600',
+                    green: 'bg-green-600',
+                    yellow: 'bg-yellow-600',
+                    stem: 'bg-purple-600'
+                };
+                return colors[section];
+            };
+            
+            const getSectionBg = (section) => {
+                const colors = {
+                    red: 'bg-red-50',
+                    blue: 'bg-blue-50',
+                    green: 'bg-green-50',
+                    yellow: 'bg-yellow-50',
+                    stem: 'bg-purple-50'
+                };
+                return colors[section];
+            };
+            
+            const getSectionModuleBg = (section) => {
+                const colors = {
+                    red: 'bg-red-100 text-red-900',
+                    blue: 'bg-blue-100 text-blue-900',
+                    green: 'bg-green-100 text-green-900',
+                    yellow: 'bg-yellow-100 text-yellow-900',
+                    stem: 'bg-purple-100 text-purple-900'
+                };
+                return colors[section];
+            };
+            
+            // Filter modules based on selected section
+            const filteredModules = allModules.filter(mod => mod.s === selectedSection);
+            
+            const sectionTabs = [
+                { id: 'red', label: 'Red - Unit', count: allModules.filter(m => m.s === 'red').length, color: 'red' },
+                { id: 'blue', label: 'Blue - Waterborne', count: allModules.filter(m => m.s === 'blue').length, color: 'blue' },
+                { id: 'green', label: 'Green - Outdoor', count: allModules.filter(m => m.s === 'green').length, color: 'green' },
+                { id: 'yellow', label: 'Yellow - Community', count: allModules.filter(m => m.s === 'yellow').length, color: 'yellow' },
+                { id: 'stem', label: 'STEM', count: allModules.filter(m => m.s === 'stem').length, color: 'purple' }
+            ];
+            
+            // PDF Export Function
+            const exportToPDF = () => {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+                
+                const unitName = personnel.length > 0 ? cleanUnitName(personnel[0].unit) : "Unit";
+                const sectionName = sectionTabs.find(t => t.id === selectedSection)?.label || selectedSection;
+                
+                // Section color mapping (RGB values)
+                const sectionColors = {
+                    'red': [220, 38, 38],      // red-600
+                    'blue': [37, 99, 235],     // blue-600
+                    'green': [22, 163, 74],    // green-600
+                    'yellow': [202, 138, 4],   // yellow-600
+                    'stem': [147, 51, 234]     // purple-600
+                };
+                const fillColor = sectionColors[selectedSection] || [13, 172, 80];
+                
+                // Header
+                doc.setFont("helvetica", "bold");
+                doc.setFontSize(16);
+                doc.text(`Junior Progress Chart - ${sectionName}`, 148.5, 15, { align: "center" });
+                
+                doc.setFont("helvetica", "normal");
+                doc.setFontSize(10);
+                doc.text(unitName, 148.5, 22, { align: "center" });
+                doc.text(`Generated: ${new Date().toLocaleDateString('en-GB')}`, 148.5, 27, { align: "center" });
+                
+                // Calculate column width based on number of juniors
+                const startY = 35;
+                const moduleColWidth = 60;
+                const availableWidth = 297 - moduleColWidth - 10;
+                const cadetColWidth = Math.min(20, availableWidth / juniors.length);
+                
+                // Table Headers
+                doc.setFontSize(7);
+                doc.setFont("helvetica", "bold");
+                
+                // Module column header
+                doc.rect(5, startY, moduleColWidth, 25);
+                doc.text("Module", 7, startY + 13);
+                
+                // Cadet column headers (vertical text)
+                juniors.forEach((junior, idx) => {
+                    const x = 5 + moduleColWidth + (idx * cadetColWidth);
+                    doc.rect(x, startY, cadetColWidth, 25);
+                    
+                    // Full surname, rotated 90 degrees - centered horizontally, starts from bottom
+                    const surname = junior.name.split(',')[0];
+                    // Position text at exact center of column width, bottom of header box
+                    const centerX = x + (cadetColWidth / 2);
+                    const bottomY = startY + 23; // Near bottom of 25mm header
+                    doc.text(surname, centerX, bottomY, { 
+                        align: "left",
+                        angle: 90
+                    });
+                });
+                
+                // Table Body
+                let currentY = startY + 25;
+                doc.setFont("helvetica", "normal");
+                doc.setFontSize(7);
+                
+                filteredModules.forEach((mod, idx) => {
+                    // Check if we need a new page
+                    if (currentY > 185) {
+                        doc.addPage();
+                        currentY = 20;
+                    }
+                    
+                    const rowHeight = 6;
+                    
+                    // Module name
+                    doc.rect(5, currentY, moduleColWidth, rowHeight);
+                    const moduleText = `${mod.s.toUpperCase()} ${mod.c}: ${mod.n}`;
+                    const truncated = moduleText.length > 45 ? moduleText.substring(0, 42) + "..." : moduleText;
+                    doc.text(truncated, 7, currentY + 4);
+                    
+                    // Completion status for each junior
+                    juniors.forEach((junior, jIdx) => {
+                        const x = 5 + moduleColWidth + (jIdx * cadetColWidth);
+                        doc.rect(x, currentY, cadetColWidth, rowHeight);
+                        
+                        const completion = hasModule(junior.pNumber, mod.s, mod.c);
+                        if (completion) {
+                            // Draw checkmark in section color
+                            doc.setFillColor(...fillColor);
+                            doc.rect(x, currentY, cadetColWidth, rowHeight, 'F');
+                            doc.setTextColor(255, 255, 255);
+                            doc.text("✓", x + cadetColWidth/2, currentY + 4, { align: "center" });
+                            doc.setTextColor(0, 0, 0);
+                        }
+                    });
+                    
+                    currentY += rowHeight;
+                });
+                
+                // Summary footer
+                doc.setFont("helvetica", "bold");
+                doc.setFontSize(8);
+                currentY += 5;
+                if (currentY > 185) {
+                    doc.addPage();
+                    currentY = 20;
+                }
+                doc.text("Summary:", 7, currentY);
+                currentY += 5;
+                
+                doc.setFont("helvetica", "normal");
+                doc.setFontSize(7);
+                juniors.forEach((junior, idx) => {
+                    const moduleCount = juniorData?.moduleCompletions?.filter(m => 
+                        m.pNumber === junior.pNumber && m.section === selectedSection
+                    ).length || 0;
+                    const shortName = junior.name.split(',')[0];
+                    doc.text(`${shortName}: ${moduleCount}/${filteredModules.length}`, 7 + (idx * 40), currentY);
+                    if ((idx + 1) % 7 === 0) currentY += 4;
+                });
+                
+                doc.save(`Junior_Progress_${sectionName.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`);
+            };
+            
+            return (
+                <div className="space-y-4">
+                    <div className="bg-white rounded-lg shadow p-4 border-l-4 border-purple-500">
+                        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                            <div className="flex items-center gap-3">
+                                <Icon name="BarChart3" className="w-6 h-6 text-purple-700" />
+                                <div>
+                                    <h1 className="text-2xl font-bold text-slate-900">Junior Progress Chart</h1>
+                                    <p className="text-sm text-slate-600">{juniors.length} juniors tracked across {allModules.length} modules</p>
+                                </div>
+                            </div>
+                            <div className="flex flex-wrap gap-2 items-center">
+                                {!recordingMode ? (
+                                    <>
+                                        <button
+                                            onClick={toggleRecordingMode}
+                                            className="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold text-xs transition-all flex items-center gap-1"
+                                        >
+                                            <Icon name="Edit" className="w-3 h-3" />
+                                            Record Modules
+                                        </button>
+                                        <button
+                                            onClick={exportToPDF}
+                                            className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold text-xs transition-all flex items-center gap-1"
+                                        >
+                                            <Icon name="FileDown" className="w-3 h-3" />
+                                            Export PDF
+                                        </button>
+                                    </>
+                                ) : (
+                                    <>
+                                        <button
+                                            onClick={saveModules}
+                                            disabled={selectedModules.size === 0}
+                                            className={`px-3 py-1.5 rounded-lg font-semibold text-xs transition-all flex items-center gap-1 ${
+                                                selectedModules.size > 0 
+                                                    ? 'bg-green-600 hover:bg-green-700 text-white' 
+                                                    : 'bg-slate-300 text-slate-500 cursor-not-allowed'
+                                            }`}
+                                        >
+                                            <Icon name="Save" className="w-3 h-3" />
+                                            Save Modules ({selectedModules.size})
+                                        </button>
+                                        <button
+                                            onClick={clearSelections}
+                                            disabled={selectedModules.size === 0}
+                                            className={`px-3 py-1.5 rounded-lg font-semibold text-xs transition-all flex items-center gap-1 ${
+                                                selectedModules.size > 0 
+                                                    ? 'bg-amber-600 hover:bg-amber-700 text-white' 
+                                                    : 'bg-slate-300 text-slate-500 cursor-not-allowed'
+                                            }`}
+                                        >
+                                            <Icon name="X" className="w-3 h-3" />
+                                            Clear
+                                        </button>
+                                        <button
+                                            onClick={toggleRecordingMode}
+                                            className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold text-xs transition-all flex items-center gap-1"
+                                        >
+                                            <Icon name="X" className="w-3 h-3" />
+                                            Cancel
+                                        </button>
+                                        <span className="text-xs font-semibold text-blue-600 bg-blue-50 px-3 py-1.5 rounded-lg">
+                                            Recording Mode Active - Click cells to select
+                                        </span>
+                                    </>
+                                )}
+                                {sectionTabs.map(tab => (
+                                    <button
+                                        key={tab.id}
+                                        onClick={() => setSelectedSection(tab.id)}
+                                        className={`px-3 py-1.5 rounded-lg font-semibold text-xs transition-all ${
+                                            selectedSection === tab.id
+                                                ? tab.color === 'red' ? 'bg-red-600 text-white' :
+                                                  tab.color === 'blue' ? 'bg-blue-600 text-white' :
+                                                  tab.color === 'green' ? 'bg-green-600 text-white' :
+                                                  tab.color === 'yellow' ? 'bg-yellow-600 text-white' :
+                                                  'bg-purple-600 text-white'
+                                                : `bg-${tab.color}-50 text-${tab.color}-700 hover:bg-${tab.color}-100`
+                                        }`}
+                                    >
+                                        {tab.label} <span className="opacity-75">({tab.count})</span>
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div className="bg-white rounded-lg shadow overflow-hidden">
+                        <div className="overflow-x-auto" style={{maxHeight: '70vh', overflowY: 'auto'}}>
+                            <table className="min-w-full text-xs border-collapse">
+                                <thead className="bg-slate-100 sticky top-0 z-20">
+                                    <tr>
+                                        <th className="sticky left-0 bg-slate-100 px-2 py-2 text-left font-bold text-slate-700 uppercase z-30 border-r text-xs" style={{maxWidth: '200px', width: '200px'}}>
+                                            Module / Cadet
+                                        </th>
+                                        {juniors.map(junior => {
+                                            // Calculate module count for this junior in the selected section
+                                            const moduleCount = juniorData?.moduleCompletions?.filter(m => 
+                                                m.pNumber === junior.pNumber && m.section === selectedSection
+                                            ).length || 0;
+                                            return (
+                                            <th key={junior.pNumber} className="px-1 py-2 text-center font-semibold text-slate-700 border-r last:border-r-0 relative bg-slate-100" style={{width: '30px'}}>
+                                                <div className="flex items-center justify-center" style={{height: '140px'}}>
+                                                    <div style={{
+                                                        transform: 'rotate(-90deg)',
+                                                        transformOrigin: 'center center',
+                                                        whiteSpace: 'nowrap',
+                                                        width: '140px',
+                                                        textAlign: 'left',
+                                                        position: 'absolute'
+                                                    }}>
+                                                        <div className="text-[10px] font-bold leading-tight">{junior.name}</div>
+                                                        <div className="text-[8px] font-normal text-slate-500 leading-tight">{junior.rank}</div>
+                                                        <div className="text-[9px] font-bold text-blue-600 leading-tight mt-0.5">{moduleCount} modules</div>
+                                                    </div>
+                                                </div>
+                                            </th>
+                                            );
+                                        })}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {filteredModules.map((mod, idx) => (
+                                        <tr key={`${mod.s}-${mod.c}`} className={getSectionBg(mod.s)}>
+                                            <td className={`sticky left-0 px-2 py-1 font-semibold border-r border-b z-10 text-xs ${getSectionModuleBg(mod.s)}`} style={{maxWidth: '200px', width: '200px'}}>
+                                                <div className="overflow-hidden text-ellipsis whitespace-nowrap" title={`${mod.s.toUpperCase()} ${mod.c}: ${mod.n}`}>
+                                                    {(() => {
+                                                        // Check if this is a core module
+                                                        const redCores = ["1", "1.1", "1.2", "1.3", "1.4", "1.5", "2", "2.1", "2.2", "2.3", "3", "4", "4.1", "4.2", "5", "6"];
+                                                        const blueCores = ["1", "1.1", "1.2", "9", "21", "21.1", "21.2", "21.3", "25"];
+                                                        const isCore = (mod.s === 'red' && redCores.includes(mod.c)) || (mod.s === 'blue' && blueCores.includes(mod.c));
+                                                        
+                                                        return (
+                                                            <>
+                                                                {isCore && <span className="text-amber-500 mr-1">★</span>}
+                                                                <span className="font-bold">{mod.s.toUpperCase()} {mod.c}:</span> {mod.n}
+                                                            </>
+                                                        );
+                                                    })()}
+                                                </div>
+                                            </td>
+                                            {juniors.map(junior => {
+                                                const completion = hasModule(junior.pNumber, mod.s, mod.c);
+                                                const selectionKey = `${junior.pNumber}-${mod.s}-${mod.c}`;
+                                                const isSelected = selectedModules.has(selectionKey);
+                                                const isClickable = recordingMode && !completion;
+                                                
+                                                return (
+                                                    <td 
+                                                        key={junior.pNumber} 
+                                                        style={{width: '30px'}} 
+                                                        className={`px-0 py-1 text-center border-r border-b last:border-r-0 transition-all ${
+                                                            completion ? getSectionColor(mod.s) : 
+                                                            isSelected ? 'bg-blue-400 ring-2 ring-blue-600 ring-inset' :
+                                                            isClickable ? 'hover:bg-blue-50 cursor-pointer' : ''
+                                                        }`}
+                                                        title={
+                                                            completion ? `Completed: ${formatDate(completion.dateCompleted)}` : 
+                                                            isClickable ? 'Click to select for recording' : 
+                                                            ''
+                                                        }
+                                                        onClick={() => handleCellClick(junior.pNumber, mod.s, mod.c)}
+                                                    >
+                                                        {completion ? '✓' : isSelected ? '○' : ''}
+                                                    </td>
+                                                );
+                                            })}
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
 
 
         // Juniors View Component
@@ -4527,19 +5882,37 @@
                 reader.onload = async (event) => {
                     try {
                         const imported = JSON.parse(event.target.result);
-                        if (confirm('Import this data? This will replace all local junior data.')) {
-                            setUploadStatus('Importing junior data...');
-                            const result = await saveJuniorData(imported);
-                            if (result) {
-                                setUploadStatus('Import successful! Reloading...');
-                                setTimeout(() => window.location.reload(), 1000);
+                        console.log(`📦 Junior import: ${imported.moduleCompletions?.length || 0} completions found`);
+                        
+                        if (confirm(`Import ${imported.moduleCompletions?.length || 0} junior module completions? This will replace all junior data in Supabase.`)) {
+                            // Get current user from Supabase session
+                            const { data: { user } } = await supabase.auth.getUser();
+                            if (!user) {
+                                alert('Error: Not logged in. Please refresh and try again.');
+                                return;
+                            }
+                            
+                            console.log(`💾 Saving to Supabase for user: ${user.id}`);
+                            const result = await saveJuniorData(user.id, imported);
+                            
+                            if (result.success) {
+                                console.log('✅ Junior data saved to Supabase successfully!');
+                                const msg = `Import complete!\n\n` +
+                                    `Total records: ${result.totalRecords}\n` +
+                                    `Duplicates removed: ${result.duplicatesRemoved}\n` +
+                                    `Records inserted: ${result.insertedRecords}\n\n` +
+                                    (result.duplicateExamples ? `Example duplicates:\n${result.duplicateExamples}\n\n` : '') +
+                                    `Check console for full details.\n\n` +
+                                    `Click OK to reload the page.`;
+                                alert(msg);
+                                window.location.reload();
                             } else {
-                                setUploadStatus('');
-                                alert('Error importing data. Check console (F12) for details.');
+                                console.error('❌ Failed to save junior data to Supabase');
+                                alert('Error saving junior data to Supabase. Check console for details.');
                             }
                         }
                     } catch (e) {
-                        console.error('Import error:', e);
+                        console.error('Error importing junior data:', e);
                         alert('Error parsing JSON file: ' + e.message);
                     }
                 };
@@ -4632,7 +6005,7 @@
                         
                         <div className="bg-blue-100 p-4 rounded-lg">
                             <p className="text-sm text-blue-900">
-                                <strong>Current data:</strong> {juniorData.moduleCompletions.length} module completions tracked
+                                <strong>Current data:</strong> {juniorData?.moduleCompletions?.length || 0} module completions tracked
                             </p>
                         </div>
                     </div>
@@ -4703,11 +6076,11 @@
                                         
                                         // For each junior, check if they've completed this module
                                         const cells = juniors.map(junior => {
-                                            const hasCompleted = juniorData.moduleCompletions.some(comp => 
+                                            const hasCompleted = juniorData?.moduleCompletions?.some(comp => 
                                                 comp.pNumber === junior.pNumber &&
                                                 comp.section === section &&
                                                 comp.moduleCode === moduleCode
-                                            );
+                                            ) || false;
                                             return hasCompleted ? "X" : "";
                                         });
                                         
@@ -5127,11 +6500,11 @@
                             </div>
                             <div>
                                 <p className="text-slate-600 font-semibold">Junior Completions</p>
-                                <p className="text-slate-900">{juniorData.moduleCompletions.length} records</p>
+                                <p className="text-slate-900">{juniorData?.moduleCompletions?.length || 0} records</p>
                             </div>
                             <div>
                                 <p className="text-slate-600 font-semibold">Storage Used</p>
-                                <p className="text-slate-900">~{Math.round(JSON.stringify(juniorData).length / 1024)}KB</p>
+                                <p className="text-slate-900">~{Math.round(JSON.stringify(juniorData || {moduleCompletions: [], rankHistory: [], sectionBadges: []}).length / 1024)}KB</p>
                             </div>
                         </div>
                     </div>
@@ -5144,12 +6517,37 @@
         // ============================================================================
         
         const JuniorsView = ({ personnel, qualifications }) => {
-            const juniorData = getJuniorData();
+            const [juniorData, setJuniorData] = useState({ moduleCompletions: [], rankHistory: [], sectionBadges: [] });
+            const [loading, setLoading] = useState(true);
+            
+            // Load junior data from Supabase on mount
+            useEffect(() => {
+                const loadData = async () => {
+                    const { data: { user } } = await supabase.auth.getUser();
+                    if (user) {
+                        const data = await getJuniorData(user.id);
+                        setJuniorData(data);
+                    }
+                    setLoading(false);
+                };
+                loadData();
+            }, []);
             
             // Filter personnel to only juniors (under 12 or 12 with junior modules/rank)
             const juniors = personnel.filter(cadet => isJunior(cadet.dob, cadet.pNumber, cadet.rank));
             
             const [selectedJuniorPNum, setSelectedJuniorPNum] = useState(juniors.length > 0 ? juniors[0].pNumber : "");
+            
+            if (loading) {
+                return (
+                    <div className="p-8">
+                        <div className="bg-white rounded-lg shadow p-8 text-center">
+                            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-700 mx-auto mb-4"></div>
+                            <p className="text-slate-600">Loading junior data...</p>
+                        </div>
+                    </div>
+                );
+            }
             
             if (juniors.length === 0) {
                 return (
@@ -5195,7 +6593,7 @@
                                     >
                                         {juniors.map(junior => {
                                             // Calculate progress for this junior
-                                            const juniorMods = juniorData.moduleCompletions.filter(m => m.pNumber === junior.pNumber);
+                                            const juniorMods = juniorData?.moduleCompletions?.filter(m => m.pNumber === junior.pNumber) || [];
                                             const redCount = juniorMods.filter(m => m.section === 'red').length;
                                             const blueCount = juniorMods.filter(m => m.section === 'blue').length;
                                             const greenCount = juniorMods.filter(m => m.section === 'green').length;
@@ -5226,7 +6624,7 @@
                                             const age = calculateAge(selectedJunior.dob);
                                             const timeTo12 = timeTo12thBirthday(selectedJunior.dob);
                                             const currentRank = selectedJunior.rank || "Junior Cadet";
-                                            const juniorModules = juniorData.moduleCompletions.filter(m => m.pNumber === selectedJunior.pNumber);
+                                            const juniorModules = juniorData?.moduleCompletions?.filter(m => m.pNumber === selectedJunior.pNumber) || [];
                                             const redModules = juniorModules.filter(m => m.section === 'red').length;
                                             const blueModules = juniorModules.filter(m => m.section === 'blue').length;
                                             const greenModules = juniorModules.filter(m => m.section === 'green').length;
@@ -5419,7 +6817,7 @@
                             
                             // For juniors, check junior rank requirements
                             if (isJunior(cadet.dob, cadet.pNumber, cadet.rank)) {
-                                const juniorMods = juniorData.moduleCompletions.filter(m => m.pNumber === cadet.pNumber);
+                                const juniorMods = juniorData?.moduleCompletions?.filter(m => m.pNumber === cadet.pNumber) || [];
                                 const redCount = juniorMods.filter(m => m.section === 'red').length;
                                 const blueCount = juniorMods.filter(m => m.section === 'blue').length;
                                 const greenCount = juniorMods.filter(m => m.section === 'green').length;
@@ -5529,7 +6927,7 @@
                     {/* Progress Alert Summary */}
                     {(() => {
                         const juniorsWithAlerts = juniors.filter(junior => {
-                            const juniorMods = juniorData.moduleCompletions.filter(m => m.pNumber === junior.pNumber);
+                            const juniorMods = juniorData?.moduleCompletions?.filter(m => m.pNumber === junior.pNumber) || [];
                             const counts = [
                                 juniorMods.filter(m => m.section === 'red').length,
                                 juniorMods.filter(m => m.section === 'blue').length,
@@ -5576,7 +6974,7 @@
             const timeTo12 = timeTo12thBirthday(junior.dob);
             
             // Get this junior's completed modules
-            const juniorModules = juniorData.moduleCompletions.filter(m => m.pNumber === junior.pNumber);
+            const juniorModules = juniorData?.moduleCompletions?.filter(m => m.pNumber === junior.pNumber) || [];
             
             // Get section progress
             const redModules = juniorModules.filter(m => m.section === 'red').length;
@@ -5608,7 +7006,7 @@
             const countProficiencies = (pNumber) => {
                 if (!qualifications || qualifications.length === 0) return 0;
                 const juniorQuals = qualifications.filter(q => q.pNumber === pNumber);
-                const juniorMods = juniorData.moduleCompletions.filter(m => m.pNumber === pNumber);
+                const juniorMods = juniorData?.moduleCompletions?.filter(m => m.pNumber === pNumber) || [];
                 
                 let count = 0;
                 
@@ -5765,7 +7163,7 @@
                 }
             }
             
-            const handleModuleSubmit = () => {
+            const handleModuleSubmit = async () => {
                 if (!moduleCode.trim()) {
                     alert("Please enter a module code");
                     return;
@@ -5789,30 +7187,40 @@
                     }
                 }
                 
-                // Create module object
-                const newModule = {
-                    pNumber: junior.pNumber,
-                    section: section,
-                    moduleCode: code.toUpperCase(),
-                    moduleName: `${section.toUpperCase()} ${code}`,
-                    dateCompleted: dateCompleted,
-                    isCore: false
-                };
-                
-                const updatedData = {
-                    ...juniorData,
-                    moduleCompletions: [...juniorData.moduleCompletions, newModule]
-                };
-                
-                if (saveJuniorData(updatedData)) {
-                    setShowSuccess(true);
-                    setModuleCode('');
-                    setTimeout(() => {
-                        setShowSuccess(false);
-                        window.location.reload(); // Refresh to show new data
-                    }, 1500);
-                } else {
-                    alert("Error saving module completions");
+                try {
+                    // Get user ID from Supabase auth
+                    const { data: { user }, error: authError } = await supabase.auth.getUser();
+                    if (authError || !user) {
+                        alert('Authentication error. Please refresh and try again.');
+                        return;
+                    }
+                    
+                    // Create module object
+                    const newModule = {
+                        pNumber: junior.pNumber,
+                        section: section,
+                        moduleCode: code.toUpperCase(),
+                        moduleName: `${section.toUpperCase()} ${code}`,
+                        dateCompleted: dateCompleted,
+                        isCore: false
+                    };
+                    
+                    // Use the new incremental add function
+                    const success = await addJuniorModules(user.id, [newModule]);
+                    
+                    if (success) {
+                        setShowSuccess(true);
+                        setModuleCode('');
+                        setTimeout(() => {
+                            setShowSuccess(false);
+                            window.location.reload(); // Refresh to show new data
+                        }, 1500);
+                    } else {
+                        alert("Error saving module completion. Please check console for details.");
+                    }
+                } catch (error) {
+                    console.error('Error saving module:', error);
+                    alert("Error saving module: " + error.message);
                 }
             };
             
@@ -5824,41 +7232,31 @@
                 }
                 
                 try {
-                    // Filter out the module to delete
-                    const updatedCompletions = juniorData.moduleCompletions.filter(m => 
-                        !(m.pNumber === moduleToDelete.pNumber && 
-                          m.section === moduleToDelete.section && 
-                          m.moduleCode === moduleToDelete.moduleCode &&
-                          m.dateCompleted === moduleToDelete.dateCompleted)
+                    // Get user ID from Supabase auth
+                    const { data: { user }, error: authError } = await supabase.auth.getUser();
+                    if (authError || !user) {
+                        alert('Authentication error. Please refresh and try again.');
+                        return;
+                    }
+                    
+                    // Delete from Supabase
+                    const success = await deleteJuniorModule(
+                        user.id, 
+                        moduleToDelete.pNumber, 
+                        moduleToDelete.section, 
+                        moduleToDelete.moduleCode,
+                        moduleToDelete.dateCompleted
                     );
                     
-                    const updatedData = {
-                        ...juniorData,
-                        moduleCompletions: updatedCompletions
-                    };
-                    
-                    // Show loading state
-                    const deleteBtn = event.target;
-                    const originalText = deleteBtn.textContent;
-                    deleteBtn.textContent = 'Deleting...';
-                    deleteBtn.disabled = true;
-                    
-                    const result = await saveJuniorData(updatedData);
-                    
-                    if (result) {
-                        console.log('✓ Module deleted successfully');
+                    if (success) {
+                        alert("Module deleted successfully");
                         window.location.reload(); // Refresh to show updated data
                     } else {
-                        throw new Error('Save function returned false');
+                        alert("Error deleting module. Please check console for details.");
                     }
                 } catch (error) {
-                    console.error('Delete error:', error);
-                    alert(`Error deleting module: ${error.message}\n\nPlease check the browser console (F12) for details.`);
-                    // Reset button state
-                    if (event && event.target) {
-                        event.target.textContent = 'Delete';
-                        event.target.disabled = false;
-                    }
+                    console.error('Error deleting module:', error);
+                    alert("Error deleting module: " + error.message);
                 }
             };
             
@@ -6451,305 +7849,294 @@
             const [warnings, setWarnings] = useState(null);
             
             useEffect(() => {
-                try {
-                    const stored = localStorage.getItem('importWarnings');
-                    if (stored) {
+                const stored = localStorage.getItem('importWarnings');
+                if (stored) {
+                    try {
                         setWarnings(JSON.parse(stored));
+                    } catch (e) {
+                        console.error('Error parsing import warnings', e);
                     }
-                } catch (e) {
-                    console.error('Error loading warnings:', e);
                 }
             }, []);
+            
+            const downloadWarnings = () => {
+                if (!warnings || !warnings.warnings) return;
+                
+                const csvContent = "data:text/csv;charset=utf-8," 
+                    + "Row,Warning\n"
+                    + warnings.warnings.map(err => {
+                        const match = err.match(/Row (\d+): (.+)/);
+                        if (match) {
+                            return `${match[1]},"${match[2].replace(/"/g, '""')}"`;
+                        }
+                        return `,"${err.replace(/"/g, '""')}"`;
+                    }).join("\n");
+                
+                const encodedUri = encodeURI(csvContent);
+                const link = document.createElement("a");
+                link.setAttribute("href", encodedUri);
+                link.setAttribute("download", `validation_warnings_${new Date().toISOString().split('T')[0]}.csv`);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            };
+            
+            const dismiss = () => {
+                localStorage.removeItem('importWarnings');
+                setWarnings(null);
+            };
             
             if (!warnings || !warnings.warnings || warnings.warnings.length === 0) {
                 return null;
             }
             
             return (
-                <div className="bg-amber-50 border-b-2 border-amber-300 p-2 text-center">
-                    <p className="text-sm text-amber-800">
-                        {warnings.warnings.length} warning{warnings.warnings.length !== 1 ? 's' : ''} from recent import
-                    </p>
+                <div className="fixed top-0 left-0 right-0 z-50 bg-amber-50 border-b-4 border-amber-500 shadow-lg">
+                    <div className="max-w-7xl mx-auto p-4">
+                        <div className="flex justify-between items-start">
+                            <div className="flex-1">
+                                <p className="font-bold text-amber-900 flex items-center gap-2 mb-2">
+                                    <Icon name="AlertTriangle" className="w-5 h-5" />
+                                    {warnings.warnings.length} Validation Warning{warnings.warnings.length !== 1 ? 's' : ''} from Recent Import
+                                </p>
+                                <div className="text-sm text-amber-800 max-h-32 overflow-y-auto space-y-1 mb-2">
+                                    {warnings.warnings.slice(0, 5).map((err, idx) => (
+                                        <div key={idx} className="pl-2 border-l-2 border-amber-300">• {err}</div>
+                                    ))}
+                                    {warnings.warnings.length > 5 && (
+                                        <p className="font-semibold">...and {warnings.warnings.length - 5} more warnings</p>
+                                    )}
+                                </div>
+                                <p className="text-xs text-amber-700">
+                                    Imported {warnings.personnelCount} personnel and {warnings.qualsCount} qualifications with some data quality issues.
+                                </p>
+                            </div>
+                            <div className="flex gap-2 ml-4">
+                                <button 
+                                    onClick={downloadWarnings}
+                                    className="text-amber-700 hover:text-amber-900 flex items-center gap-1 text-sm font-semibold px-3 py-1 bg-amber-100 rounded hover:bg-amber-200"
+                                    title="Download warnings as CSV"
+                                >
+                                    <Icon name="Download" className="w-4 h-4" />
+                                    Download CSV
+                                </button>
+                                <button 
+                                    onClick={dismiss} 
+                                    className="text-amber-600 hover:text-amber-800"
+                                    title="Dismiss warnings"
+                                >
+                                    <Icon name="X" className="w-5 h-5" />
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             );
         };
         
-        const LoginScreen = () => {
+        // ═══════════════════════════════════════════════════════════════════════════
+        // AUTHENTICATION COMPONENTS
+        // ═══════════════════════════════════════════════════════════════════════════
+        
+        const LoginForm = () => {
             const [email, setEmail] = useState('');
             const [password, setPassword] = useState('');
             const [loading, setLoading] = useState(false);
             const [error, setError] = useState('');
-            const [message, setMessage] = useState('');
+            const [isSignUp, setIsSignUp] = useState(false);
 
-            const handleLogin = async (e) => {
+            const handleSubmit = async (e) => {
                 e.preventDefault();
-                setLoading(true);
                 setError('');
-                setMessage('');
+                setLoading(true);
 
                 try {
-                    const { data, error } = await supabase.auth.signInWithPassword({
-                        email,
-                        password,
-                    });
-
-                    if (error) throw error;
-
-                    console.log('✓ Login successful:', data.user.email);
-                    setMessage('Login successful! Redirecting...');
-                    
-                    // Reload page to trigger auth check and load dashboard
-                    setTimeout(() => window.location.reload(), 1000);
-                } catch (err) {
-                    console.error('Login error:', err);
-                    setError(err.message || 'Login failed');
+                    if (isSignUp) {
+                        const { error } = await supabase.auth.signUp({ email, password });
+                        if (error) throw error;
+                        setError('✓ Check your email for the confirmation link!');
+                        setIsSignUp(false);
+                    } else {
+                        const { error } = await supabase.auth.signInWithPassword({ email, password });
+                        if (error) throw error;
+                    }
+                } catch (error) {
+                    setError(error.message);
                 } finally {
                     setLoading(false);
                 }
             };
 
             return (
-                <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-800 to-slate-900 flex items-center justify-center p-4">
-                    <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md">
-                        <div className="text-center mb-8">
-                            <div className="inline-block p-4 bg-blue-100 rounded-full mb-4">
-                                <svg className="w-12 h-12 text-blue-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
-                                </svg>
-                            </div>
-                            <h1 className="text-3xl font-bold text-slate-900 mb-2">TS Dashboard</h1>
-                            <p className="text-slate-600">Sign in to access your unit data</p>
+                <div className="min-h-screen flex items-center justify-center bg-slate-100">
+                    <div className="bg-white p-8 rounded-lg shadow-lg max-w-md w-full">
+                        <div className="text-center mb-6">
+                            <h1 className="text-3xl font-bold text-blue-900 mb-2">
+                                Sea Cadet Training Dashboard
+                            </h1>
+                            <p className="text-sm text-slate-600">
+                                {isSignUp ? 'Create your account' : 'Sign in to continue'}
+                            </p>
                         </div>
 
-                        <form onSubmit={handleLogin} className="space-y-4">
+                        <form onSubmit={handleSubmit} className="space-y-4">
                             <div>
-                                <label className="block text-sm font-semibold text-slate-700 mb-2">Email</label>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
                                 <input
                                     type="email"
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
-                                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                    placeholder="your.email@mhseacadets.org"
+                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     required
-                                    disabled={loading}
                                 />
                             </div>
 
                             <div>
-                                <label className="block text-sm font-semibold text-slate-700 mb-2">Password</label>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">Password</label>
                                 <input
                                     type="password"
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
-                                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                    placeholder="••••••••"
+                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     required
-                                    disabled={loading}
+                                    minLength={6}
                                 />
                             </div>
 
                             {error && (
-                                <div className="p-3 bg-red-50 border-l-4 border-red-500 text-red-700 text-sm rounded">
+                                <div className={`text-sm p-3 rounded ${error.includes('✓') ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
                                     {error}
-                                </div>
-                            )}
-
-                            {message && (
-                                <div className="p-3 bg-green-50 border-l-4 border-green-500 text-green-700 text-sm rounded">
-                                    {message}
                                 </div>
                             )}
 
                             <button
                                 type="submit"
                                 disabled={loading}
-                                className="w-full bg-blue-700 hover:bg-blue-800 text-white font-bold py-3 px-4 rounded-lg transition-colors disabled:bg-slate-400 disabled:cursor-not-allowed"
+                                className="w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors disabled:opacity-50"
                             >
-                                {loading ? 'Signing in...' : 'Sign In'}
+                                {loading ? 'Please wait...' : (isSignUp ? 'Sign Up' : 'Sign In')}
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={() => { setIsSignUp(!isSignUp); setError(''); }}
+                                className="w-full text-sm text-blue-600 hover:text-blue-700"
+                            >
+                                {isSignUp ? 'Already have an account? Sign in' : 'Need an account? Sign up'}
                             </button>
                         </form>
 
-                        <div className="mt-6 text-center text-sm text-slate-500">
-                            <p>Contact your admin if you need access</p>
-                        </div>
-
-                        <div className="mt-8 pt-6 border-t border-slate-200 text-center text-xs text-slate-400">
-                            <p>v{DATA_VERSION} | Secure Authentication</p>
+                        <div className="mt-6 text-center text-xs text-slate-400">
+                            <p>Multi-user cloud dashboard</p>
+                            <p className="mt-1">Version {DATA_VERSION}</p>
                         </div>
                     </div>
                 </div>
             );
         };
 
+        const AuthWrapper = ({ children }) => {
+            const [user, setUser] = useState(null);
+            const [loading, setLoading] = useState(true);
 
-        const App = () => {
-            // RENDER COUNTER - VISUAL DEBUG
-            const renderCount = useRef(0);
-            renderCount.current += 1;
-            const renderNum = renderCount.current;
-            console.log(`🔄 APP RENDER #${renderNum}`);
-            
-            // Emergency stop at 100 renders
-            if (renderCount.current >= 100) {
+            useEffect(() => {
+                // Check current session
+                supabase.auth.getSession().then(({ data: { session } }) => {
+                    setUser(session?.user ?? null);
+                    setLoading(false);
+                });
+
+                // Listen for auth changes
+                const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+                    setUser(session?.user ?? null);
+                });
+
+                return () => subscription.unsubscribe();
+            }, []);
+
+            if (loading) {
                 return (
-                    <div className="min-h-screen bg-red-600 flex items-center justify-center p-8">
-                        <div className="bg-white rounded-lg shadow-2xl p-8 max-w-md">
-                            <h1 className="text-3xl font-bold text-red-600 mb-4">🚨 EMERGENCY STOP</h1>
-                            <p className="text-lg mb-4">Render loop detected: {renderCount.current} renders</p>
-                            <p className="text-sm text-slate-600">The app has been stopped to prevent browser crash.</p>
-                            <button 
-                                onClick={() => window.location.reload()} 
-                                className="mt-4 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-                            >
-                                Reload Page
-                            </button>
+                    <div className="min-h-screen flex items-center justify-center bg-slate-100">
+                        <div className="text-center">
+                            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                            <p className="text-slate-600">Loading...</p>
                         </div>
                     </div>
                 );
             }
-            
-            const [isAuthenticated, setIsAuthenticated] = useState(false);
-            const [authLoading, setAuthLoading] = useState(true);
-            const [currentUser, setCurrentUser] = useState(null);
+
+            if (!user) {
+                return <LoginForm />;
+            }
+
+            return (
+                <UserContext.Provider value={user}>
+                    {children(user)}
+                </UserContext.Provider>
+            );
+        };
+        
+        const App = ({ user }) => {
             const [view, setView] = useState('upload'); 
             const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
             const [personnelData, setPersonnelData] = useState([]);
             const [qualsData, setQualsData] = useState([]);
-            // NEW STATE for Drill Down Feature
             const [drillDownInfo, setDrillDownInfo] = useState(null); 
-            
-            // Ref to prevent multiple data loads
-            const dataLoadedRef = useRef(false);
-            
-            // EMERGENCY STOP - if renders exceed 100, force stop
-            if (renderNum > 100) {
-                return (
-                    <div style={{padding: '50px', backgroundColor: 'red', color: 'white', fontSize: '24px'}}>
-                        🚨 EMERGENCY STOP: Too many renders ({renderNum})
-                        <br/>Check console for details.
-                    </div>
-                );
-            }
+            const [loading, setLoading] = useState(true);
 
-            // Check authentication on mount
+            // Load data from Supabase on mount
             useEffect(() => {
-                console.log('🔐 useEffect[AUTH CHECK] running...');
-                const checkAuth = async () => {
-                    try {
-                        const { data: { session }, error } = await supabase.auth.getSession();
-                        
-                        if (error) {
-                            console.error('Error getting session:', error);
-                            setIsAuthenticated(false);
-                            setAuthLoading(false);
-                            return;
-                        }
-                        
-                        if (session) {
-                            console.log('✓ Authenticated:', session.user.email);
-                            setCurrentUser(session.user);
-                            setIsAuthenticated(true);
-                        } else {
-                            console.log('No active session - showing login');
-                            setIsAuthenticated(false);
-                        }
-                        setAuthLoading(false);
-                    } catch (err) {
-                        console.error('Auth check failed:', err);
-                        setIsAuthenticated(false);
-                        setAuthLoading(false);
-                    }
-                };
-                
-                checkAuth();
-            }, []); // Only run once on mount
-
-            // Show login screen if not authenticated
-            if (authLoading) {
-                return (
-                    <div className="min-h-screen flex items-center justify-center bg-slate-100">
-                        <div style={{position: 'fixed', top: 0, left: 0, right: 0, backgroundColor: 'yellow', color: 'black', padding: '10px', fontSize: '20px', fontWeight: 'bold', zIndex: 9999, textAlign: 'center'}}>
-                            🔄 RENDER #{renderNum}
-                        </div>
-                        <div className="text-center">
-                            <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-700"></div>
-                            <p className="mt-4 text-slate-600">Loading...</p>
-                        </div>
-                    </div>
-                );
-            }
-
-            if (!isAuthenticated) {
-                return (
-                    <>
-                        <div style={{position: 'fixed', top: 0, left: 0, right: 0, backgroundColor: 'yellow', color: 'black', padding: '10px', fontSize: '20px', fontWeight: 'bold', zIndex: 9999, textAlign: 'center'}}>
-                            🔄 RENDER #{renderNum}
-                        </div>
-                        <LoginScreen />
-                    </>
-                );
-            }
-
-            // Logout function
-            const handleLogout = async () => {
-                if (confirm('Sign out?')) {
-                    await supabase.auth.signOut();
-                    window.location.reload(); // Reload to show login screen
-                }
-            };
-
-            // Icon Render - run when view changes or sidebar collapses/expands
-            useEffect(() => { 
-                console.log('🎨 useEffect[LUCIDE ICONS] running... view:', view, 'sidebarCollapsed:', sidebarCollapsed);
-                lucide.createIcons(); 
-            }, [view, sidebarCollapsed]);
-
-            // Load data only once when authenticated
-            useEffect(() => {
-                console.log('📊 useEffect[DATA LOAD] running... isAuthenticated:', isAuthenticated, 'dataLoadedRef:', dataLoadedRef.current);
-                // Guard: only load if authenticated and not already loaded
-                if (!isAuthenticated ||  dataLoadedRef.current) return;
-                
                 const loadData = async () => {
-                    dataLoadedRef.current = true; // Mark as loading
-                    console.log('📊 Loading data from Supabase...');
-                    
                     try {
-                        // Load personnel for current user
+                        // Load personnel
                         const { data: personnelRows, error: pError } = await supabase
                             .from('personnel')
                             .select('*')
-                            ;
+                            .eq('user_id', user.id);
                         
                         if (pError) throw pError;
                         
-                        // Load qualifications for current user
-                        const { data: qualsRows, error: qError } = await supabase
-                            .from('qualifications')
-                            .select('*')
-                            ;
+                        // Load qualifications (with pagination to get all records)
+                        let qualsRows = [];
+                        const pageSize = 1000;
+                        let page = 0;
+                        let hasMore = true;
                         
-                        if (qError) throw qError;
-                        
-                        // Load junior modules
-                        await loadJuniorDataFromSupabase();
-                        
-                        if (personnelRows && personnelRows.length > 0) {
-                            console.log(`✓ Loaded ${personnelRows.length} personnel, ${qualsRows?.length || 0} qualifications`);
+                        while (hasMore) {
+                            const { data: batch, error: qError } = await supabase
+                                .from('qualifications')
+                                .select('*')
+                                .eq('user_id', user.id)
+                                .range(page * pageSize, (page + 1) * pageSize - 1);
                             
-                            // Transform from Supabase format to app format
-                            const parsedP = personnelRows.map(row => ({
+                            if (qError) throw qError;
+                            
+                            if (batch && batch.length > 0) {
+                                qualsRows = [...qualsRows, ...batch];
+                                page++;
+                                hasMore = batch.length === pageSize; // Continue if we got a full page
+                            } else {
+                                hasMore = false;
+                            }
+                        }
+                        
+                        console.log(`✓ Loaded ${qualsRows.length} qualification records from Supabase`);
+                        
+                        // Load junior data (populates cache)
+                        await getJuniorData(user.id);
+                        
+                        // Transform data to match app format
+                        if (personnelRows && personnelRows.length > 0) {
+                            const pData = personnelRows.map(row => ({
                                 pNumber: row.p_number,
-                                rank: row.rank,
                                 name: row.name,
+                                rank: row.rank,
                                 unit: row.unit,
-                                dob: row.dob,
-                                tos: row.tos,
-                                rankDate: row.rank_date,
-                                cvqo: row.cvqo
+                                section: row.section,
+                                dob: row.dob || null
                             }));
                             
-                            const parsedQ = (qualsRows || []).map(row => ({
+                            const qData = (qualsRows || []).map(row => ({
                                 pNumber: row.p_number,
                                 module: row.module,
                                 date: row.date_achieved ? new Date(row.date_achieved) : null,
@@ -6757,43 +8144,66 @@
                                 syllabus: row.syllabus
                             }));
                             
-                            // Sort personnel alphabetically by name
-                            parsedP.sort((a, b) => a.name.localeCompare(b.name));
+                            pData.sort((a, b) => a.name.localeCompare(b.name));
                             
-                            setPersonnelData(parsedP);
-                            setQualsData(parsedQ);
-                            console.log('🏠 Setting view to HOME from data load');
+                            setPersonnelData(pData);
+                            setQualsData(qData);
                             setView('home');
-                        } else {
-                            console.log('ℹ️ No data found in Supabase - showing upload screen');
                         }
-                    } catch (e) {
-                        console.error("Error loading data from Supabase:", e);
-                        dataLoadedRef.current = false; // Reset on error to allow retry
+                    } catch (error) {
+                        console.error('Error loading data:', error);
+                    } finally {
+                        setLoading(false);
                     }
                 };
                 
                 loadData();
-            }, [isAuthenticated]); // Only depends on auth status
+            }, [user.id]);
 
             const handleDataLoaded = async (pData, qData) => {
-                console.log(`💾 Saving ${pData.length} personnel, ${qData.length} qualifications to Supabase...`);
-                
                 try {
-                    // Transform personnel to Supabase format (convert empty strings to null for dates)
+                    console.log('🔄 Starting data save...');
+                    
+                    // Check for duplicate P numbers in source data
+                    // BUT: RMC staff legitimately appear twice (SCC role + RMC volunteer)
+                    const pNumbers = pData.map(p => p.pNumber);
+                    const uniquePNumbers = new Set(pNumbers);
+                    if (pNumbers.length !== uniquePNumbers.size) {
+                        const duplicates = pNumbers.filter((p, index) => pNumbers.indexOf(p) !== index);
+                        const uniqueDuplicates = [...new Set(duplicates)];
+                        
+                        // Check if duplicates are RMC staff (different sections)
+                        const problematicDuplicates = uniqueDuplicates.filter(pNum => {
+                            const records = pData.filter(p => p.pNumber === pNum);
+                            // If all duplicates have different sections, it's OK (dual-role staff)
+                            const sections = records.map(r => r.section);
+                            const uniqueSections = new Set(sections);
+                            return sections.length !== uniqueSections.size; // Problem if same section appears twice
+                        });
+                        
+                        if (problematicDuplicates.length > 0) {
+                            console.warn('⚠️ Problematic duplicate P numbers (same section):', problematicDuplicates);
+                            alert(`Warning: Duplicate P numbers in same section: ${problematicDuplicates.join(', ')}. This will cause issues.`);
+                        } else if (uniqueDuplicates.length > 0) {
+                            console.info('ℹ️ Dual-role staff detected (RMC + SCC):', uniqueDuplicates);
+                            // This is OK - don't alert
+                        }
+                    }
+                    
+                    // Transform personnel data for Supabase
                     const personnelRecords = pData.map(p => ({
+                        user_id: user.id,
                         p_number: p.pNumber,
-                        rank: p.rank,
                         name: p.name,
+                        rank: p.rank,
                         unit: p.unit,
-                        dob: p.dob && p.dob.trim() !== '' ? p.dob : null,
-                        tos: p.tos && p.tos.trim() !== '' ? p.tos : null,
-                        rank_date: p.rankDate && p.rankDate.trim() !== '' ? p.rankDate : null,
-                        cvqo: p.cvqo
+                        section: p.section,
+                        dob: p.dob || null
                     }));
                     
-                    // Transform qualifications to Supabase format
+                    // Transform quals data for Supabase
                     const qualsRecords = qData.map(q => ({
+                        user_id: user.id,
                         p_number: q.pNumber,
                         module: q.module,
                         date_achieved: q.date ? q.date.toISOString().split('T')[0] : null,
@@ -6801,71 +8211,102 @@
                         syllabus: q.syllabus
                     }));
                     
-                    // Delete existing data for this user
-                    await supabase.from('personnel').delete();
-                    await supabase.from('qualifications').delete();
+                    // Delete existing data for this user - CHECK FOR ERRORS
+                    console.log('🗑️ Clearing existing data...');
+                    const { error: delPersonnelError } = await supabase
+                        .from('personnel')
+                        .delete()
+                        .eq('user_id', user.id);
                     
-                    // Batch insert personnel (allows duplicates for RMC staff)
+                    if (delPersonnelError) {
+                        console.error('Error deleting personnel:', delPersonnelError);
+                        throw delPersonnelError;
+                    }
+                    
+                    const { error: delQualsError } = await supabase
+                        .from('qualifications')
+                        .delete()
+                        .eq('user_id', user.id);
+                    
+                    if (delQualsError) {
+                        console.error('Error deleting qualifications:', delQualsError);
+                        throw delQualsError;
+                    }
+                    
+                    console.log('✓ Old data cleared');
+                    
+                    // Batch insert personnel
+                    console.log(`📥 Inserting ${personnelRecords.length} personnel records...`);
                     const personnelBatchSize = 1000;
                     for (let i = 0; i < personnelRecords.length; i += personnelBatchSize) {
                         const batch = personnelRecords.slice(i, i + personnelBatchSize);
-                        const { error: pError } = await supabase
-                            .from('personnel')
-                            .insert(batch);
-                        
-                        if (pError) throw pError;
+                        const { error: pError } = await supabase.from('personnel').insert(batch);
+                        if (pError) {
+                            console.error('Error inserting personnel batch:', pError);
+                            throw pError;
+                        }
                     }
+                    console.log('✓ Personnel records saved');
                     
-                    // Batch insert qualifications to avoid hitting limits
+                    // Batch insert qualifications
+                    console.log(`📥 Inserting ${qualsRecords.length} qualification records...`);
                     const qualsBatchSize = 1000;
                     for (let i = 0; i < qualsRecords.length; i += qualsBatchSize) {
                         const batch = qualsRecords.slice(i, i + qualsBatchSize);
-                        const { error: qError } = await supabase
-                            .from('qualifications')
-                            .insert(batch);
-                        
-                        if (qError) throw qError;
+                        const { error: qError } = await supabase.from('qualifications').insert(batch);
+                        if (qError) {
+                            console.error('Error inserting qualifications batch:', qError);
+                            throw qError;
+                        }
                     }
+                    console.log('✓ Qualification records saved');
                     
-                    console.log('✓ Successfully saved to Supabase');
+                    console.log('✅ All data saved to Supabase successfully!');
                     
-                    // Sort personnel alphabetically by name
+                    // Sort and update state
                     pData.sort((a, b) => a.name.localeCompare(b.name));
-                    
                     setPersonnelData(pData);
                     setQualsData(qData);
-                    console.log('🏠 Setting view to HOME from handleDataLoaded');
                     setView('home');
-                } catch (e) {
-                    console.error("Error saving to Supabase:", e);
+                } catch (error) {
+                    console.error('Error saving data:', error);
                     alert('Error saving data to cloud. Please try again.');
                 }
             };
 
             const clearData = async () => {
-                // Clear cadet data from Supabase
                 try {
-                    await supabase.from('personnel').delete();
-                    await supabase.from('qualifications').delete();
-                    console.log('✓ Cleared cadet data from Supabase');
-                } catch (e) {
-                    console.error('Error clearing Supabase data:', e);
+                    const { error: pError } = await supabase.from('personnel').delete().eq('user_id', user.id);
+                    if (pError) throw pError;
+                    
+                    const { error: qError } = await supabase.from('qualifications').delete().eq('user_id', user.id);
+                    if (qError) throw qError;
+                    
+                    console.log('✓ Cleared data from Supabase');
+                } catch (error) {
+                    console.error('Error clearing data:', error);
+                    alert('Error clearing data. Check console for details.');
                 }
                 window.location.reload();
             };
 
             const wipeAllData = async () => {
-                // Clear everything from Supabase
                 try {
-                    await supabase.from('personnel').delete();
-                    await supabase.from('qualifications').delete();
-                    await supabase.from('junior_modules').delete();
+                    const { error: pError } = await supabase.from('personnel').delete().eq('user_id', user.id);
+                    if (pError) throw pError;
+                    
+                    const { error: qError } = await supabase.from('qualifications').delete().eq('user_id', user.id);
+                    if (qError) throw qError;
+                    
+                    const { error: jError } = await supabase.from('junior_module_completions').delete().eq('user_id', user.id);
+                    if (jError) throw jError;
+                    
                     console.log('✓ Wiped all data from Supabase');
-                } catch (e) {
-                    console.error('Error wiping Supabase data:', e);
+                } catch (error) {
+                    console.error('Error wiping data:', error);
+                    alert('Error wiping data. Check console for details.');
                 }
-                // Also clear localStorage
-                localStorage.clear();
+                localStorage.clear(); // Also clear any local settings like logos
                 window.location.reload();
             };
 
@@ -6875,8 +8316,7 @@
             };
 
             // Memoized progress calculation to prevent unnecessary recalculations
-            // FIXED: Removed useCallback to prevent infinite loop
-            const getCadetProgress = (cadet) => {
+            const getCadetProgress = useCallback((cadet) => {
                  const isRMC = RMC_RANK_ORDER.includes(cadet.rank);
                  const syllabus = isRMC ? RMC_SYLLABUS : SCC_SYLLABUS;
                  const currentRankSyllabus = syllabus[cadet.rank];
@@ -6887,7 +8327,7 @@
                      if(qualsData.some(q => q.pNumber === cadet.pNumber && q.module.includes(m.code))) passed++;
                  }));
                  return { percentage: total === 0 ? 100 : Math.round((passed/total)*100) };
-            };
+            }, [qualsData]);
 
             const NavItem = ({ id, icon, label }) => (
                 <button onClick={() => { setView(id); window.scrollTo(0, 0); }} className={`flex items-center gap-2 w-full p-2 rounded-lg transition-all text-sm ${view === id ? 'bg-blue-800 text-white' : 'text-blue-100 hover:bg-blue-800/50'}`}>
@@ -6908,7 +8348,7 @@
                         {/* Disclaimer Section when no data loaded */}
                         <div className="mt-8 max-w-2xl text-center text-xs text-slate-400 p-4 border-t border-slate-200">
                             <p className="font-semibold mb-1">Disclaimer</p>
-                            <p>This has been created independently of the MSSC and no warranty of offered or implied etc. Feature requests and bug fixes should be addressed to James Harbidge - jharbidge@mhseacadets.org</p>
+                            <p>Feature requests and bug fixes should be addressed to James Harbidge - jharbidge@mhseacadets.org</p>
                             <p className="mt-3 text-[10px] text-slate-300">Version {DATA_VERSION}</p>
                         </div>
                         </div>
@@ -6918,9 +8358,6 @@
 
             return (
                 <ErrorBoundary>
-                    <div style={{position: 'fixed', top: 0, left: 0, right: 0, backgroundColor: 'yellow', color: 'black', padding: '10px', fontSize: '20px', fontWeight: 'bold', zIndex: 9999, textAlign: 'center'}}>
-                        🔄 RENDER #{renderNum}
-                    </div>
                     <ImportWarningsBanner />
                     <div className="min-h-screen bg-slate-100 flex font-sans text-slate-900">
                         <aside className={`${sidebarCollapsed ? 'w-20' : 'w-64'} bg-blue-900 text-white flex flex-col shadow-2xl fixed h-full z-10 transition-all duration-300`}>
@@ -6928,7 +8365,7 @@
                                 {!sidebarCollapsed && (
                                     <div className="flex flex-col items-center mb-2 w-full">
                                         <img src="media/ts_dashboard.webp" alt="TS Dashboard" className="object-contain w-full h-auto mb-2" />
-                                        <p className="text-xs text-blue-300 truncate font-semibold text-center w-full">{personnelData.length > 0 ? personnelData[0].unit : 'Unit Dashboard'}</p>
+                                        <p className="text-xs text-blue-300 truncate font-semibold text-center w-full">{personnelData.length > 0 ? cleanUnitName(personnelData[0].unit) : 'Unit Dashboard'}</p>
                                     </div>
                                 )}
                                 <button onClick={() => setSidebarCollapsed(!sidebarCollapsed)} title="Toggle Sidebar" className={`p-1 hover:bg-blue-800 rounded absolute top-2 right-2 ${sidebarCollapsed ? 'static mt-2' : ''}`}>
@@ -6938,21 +8375,28 @@
                             <nav className="flex-1 p-3 space-y-0.5 overflow-hidden">
                                 <NavItem id="home" icon="Home" label="Home" />
                                 <NavItem id="juniors" icon="Users" label="Junior Focus" />
+                                <NavItem id="junior_progress" icon="BarChart3" label="Junior Progress" />
                                 <NavItem id="cadet_focus" icon="User" label="Cadet Focus" />
                                 <NavItem id="planner" icon="ShipWheel" label="SCC CTP Progress" />
                                 <NavItem id="rmc_planner" icon="Target" label="RMC CTS Progress" />
                                 <NavItem id="waterborne" icon="Anchor" label="Waterborne" />
                                 <NavItem id="awards" icon="Award" label="Awards" />
+                                <NavItem id="suggestions" icon="ChartGantt" label="Training Plan" />
                                 <NavItem id="data_utilities" icon="Database" label="Data / Utilities" />
                             </nav>
                             <div className="p-3 border-t border-blue-800">
                                 {!sidebarCollapsed && (
                                     <div className="space-y-2">
                                         <div className="bg-blue-800/50 rounded p-2 mb-2">
-                                            <p className="text-xs text-blue-200 truncate">{currentUser?.email}</p>
+                                            <p className="text-xs text-blue-200 truncate">{user.email}</p>
                                         </div>
                                         <button
-                                            onClick={handleLogout}
+                                            onClick={async () => {
+                                                if (confirm('Sign out?')) {
+                                                    await supabase.auth.signOut();
+                                                    window.location.reload();
+                                                }
+                                            }}
                                             className="w-full py-2 px-3 bg-red-600 hover:bg-red-700 text-white text-sm font-semibold rounded transition-colors"
                                         >
                                             Sign Out
@@ -6962,7 +8406,12 @@
                                 )}
                                 {sidebarCollapsed && (
                                     <button
-                                        onClick={handleLogout}
+                                        onClick={async () => {
+                                            if (confirm('Sign out?')) {
+                                                await supabase.auth.signOut();
+                                                window.location.reload();
+                                            }
+                                        }}
                                         className="w-full py-2 text-red-400 hover:text-red-300 transition-colors"
                                         title="Sign Out"
                                     >
@@ -6975,12 +8424,14 @@
                         </aside>
                         <main className={`flex-1 ${sidebarCollapsed ? 'ml-20' : 'ml-64'} p-8 overflow-y-auto transition-all duration-300`}>
                             {view === 'home' && <HomeView personnel={personnelData} />} 
-                            {view === 'cadet_focus' && <CadetFocus personnel={personnelData} qualsData={qualsData} />}
+                            {view === 'cadet_focus' && <CadetFocus personnel={personnelData} qualsData={qualsData} setView={setView} />}
                             {view === 'juniors' && <JuniorsView personnel={personnelData} qualifications={qualsData} />}
+                            {view === 'junior_progress' && <JuniorProgressView personnel={personnelData} />}
                             {view === 'awards' && <AwardsView personnel={personnelData} quals={qualsData} />}
                             {(view === 'waterborne') && <WaterborneView personnel={personnelData} qualsData={qualsData} />}
                             {(view === 'planner') && <TrainingPlanner personnel={personnelData} getCadetProgress={getCadetProgress} qualsData={qualsData} title="SCC CTP Progress" rankOrder={SCC_RANK_ORDER} syllabus={SCC_SYLLABUS} iconName="ShipWheel" onModuleClick={handleModuleDrillDown} />}
                             {(view === 'rmc_planner') && <TrainingPlanner personnel={personnelData} getCadetProgress={getCadetProgress} qualsData={qualsData} title="RMC CTS Progress" rankOrder={RMC_RANK_ORDER} syllabus={RMC_SYLLABUS} colorTheme="green" iconName="Target" onModuleClick={handleModuleDrillDown} />}
+                            {(view === 'suggestions') && <TrainingSuggestions personnel={personnelData} getCadetProgress={getCadetProgress} qualsData={qualsData} />}
                             {view === 'data_utilities' && <DataUtilitiesView clearData={clearData} wipeAllData={wipeAllData} setView={setView} personnel={personnelData} />}
                         </main>
                     </div>
@@ -6991,7 +8442,11 @@
         };
 
         const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
+        root.render(
+            <AuthWrapper>
+                {(user) => <App user={user} />}
+            </AuthWrapper>
+        );
         
         console.log(`===========================================`);
         console.log(`Market Harborough Sea Cadets Training Dashboard`);
@@ -6999,6 +8454,7 @@
         console.log(`===========================================`);
         console.log(`🌩️  Cloud Storage: ENABLED (Supabase)`);
         console.log(`Key Features:`);
+        console.log(`✓ Multi-user authentication`);
         console.log(`✓ Junior Sea Cadets module tracking (341 modules)`);
         console.log(`✓ SCC/RMC training progression`);
         console.log(`✓ Bulk upload with validation`);

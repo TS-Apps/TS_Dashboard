@@ -115,7 +115,7 @@
         // CONSTANTS & DATA
         // ═══════════════════════════════════════════════════════════════════════════
         
-        const DATA_VERSION = "4.0.11-cloud"; // CRITICAL FIX: New addJuniorModules() function for incremental saves (no more delete-all-and-reinsert)
+        const DATA_VERSION = "4.0.12-cloud"; // Fixed syntax error from orphaned code
  
         // Badge & Rank Image Maps
         const RANK_IMG_MAP = {
@@ -1530,27 +1530,6 @@
             } catch (error) {
                 console.error("❌ Error adding junior modules:", error);
                 return false;
-            }
-        };
-                    cachedJuniorData = {
-                        moduleCompletions: data?.moduleCompletions || [],
-                        rankHistory: data?.rankHistory || [],
-                        sectionBadges: data?.sectionBadges || []
-                    };
-                    
-                    return {
-                        success: true,
-                        totalRecords: records.length,
-                        duplicatesRemoved: duplicatesRemoved,
-                        insertedRecords: uniqueRecords.length,
-                        duplicateExamples: duplicateKeys.slice(0, 10).join(', ')
-                    };
-                }
-                
-                return { success: true, totalRecords: 0, duplicatesRemoved: 0, insertedRecords: 0 };
-            } catch (error) {
-                console.error("❌ Error saving junior data:", error);
-                return { success: false, error: error.message };
             }
         };
 

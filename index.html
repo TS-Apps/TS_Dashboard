@@ -115,7 +115,7 @@
         // CONSTANTS & DATA
         // ═══════════════════════════════════════════════════════════════════════════
         
-        const DATA_VERSION = "V2.0.0-Cloud"; // Cloud Storage Release - Supabase integration complete
+        const DATA_VERSION = "V2.0.2-Cloud"; // Fixed: Users with existing data now go straight to home, not upload page
  
         // Badge & Rank Image Maps
         const RANK_IMG_MAP = {
@@ -5818,7 +5818,30 @@
             const [sccLogoPreview, setSccLogoPreview] = useState(localStorage.getItem('scc_logo') || null);
             const [rmcLogoPreview, setRmcLogoPreview] = useState(localStorage.getItem('rmc_logo') || null);
             const [unitCrestPreview, setUnitCrestPreview] = useState(localStorage.getItem('unit_crest') || null);
-            const juniorData = getJuniorData();
+            const [juniorData, setJuniorData] = useState({ moduleCompletions: [], rankHistory: [], sectionBadges: [] });
+            const [loadingJuniorData, setLoadingJuniorData] = useState(true);
+            
+            // Load junior data from Supabase on mount
+            useEffect(() => {
+                const loadData = async () => {
+                    try {
+                        const { data: { user }, error: authError } = await supabase.auth.getUser();
+                        if (authError || !user) {
+                            console.warn('Not authenticated, skipping junior data load');
+                            setLoadingJuniorData(false);
+                            return;
+                        }
+                        
+                        const data = await getJuniorData(user.id);
+                        setJuniorData(data);
+                    } catch (error) {
+                        console.error('Error loading junior data:', error);
+                    } finally {
+                        setLoadingJuniorData(false);
+                    }
+                };
+                loadData();
+            }, []);
             
             const handleLogoUpload = (file, type) => {
                 if (!file) return;
@@ -5861,7 +5884,19 @@
                 setTimeout(() => setUploadStatus(''), 3000);
             };
             
-            const exportJuniorData = () => {
+            const exportJuniorData = async () => {
+                if (loadingJuniorData) {
+                    setUploadStatus('Please wait, loading data...');
+                    setTimeout(() => setUploadStatus(''), 3000);
+                    return;
+                }
+                
+                if (!juniorData || juniorData.moduleCompletions.length === 0) {
+                    setUploadStatus('No junior data to export. Please load data first.');
+                    setTimeout(() => setUploadStatus(''), 3000);
+                    return;
+                }
+                
                 const dataStr = JSON.stringify(juniorData, null, 2);
                 const blob = new Blob([dataStr], {type: 'application/json'});
                 const url = URL.createObjectURL(blob);
@@ -5871,7 +5906,8 @@
                 const timestamp = now.toISOString().replace(/[:.]/g, '-').slice(0, -5);
                 a.download = `juniors_backup_${timestamp}.json`;
                 a.click();
-                setUploadStatus('Junior data exported successfully!');
+                URL.revokeObjectURL(url); // Clean up
+                setUploadStatus(`Junior data exported successfully! (${juniorData.moduleCompletions.length} records)`);
                 setTimeout(() => setUploadStatus(''), 3000);
             };
             
@@ -6005,7 +6041,7 @@
                         
                         <div className="bg-blue-100 p-4 rounded-lg">
                             <p className="text-sm text-blue-900">
-                                <strong>Current data:</strong> {juniorData?.moduleCompletions?.length || 0} module completions tracked
+                                <strong>Current data:</strong> {loadingJuniorData ? 'Loading...' : `${juniorData?.moduleCompletions?.length || 0} module completions tracked`}
                             </p>
                         </div>
                     </div>
@@ -8336,6 +8372,20 @@
                 </button>
             );
 
+            // Show loading spinner while checking for existing data
+            if (loading) {
+                return (
+                    <div className="min-h-screen flex items-center justify-center bg-slate-100">
+                        <div className="text-center">
+                            <div className="inline-block animate-spin rounded-full h-16 w-16 border-4 border-blue-600 border-t-transparent mb-4"></div>
+                            <p className="text-slate-600 font-semibold">Loading your dashboard...</p>
+                            <p className="text-slate-400 text-sm mt-2">Please wait while we fetch your data</p>
+                        </div>
+                    </div>
+                );
+            }
+            
+            // Show upload page only if no data exists after loading
             if (view === 'upload' && personnelData.length === 0) {
                 return (
                     <div>

@@ -115,7 +115,7 @@
         // CONSTANTS & DATA
         // ═══════════════════════════════════════════════════════════════════════════
         
-        const DATA_VERSION = "4.0.15-cloud"; // Fixed delete functionality - now properly removes from Supabase
+        const DATA_VERSION = "V2.0.0-Cloud"; // Cloud Storage Release - Supabase integration complete
  
         // Badge & Rank Image Maps
         const RANK_IMG_MAP = {
@@ -1079,6 +1079,13 @@
                 .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
                 .replace(/<[^>]+>/g, '')
                 .trim();
+        };
+        
+        // Helper to clean unit names - removes bracketed sections like (JUNIOR SECTION 1), (RMCD)
+        const cleanUnitName = (unitName) => {
+            if (!unitName) return unitName;
+            // Remove everything in brackets and trim
+            return unitName.split('(')[0].trim();
         };
 
         const RANK_ABBREVIATIONS = {
@@ -2395,7 +2402,7 @@
 
         // Home View Component
         const HomeView = ({ personnel }) => {
-            const unitName = personnel.length > 0 ? (personnel[0].unit || "Your Unit") : "Sea Cadets";
+            const unitName = personnel.length > 0 ? cleanUnitName(personnel[0].unit || "Your Unit") : "Sea Cadets";
 
             return (
                 <div className="space-y-8">
@@ -2433,9 +2440,6 @@
                     {/* Disclaimer Section */}
                     <div className="mt-10 max-w-4xl mx-auto text-center text-xs text-slate-400 p-4 border-t border-slate-300">
                         <p className="font-semibold mb-1">Disclaimer</p>
-                        <p className="mb-2">
-                            This app was built independently by volunteers and is not an official MSSC product. It's provided "as is", with no warranty or guarantees offered or implied, and you use it at your own risk. The code is open source, and parts of the solution, documentation, or content may be AI-generated. Always review outputs for accuracy.
-                        </p>
                         <p>
                             If you spot a bug, have a feature idea, or make an improvement, please share it so others can benefit. 
                             You can contact James Harbidge at <a href="mailto:jharbidge@mhseacadets.org?subject=TS Dashboard" className="text-blue-500 hover:text-blue-600 underline">jharbidge@mhseacadets.org</a>.
@@ -2918,7 +2922,7 @@
                 
                 const { jsPDF } = window.jspdf;
                 const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
-                const unitName = personnel.length > 0 ? personnel[0].unit : "Sea Cadets";
+                const unitName = personnel.length > 0 ? cleanUnitName(personnel[0].unit) : "Sea Cadets";
                 
                 doc.setFont("helvetica", "bold");
                 doc.setFontSize(18);
@@ -4541,7 +4545,7 @@
                 const { jsPDF } = window.jspdf;
                 const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
                 
-                const unitName = personnel.length > 0 ? personnel[0].unit : "Unit";
+                const unitName = personnel.length > 0 ? cleanUnitName(personnel[0].unit) : "Unit";
                 
                 // Header
                 doc.setFont("helvetica", "bold");
@@ -5507,7 +5511,7 @@
                 const { jsPDF } = window.jspdf;
                 const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
                 
-                const unitName = personnel.length > 0 ? personnel[0].unit : "Unit";
+                const unitName = personnel.length > 0 ? cleanUnitName(personnel[0].unit) : "Unit";
                 const sectionName = sectionTabs.find(t => t.id === selectedSection)?.label || selectedSection;
                 
                 // Section color mapping (RGB values)
@@ -8344,7 +8348,7 @@
                         {/* Disclaimer Section when no data loaded */}
                         <div className="mt-8 max-w-2xl text-center text-xs text-slate-400 p-4 border-t border-slate-200">
                             <p className="font-semibold mb-1">Disclaimer</p>
-                            <p>This has been created independently of the MSSC and no warranty of offered or implied etc. Feature requests and bug fixes should be addressed to James Harbidge - jharbidge@mhseacadets.org</p>
+                            <p>Feature requests and bug fixes should be addressed to James Harbidge - jharbidge@mhseacadets.org</p>
                             <p className="mt-3 text-[10px] text-slate-300">Version {DATA_VERSION}</p>
                         </div>
                         </div>
@@ -8361,7 +8365,7 @@
                                 {!sidebarCollapsed && (
                                     <div className="flex flex-col items-center mb-2 w-full">
                                         <img src="media/ts_dashboard.webp" alt="TS Dashboard" className="object-contain w-full h-auto mb-2" />
-                                        <p className="text-xs text-blue-300 truncate font-semibold text-center w-full">{personnelData.length > 0 ? personnelData[0].unit : 'Unit Dashboard'}</p>
+                                        <p className="text-xs text-blue-300 truncate font-semibold text-center w-full">{personnelData.length > 0 ? cleanUnitName(personnelData[0].unit) : 'Unit Dashboard'}</p>
                                     </div>
                                 )}
                                 <button onClick={() => setSidebarCollapsed(!sidebarCollapsed)} title="Toggle Sidebar" className={`p-1 hover:bg-blue-800 rounded absolute top-2 right-2 ${sidebarCollapsed ? 'static mt-2' : ''}`}>

@@ -111,11 +111,35 @@
         
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         
+        // Check if current user is an admin
+        const checkIsAdmin = async () => {
+            try {
+                const { data: { user }, error: authError } = await supabase.auth.getUser();
+                if (authError || !user) return false;
+                
+                const { data, error } = await supabase
+                    .from('user_profiles')
+                    .select('is_admin')
+                    .eq('id', user.id)
+                    .single();
+                
+                if (error) {
+                    console.error('Error checking admin status:', error);
+                    return false;
+                }
+                
+                return data?.is_admin || false;
+            } catch (error) {
+                console.error('Error in checkIsAdmin:', error);
+                return false;
+            }
+        };
+        
         // ═══════════════════════════════════════════════════════════════════════════
         // CONSTANTS & DATA
         // ═══════════════════════════════════════════════════════════════════════════
         
-        const DATA_VERSION = "V2.0.2-Cloud"; // Fixed: Users with existing data now go straight to home, not upload page
+        const DATA_VERSION = "V2.1.0-Cloud"; // SINGLE-UNIT SHARED DATA: Removed user_id filters, added admin-only upload protection
  
         // Badge & Rank Image Maps
         const RANK_IMG_MAP = {
@@ -1380,12 +1404,7 @@
         // Cache for junior data (so synchronous functions can access it)
         let cachedJuniorData = { moduleCompletions: [], rankHistory: [], sectionBadges: [] };
         
-        const getJuniorData = async (userId) => {
-            if (!userId) {
-                console.warn('getJuniorData called without userId, returning cached data');
-                return cachedJuniorData;
-            }
-            
+        const getJuniorData = async () => {
             try {
                 console.log('📥 Loading junior module completions from Supabase...');
                 
@@ -1399,7 +1418,6 @@
                     const { data, error, count } = await supabase
                         .from('junior_module_completions')
                         .select('*', { count: 'exact' })
-                        .eq('user_id', userId)
                         .range(from, from + pageSize - 1);
                     
                     if (error) throw error;
@@ -1452,7 +1470,7 @@
                 const { error: deleteError, count } = await supabase
                     .from('junior_module_completions')
                     .delete({ count: 'exact' })
-                    .eq('user_id', userId);
+                    ;
                 
                 if (deleteError) {
                     console.error('❌ Delete error:', deleteError);
@@ -1465,7 +1483,7 @@
                     console.log(`📋 Processing ${data.moduleCompletions.length} records from import...`);
                     
                     const records = data.moduleCompletions.map(mc => ({
-                        user_id: userId,
+                        
                         p_number: mc.pNumber,
                         section: mc.section,
                         module_code: mc.moduleCode,
@@ -1522,14 +1540,14 @@
         };
         
         // NEW: Delete a specific junior module from Supabase
-        const deleteJuniorModule = async (userId, pNumber, section, moduleCode, dateCompleted) => {
+        const deleteJuniorModule = async (pNumber, section, moduleCode, dateCompleted) => {
             try {
                 console.log(`🗑️ Deleting junior module: ${pNumber} - ${section.toUpperCase()} ${moduleCode}`);
                 
                 const { error } = await supabase
                     .from('junior_module_completions')
                     .delete()
-                    .eq('user_id', userId)
+                    
                     .eq('p_number', pNumber)
                     .eq('section', section)
                     .eq('module_code', moduleCode)
@@ -1560,12 +1578,12 @@
         };
         
         // NEW: Add junior modules incrementally without deleting existing data
-        const addJuniorModules = async (userId, newModules) => {
+        const addJuniorModules = async (newModules) => {
             try {
                 console.log(`➕ Adding ${newModules.length} new junior module(s)...`);
                 
                 const records = newModules.map(mc => ({
-                    user_id: userId,
+                    
                     p_number: mc.pNumber,
                     section: mc.section,
                     module_code: mc.moduleCode,
@@ -1689,12 +1707,31 @@
         }
 
         // File Uploader Component
-        const FileUploader = ({ onDataLoaded, hasData, clearData, wipeAllData }) => {
+        const FileUploader = ({ onDataLoaded, hasData, clearData, wipeAllData, isAdmin }) => {
             const [personnelFile, setPersonnelFile] = useState(null);
             const [qualsFile, setQualsFile] = useState(null);
             const [loading, setLoading] = useState(false);
             const [error, setError] = useState(null);
             const [showVideoModal, setShowVideoModal] = useState(false);
+            
+            // Show admin-only message for non-admins
+            if (isAdmin === false) {
+                return (
+                    <div className="bg-white p-6 rounded-lg shadow-md max-w-2xl mx-auto mt-2 border border-slate-200">
+                        <div className="text-center py-8">
+                            <Icon name="ShieldAlert" className="w-16 h-16 mx-auto text-amber-500 mb-4" />
+                            <h2 className="text-2xl font-bold text-slate-800 mb-2">Admin Access Required</h2>
+                            <p className="text-slate-600 mb-4">
+                                Data upload and management is restricted to administrators only.
+                            </p>
+                            <p className="text-sm text-slate-500">
+                                If you need access, please contact your unit administrator at<br />
+                                <a href="mailto:jharbidge@mhseacadets.org" className="text-blue-600 hover:underline">jharbidge@mhseacadets.org</a>
+                            </p>
+                        </div>
+                    </div>
+                );
+            }
             const [preview, setPreview] = useState(null); // NEW: Preview data before import
             const [validationErrors, setValidationErrors] = useState([]); // NEW: Validation errors
             const [importSummary, setImportSummary] = useState(null); // NEW: Import summary
@@ -4829,7 +4866,7 @@
                 const loadData = async () => {
                     const { data: { user } } = await supabase.auth.getUser();
                     if (user) {
-                        const data = await getJuniorData(user.id);
+                        const data = await getJuniorData();
                         setJuniorData(data);
                     }
                     setLoading(false);
@@ -5434,7 +5471,7 @@
                     }
                     
                     // Use the new incremental add function
-                    const success = await addJuniorModules(user.id, newCompletions);
+                    const success = await addJuniorModules(newCompletions);
                     
                     if (success) {
                         alert(`Successfully recorded ${newCompletions.length} module completion${newCompletions.length !== 1 ? 's' : ''}!`);
@@ -5832,7 +5869,7 @@
                             return;
                         }
                         
-                        const data = await getJuniorData(user.id);
+                        const data = await getJuniorData();
                         setJuniorData(data);
                     } catch (error) {
                         console.error('Error loading junior data:', error);
@@ -6561,7 +6598,7 @@
                 const loadData = async () => {
                     const { data: { user } } = await supabase.auth.getUser();
                     if (user) {
-                        const data = await getJuniorData(user.id);
+                        const data = await getJuniorData();
                         setJuniorData(data);
                     }
                     setLoading(false);
@@ -7242,7 +7279,7 @@
                     };
                     
                     // Use the new incremental add function
-                    const success = await addJuniorModules(user.id, [newModule]);
+                    const success = await addJuniorModules([newModule]);
                     
                     if (success) {
                         setShowSuccess(true);
@@ -8119,6 +8156,18 @@
             const [qualsData, setQualsData] = useState([]);
             const [drillDownInfo, setDrillDownInfo] = useState(null); 
             const [loading, setLoading] = useState(true);
+            const [isAdmin, setIsAdmin] = useState(false);
+            
+            // Check admin status on mount
+            useEffect(() => {
+                const checkAdmin = async () => {
+                    const adminStatus = await checkIsAdmin();
+                    setIsAdmin(adminStatus);
+                    console.log(`🔐 User admin status: ${adminStatus ? 'ADMIN' : 'Regular User'}`);
+                };
+                checkAdmin();
+            }, []);
+
 
             // Load data from Supabase on mount
             useEffect(() => {
@@ -8128,7 +8177,7 @@
                         const { data: personnelRows, error: pError } = await supabase
                             .from('personnel')
                             .select('*')
-                            .eq('user_id', user.id);
+                            ;
                         
                         if (pError) throw pError;
                         
@@ -8142,7 +8191,7 @@
                             const { data: batch, error: qError } = await supabase
                                 .from('qualifications')
                                 .select('*')
-                                .eq('user_id', user.id)
+                                
                                 .range(page * pageSize, (page + 1) * pageSize - 1);
                             
                             if (qError) throw qError;
@@ -8159,7 +8208,7 @@
                         console.log(`✓ Loaded ${qualsRows.length} qualification records from Supabase`);
                         
                         // Load junior data (populates cache)
-                        await getJuniorData(user.id);
+                        await getJuniorData();
                         
                         // Transform data to match app format
                         if (personnelRows && personnelRows.length > 0) {
@@ -8228,7 +8277,7 @@
                     
                     // Transform personnel data for Supabase
                     const personnelRecords = pData.map(p => ({
-                        user_id: user.id,
+                        
                         p_number: p.pNumber,
                         name: p.name,
                         rank: p.rank,
@@ -8239,7 +8288,7 @@
                     
                     // Transform quals data for Supabase
                     const qualsRecords = qData.map(q => ({
-                        user_id: user.id,
+                        
                         p_number: q.pNumber,
                         module: q.module,
                         date_achieved: q.date ? q.date.toISOString().split('T')[0] : null,
@@ -8252,7 +8301,7 @@
                     const { error: delPersonnelError } = await supabase
                         .from('personnel')
                         .delete()
-                        .eq('user_id', user.id);
+                        ;
                     
                     if (delPersonnelError) {
                         console.error('Error deleting personnel:', delPersonnelError);
@@ -8262,7 +8311,7 @@
                     const { error: delQualsError } = await supabase
                         .from('qualifications')
                         .delete()
-                        .eq('user_id', user.id);
+                        ;
                     
                     if (delQualsError) {
                         console.error('Error deleting qualifications:', delQualsError);
@@ -8312,10 +8361,10 @@
 
             const clearData = async () => {
                 try {
-                    const { error: pError } = await supabase.from('personnel').delete().eq('user_id', user.id);
+                    const { error: pError } = await supabase.from('personnel').delete();
                     if (pError) throw pError;
                     
-                    const { error: qError } = await supabase.from('qualifications').delete().eq('user_id', user.id);
+                    const { error: qError } = await supabase.from('qualifications').delete();
                     if (qError) throw qError;
                     
                     console.log('✓ Cleared data from Supabase');
@@ -8328,13 +8377,13 @@
 
             const wipeAllData = async () => {
                 try {
-                    const { error: pError } = await supabase.from('personnel').delete().eq('user_id', user.id);
+                    const { error: pError } = await supabase.from('personnel').delete();
                     if (pError) throw pError;
                     
-                    const { error: qError } = await supabase.from('qualifications').delete().eq('user_id', user.id);
+                    const { error: qError } = await supabase.from('qualifications').delete();
                     if (qError) throw qError;
                     
-                    const { error: jError } = await supabase.from('junior_module_completions').delete().eq('user_id', user.id);
+                    const { error: jError } = await supabase.from('junior_module_completions').delete();
                     if (jError) throw jError;
                     
                     console.log('✓ Wiped all data from Supabase');
@@ -8393,7 +8442,7 @@
                         <div className="min-h-screen flex flex-col items-center pt-5 pb-10">
                         <img src="media/ts_dashboard.webp" alt="TS Dashboard" className="w-[300px] h-auto mb-2 object-contain" />
                         <h1 className="text-4xl font-extrabold text-blue-900 mb-1">Sea Cadet Training Dashboard</h1>
-                        <FileUploader onDataLoaded={handleDataLoaded} hasData={personnelData.length > 0} clearData={clearData} wipeAllData={wipeAllData} />
+                        <FileUploader onDataLoaded={handleDataLoaded} hasData={personnelData.length > 0} clearData={clearData} wipeAllData={wipeAllData} isAdmin={isAdmin} />
                         
                         {/* Disclaimer Section when no data loaded */}
                         <div className="mt-8 max-w-2xl text-center text-xs text-slate-400 p-4 border-t border-slate-200">

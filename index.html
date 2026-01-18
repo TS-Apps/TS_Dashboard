@@ -8390,7 +8390,7 @@
                     const { error: delPersonnelError } = await supabase
                         .from('personnel')
                         .delete()
-                        ;
+                        .neq('p_number', ''); // Delete all rows (WHERE p_number != '')
                     
                     if (delPersonnelError) {
                         console.error('Error deleting personnel:', delPersonnelError);
@@ -8400,7 +8400,7 @@
                     const { error: delQualsError } = await supabase
                         .from('qualifications')
                         .delete()
-                        ;
+                        .neq('p_number', ''); // Delete all rows (WHERE p_number != '')
                     
                     if (delQualsError) {
                         console.error('Error deleting qualifications:', delQualsError);
@@ -8467,10 +8467,10 @@
 
             const clearData = async () => {
                 try {
-                    const { error: pError } = await supabase.from('personnel').delete();
+                    const { error: pError } = await supabase.from('personnel').delete().neq('p_number', '');
                     if (pError) throw pError;
                     
-                    const { error: qError } = await supabase.from('qualifications').delete();
+                    const { error: qError } = await supabase.from('qualifications').delete().neq('p_number', '');
                     if (qError) throw qError;
                     
                     console.log('✓ Cleared data from Supabase');
@@ -8483,13 +8483,13 @@
 
             const wipeAllData = async () => {
                 try {
-                    const { error: pError } = await supabase.from('personnel').delete();
+                    const { error: pError } = await supabase.from('personnel').delete().neq('p_number', '');
                     if (pError) throw pError;
                     
-                    const { error: qError } = await supabase.from('qualifications').delete();
+                    const { error: qError } = await supabase.from('qualifications').delete().neq('p_number', '');
                     if (qError) throw qError;
                     
-                    const { error: jError } = await supabase.from('junior_module_completions').delete();
+                    const { error: jError } = await supabase.from('junior_module_completions').delete().neq('p_number', '');
                     if (jError) throw jError;
                     
                     console.log('✓ Wiped all data from Supabase');

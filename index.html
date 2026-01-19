@@ -8185,6 +8185,7 @@
             const [isSignUp, setIsSignUp] = useState(false);
             const [showRequestForm, setShowRequestForm] = useState(false);
             const [requestReason, setRequestReason] = useState('');
+            const [honeypot, setHoneypot] = useState(''); // Bot detection field
             
             // ========================================================================
             // ACCESS CONTROL: Hybrid System
@@ -8271,6 +8272,16 @@
                     return;
                 }
                 
+                // HONEYPOT: Silent bot detection
+                if (honeypot !== '') {
+                    // Bot detected - pretend success but don't submit
+                    console.warn('Bot detected via honeypot field');
+                    setError('✓ Access request submitted! An admin will review it shortly.');
+                    setShowRequestForm(false);
+                    setIsSignUp(false);
+                    return;
+                }
+                
                 setLoading(true);
                 try {
                     // Store access request in database
@@ -8333,6 +8344,18 @@
                                         required
                                     />
                                 </div>
+                                
+                                {/* HONEYPOT: Hidden field to catch bots */}
+                                <input
+                                    type="text"
+                                    name="website"
+                                    value={honeypot}
+                                    onChange={(e) => setHoneypot(e.target.value)}
+                                    style={{ position: 'absolute', left: '-9999px', width: '1px', height: '1px' }}
+                                    tabIndex="-1"
+                                    autoComplete="off"
+                                    aria-hidden="true"
+                                />
                                 
                                 {error && (
                                     <div className={`text-sm p-3 rounded ${error.includes('✓') ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
@@ -8591,13 +8614,15 @@
                     
                     // Transform personnel data for Supabase
                     const personnelRecords = pData.map(p => ({
-                        
                         p_number: p.pNumber,
                         name: p.name,
                         rank: p.rank,
                         unit: p.unit,
                         section: p.section,
-                        dob: p.dob || null
+                        dob: p.dob || null,
+                        tos: p.tos || null,
+                        rank_date: p.rankDate || null,
+                        cvqo: p.cvqo || null
                     }));
                     
                     // Transform quals data for Supabase

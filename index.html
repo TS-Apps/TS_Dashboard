@@ -5860,7 +5860,7 @@
         // DATA / UTILITIES VIEW COMPONENT
         // ============================================================================
         
-        const DataUtilitiesView = ({ clearData, wipeAllData, setView, personnel }) => {
+        const DataUtilitiesView = ({ clearData, wipeAllData, setView, personnel, isAdmin }) => {
             const [uploadStatus, setUploadStatus] = useState('');
             const [uploadHistory, setUploadHistory] = useState([]);
             const [showLogoUpdate, setShowLogoUpdate] = useState(false);
@@ -6080,15 +6080,16 @@
                         </button>
                     </div>
                     
-                    {/* Junior Data Management */}
-                    <div className="bg-blue-50 rounded-lg shadow p-6 border-l-4 border-blue-500">
-                        <h2 className="text-2xl font-bold text-blue-900 mb-4 flex items-center gap-2">
-                            <Icon name="Users" className="w-6 h-6 text-blue-600" />
-                            Junior Sea Cadet Data
-                        </h2>
-                        <p className="text-slate-700 mb-6">
-                            Export junior data to share with other JTOs or create backups. Import to load shared data.
-                        </p>
+                    {/* Junior Data Management - ADMIN ONLY */}
+                    {isAdmin && (
+                        <div className="bg-blue-50 rounded-lg shadow p-6 border-l-4 border-blue-500">
+                            <h2 className="text-2xl font-bold text-blue-900 mb-4 flex items-center gap-2">
+                                <Icon name="Users" className="w-6 h-6 text-blue-600" />
+                                Junior Sea Cadet Data
+                            </h2>
+                            <p className="text-slate-700 mb-6">
+                                Export junior data to share with other JTOs or create backups. Import to load shared data.
+                            </p>
                         
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                             <div className="bg-white p-4 rounded-lg border border-blue-200">
@@ -6129,8 +6130,10 @@
                             </p>
                         </div>
                     </div>
+                    )}
                     
-                    {/* Bulk Upload Template for Legacy Data */}
+                    {/* Bulk Upload Template for Legacy Data - ADMIN ONLY */}
+                    {isAdmin && (
                     <div className="bg-amber-50 rounded-lg shadow p-6 border-l-4 border-amber-500">
                         <h2 className="text-2xl font-bold text-amber-900 mb-4 flex items-center gap-2">
                             <Icon name="Upload" className="w-6 h-6 text-amber-600" />
@@ -6339,6 +6342,7 @@
                             <p><strong>Sections:</strong> red (Unit), blue (Waterborne), green (Outdoor), yellow (Community), stem (STEM)</p>
                         </div>
                     </div>
+                    )}
                     
                     {/* Data Management Actions */}
                     <div className="bg-white rounded-lg shadow p-6">
@@ -8658,7 +8662,7 @@
                             {(view === 'planner') && <TrainingPlanner personnel={personnelData} getCadetProgress={getCadetProgress} qualsData={qualsData} title="SCC CTP Progress" rankOrder={SCC_RANK_ORDER} syllabus={SCC_SYLLABUS} iconName="ShipWheel" onModuleClick={handleModuleDrillDown} />}
                             {(view === 'rmc_planner') && <TrainingPlanner personnel={personnelData} getCadetProgress={getCadetProgress} qualsData={qualsData} title="RMC CTS Progress" rankOrder={RMC_RANK_ORDER} syllabus={RMC_SYLLABUS} colorTheme="green" iconName="Target" onModuleClick={handleModuleDrillDown} />}
                             {(view === 'suggestions') && <TrainingSuggestions personnel={personnelData} getCadetProgress={getCadetProgress} qualsData={qualsData} />}
-                            {view === 'data_utilities' && <DataUtilitiesView clearData={clearData} wipeAllData={wipeAllData} setView={setView} personnel={personnelData} />}
+                            {view === 'data_utilities' && <DataUtilitiesView clearData={clearData} wipeAllData={wipeAllData} setView={setView} personnel={personnelData} isAdmin={isAdmin} />}
                         </main>
                     </div>
                     {/* Render the Drill Down Modal */}

@@ -7361,6 +7361,8 @@
                         return;
                     }
                     
+                    console.log('👤 Current user:', user.email);
+                    
                     // Create module object
                     const newModule = {
                         pNumber: junior.pNumber,
@@ -7369,9 +7371,11 @@
                         moduleName: `${section.toUpperCase()} ${code}`,
                         dateCompleted: dateCompleted,
                         isCore: false,
-                        added_by_email: user.email,
+                        added_by_email: user.email || user.user_metadata?.email || 'unknown',
                         added_at: new Date().toISOString()
                     };
+                    
+                    console.log('📝 Module to add:', newModule);
                     
                     // Use the new incremental add function
                     const success = await addJuniorModules([newModule]);

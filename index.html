@@ -139,7 +139,7 @@
         // CONSTANTS & DATA
         // ═══════════════════════════════════════════════════════════════════════════
         
-        const DATA_VERSION = "V2.2.0-Cloud"; // Added upload history tracking with timestamps and user emails
+        const DATA_VERSION = "V2.2.1-Cloud"; // Added tracking of who added junior modules (added_by_email, added_at)
  
         // Badge & Rank Image Maps
         const RANK_IMG_MAP = {
@@ -1441,7 +1441,9 @@
                     moduleCode: row.module_code,
                     moduleName: row.module_name,
                     dateCompleted: row.date_completed,
-                    isCore: row.is_core
+                    isCore: row.is_core,
+                    added_by_email: row.added_by_email || null,
+                    added_at: row.added_at || null
                 }));
                 
                 cachedJuniorData = { 
@@ -1589,7 +1591,9 @@
                     module_code: mc.moduleCode,
                     module_name: mc.moduleName,
                     date_completed: mc.dateCompleted,
-                    is_core: mc.isCore || false
+                    is_core: mc.isCore || false,
+                    added_by_email: mc.added_by_email || null,
+                    added_at: mc.added_at || new Date().toISOString()
                 }));
                 
                 console.log('📋 Records to insert:', records);
@@ -7364,7 +7368,9 @@
                         moduleCode: code.toUpperCase(),
                         moduleName: `${section.toUpperCase()} ${code}`,
                         dateCompleted: dateCompleted,
-                        isCore: false
+                        isCore: false,
+                        added_by_email: user.email,
+                        added_at: new Date().toISOString()
                     };
                     
                     // Use the new incremental add function
@@ -7928,6 +7934,11 @@
                                             </span>
                                             {isCore && <span className="text-amber-500 font-bold mr-2" title="Core module required for promotion">★</span>}
                                             <span className="text-slate-700">{mod.moduleName}</span>
+                                            {mod.added_by_email && (
+                                                <span className="text-xs text-slate-400 ml-2" title={`Added by ${mod.added_by_email} on ${mod.added_at ? new Date(mod.added_at).toLocaleString('en-GB') : 'unknown date'}`}>
+                                                    (by {mod.added_by_email.split('@')[0]})
+                                                </span>
+                                            )}
                                         </div>
                                         <div className="flex items-center gap-3">
                                             <span className="text-sm text-slate-500">{formatDate(mod.dateCompleted)}</span>

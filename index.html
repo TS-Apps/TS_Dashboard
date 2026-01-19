@@ -5438,8 +5438,11 @@
                     }
                     
                     const today = new Date().toISOString().split('T')[0];
+                    const currentTimestamp = new Date().toISOString();
                     const newCompletions = [];
                     const alreadyCompleted = [];
+                    
+                    console.log('👤 Current user (bulk recording):', user.email);
                     
                     // Check each selected module against current data
                     selectedModules.forEach(key => {
@@ -5460,9 +5463,13 @@
                             moduleCode: code,
                             moduleName: module ? module.n : code,
                             dateCompleted: today,
-                            isCore: module?.core || false
+                            isCore: module?.core || false,
+                            added_by_email: user.email || user.user_metadata?.email || 'unknown',
+                            added_at: currentTimestamp
                         });
                     });
+                    
+                    console.log('📝 Modules to add (bulk):', newCompletions);
                     
                     // Alert if any duplicates were found
                     if (alreadyCompleted.length > 0) {

@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sea Cadet Training Dashboard - With NLQ</title>
+    
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+
+    <style>
+        body { background-color: #f1f5f9; }
+        .drag-active { border-color: #3b82f6; background-color: #eff6ff; }
+        .planner-table th, .planner-table td { white-space: nowrap; }
+        .planner-container { overflow-x: auto; max-height: 75vh; }
+        .planner-table thead { position: sticky; top: 0; z-index: 50; }
+        .planner-table th { position: sticky; top: 0; z-index: 50; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+        .planner-table th:first-child, .planner-table td:first-child {
+            position: sticky; left: 0; z-index: 60 !important;
+            background-color: #FFFFFF !important; border-right: 2px solid #e2e8f0;
+        }
+        .planner-table thead tr th:first-child { z-index: 70 !important; background-color: #f1f5f9 !important; }
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        .bg-passed { background-color: #0DAC50 !important; }
+        .spec-basic { background-color: #fdba74 !important; color: #7c2d12; font-weight: 700; font-size: 12px; }
+        .spec-int { background-color: #94a3b8 !important; color: #ffffff; font-weight: 700; font-size: 12px; }
+        .spec-adv { background-color: #fcd34d !important; color: #78350f; font-weight: 800; font-size: 12px; }
+        .spec-junior { background-color: #f1f5f9 !important; color: #94a3b8; font-style: italic; font-size: 11px; }
+        .spec-none { color: #cbd5e1; }
+        .planner-table td.status-cox-pending { background-color: #add8e6 !important; color: black !important; }
+        .planner-table td.status-cox-awarded { background-color: #003366 !important; color: white !important; }
+        .planner-table td.status-master-pending { background-color: #ffffe0 !important; color: black !important; }
+        .planner-table td.status-master-awarded { background-color: #ffd700 !important; color: black !important; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useMemo, useCallback } = React;
+        const { createClient } = supabase;
+        
+        // Initialize Supabase
+        const SUPABASE_URL = 'https://vcukmztdzjxwaafseicu.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZjdWttenRkemp4d2FhZnNlaWN1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzczOTg3NzIsImV4cCI6MjA1Mjk3NDc3Mn0.5p-RNFHl3lV8BNLvMpvv4IEAWFpRq9dKS7aLnp5vPEE';
+        const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        const DATA_VERSION = "1.0-SUPABASE-NLQ";
+        
+        const Icons = {
+            Upload: lucide.icons.Upload, Users: lucide.icons.Users, Award: lucide.icons.Award,
+            BookOpen: lucide.icons.BookOpen, CheckCircle: lucide.icons.CheckCircle,
+            FileText: lucide.icons.FileText, ChevronDown: lucide.icons.ChevronDown,
+            ChevronUp: lucide.icons.ChevronUp, ChevronLeft: lucide.icons.ChevronLeft,
+            ChevronRight: lucide.icons.ChevronRight, Calendar: lucide.icons.Calendar,
+            Save: lucide.icons.Save, Trash2: lucide.icons.Trash2, RefreshCw: lucide.icons.RefreshCw,
+            X: lucide.icons.X, AlertCircle: lucide.icons.AlertCircle, Anchor: lucide.icons.Anchor,
+            Shield: lucide.icons.Shield, ShieldAlert: lucide.icons.ShieldAlert,
+            Target: lucide.icons.Target, Lightbulb: lucide.icons.Lightbulb, User: lucide.icons.User,
+            Star: lucide.icons.Star, Command: lucide.icons.Command, ShipWheel: lucide.icons.ShipWheel,
+            ChartGantt: lucide.icons.ChartGantt, Database: lucide.icons.Database,
+            Download: lucide.icons.Download, Settings: lucide.icons.Settings,
+            BarChart3: lucide.icons.BarChart3, Home: lucide.icons.Home, Search: lucide.icons.Search,
+            Sparkles: lucide.icons.Sparkles
+        };
+
+        const Icon = ({ name, className }) => {
+            return <i data-lucide={name.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase()} className={className}></i>;
+        };
+
+        // Natural Language Query Component
+        const NaturalLanguageQuery = ({ onClose }) => {
+            const [query, setQuery] = useState('');
+            const [loading, setLoading] = useState(false);
+            const [results, setResults] = useState(null);
+            const [error, setError] = useState(null);
+
+            const exampleQueries = [
+                "Show me all juniors who haven't completed STEM module 1",
+                "Find cadets aged 14 or older with Basic Marine Engineering",
+                "List all Able Cadets who need the Navigation - Basic module",
+                "Show me Leading Cadets with Powerboat Level 2",
+                "Find all juniors who have completed 10 or more RED modules",
+                "Show cadets who earned qualifications in the last 30 days"
+            ];
+
+            const SCHEMA = {
+                personnel: {
+                    columns: ['pNumber', 'rank', 'name', 'unit', 'dob', 'tos', 'rankDate', 'cvqo'],
+                    description: 'Cadet personnel records with ranks, ages, and dates'
+                },
+                qualifications: {
+                    columns: ['pNumber', 'module', 'date', 'result', 'syllabus'],
+                    description: 'Qualification completions and awards'
+                },
+                junior_modules: {
+                    columns: ['pNumber', 'section', 'moduleCode', 'moduleName', 'dateCompleted', 'isCore'],
+                    description: 'Junior Sea Cadet module completions (sections: red, blue, green, yellow, stem)'
+                }
+            };
+
+            const executeQuery = async () => {
+                if (!query.trim()) return;
+                
+                setLoading(true);
+                setError(null);
+                setResults(null);
+
+                try {
+                    // Call Claude API to convert natural language to Supabase query
+                    const response = await fetch("https://api.anthropic.com/v1/messages", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify({
+                            model: "claude-sonnet-4-20250514",
+                            max_tokens: 1000,
+                            messages: [{
+                                role: "user",
+                                content: `You are a Supabase query builder. Convert this natural language query into a Supabase query specification.
+
+IMPORTANT: Return ONLY valid JSON, no markdown, no explanations, no preamble.
+
+Schema:
+${JSON.stringify(SCHEMA, null, 2)}
+
+User Query: "${query}"
+
+Return a JSON object with this structure:
+{
+  "table": "table_name",
+  "select": "column1, column2",
+  "filters": [
+    {"column": "age", "operator": "gte", "value": 14},
+    {"column": "rank", "operator": "eq", "value": "Able Cadet"}
+  ],
+  "joins": [
+    {"table": "qualifications", "on": "pNumber", "type": "left"}
+  ],
+  "explanation": "Brief explanation of what this query does"
+}
+
+For age calculations from dob, use: {"column": "dob", "operator": "age_gte", "value": 14}
+For "juniors", filter age between 9-11.
+For "hasn't completed" or "missing", use NOT EXISTS subqueries.
+
+Return ONLY the JSON object.`
+                            }]
+                        })
+                    });
+
+                    const data = await response.json();
+                    let querySpec;
+                    
+                    try {
+                        const content = data.content[0].text.trim();
+                        const cleanContent = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+                        querySpec = JSON.parse(cleanContent);
+                    } catch (e) {
+                        throw new Error('Failed to parse query specification from Claude');
+                    }
+
+                    // Execute the Supabase query
+                    let supabaseQuery = supabaseClient
+                        .from(querySpec.table)
+                        .select(querySpec.select || '*');
+
+                    // Apply filters
+                    if (querySpec.filters) {
+                        for (const filter of querySpec.filters) {
+                            if (filter.operator === 'age_gte' || filter.operator === 'age_lte') {
+                                // Age calculation requires custom handling
+                                const today = new Date();
+                                const targetDate = new Date(today);
+                                targetDate.setFullYear(today.getFullYear() - filter.value);
+                                
+                                if (filter.operator === 'age_gte') {
+                                    supabaseQuery = supabaseQuery.lte('dob', targetDate.toISOString());
+                                } else {
+                                    supabaseQuery = supabaseQuery.gte('dob', targetDate.toISOString());
+                                }
+                            } else if (filter.operator === 'eq') {
+                                supabaseQuery = supabaseQuery.eq(filter.column, filter.value);
+                            } else if (filter.operator === 'neq') {
+                                supabaseQuery = supabaseQuery.neq(filter.column, filter.value);
+                            } else if (filter.operator === 'gte') {
+                                supabaseQuery = supabaseQuery.gte(filter.column, filter.value);
+                            } else if (filter.operator === 'lte') {
+                                supabaseQuery = supabaseQuery.lte(filter.column, filter.value);
+                            } else if (filter.operator === 'like') {
+                                supabaseQuery = supabaseQuery.ilike(filter.column, `%${filter.value}%`);
+                            }
+                        }
+                    }
+
+                    const { data: queryResults, error: queryError } = await supabaseQuery;
+
+                    if (queryError) throw queryError;
+
+                    setResults({
+                        data: queryResults,
+                        explanation: querySpec.explanation,
+                        count: queryResults.length
+                    });
+
+                } catch (err) {
+                    console.error('Query error:', err);
+                    setError(err.message || 'Failed to execute query');
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            return (
+                <div className="fixed inset-0 bg-slate-900 bg-opacity-75 z-50 flex items-center justify-center p-4" onClick={onClose}>
+                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+                        <div className="p-6 border-b flex justify-between items-center bg-gradient-to-r from-blue-50 to-purple-50">
+                            <div className="flex items-center gap-3">
+                                <Icon name="Sparkles" className="w-6 h-6 text-purple-600" />
+                                <div>
+                                    <h3 className="text-2xl font-bold text-slate-900">Ask Your Data</h3>
+                                    <p className="text-sm text-slate-600">Query your cadet data in plain English</p>
+                                </div>
+                            </div>
+                            <button onClick={onClose} className="p-2 rounded-full hover:bg-slate-100 text-slate-600">
+                                <Icon name="X" className="w-5 h-5" />
+                            </button>
+                        </div>
+
+                        <div className="p-6 space-y-4 flex-1 overflow-y-auto">
+                            {/* Search Input */}
+                            <div className="flex gap-2">
+                                <input
+                                    type="text"
+                                    value={query}
+                                    onChange={(e) => setQuery(e.target.value)}
+                                    onKeyPress={(e) => e.key === 'Enter' && executeQuery()}
+                                    placeholder="Ask a question about your cadet data..."
+                                    className="flex-1 p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                                />
+                                <button
+                                    onClick={executeQuery}
+                                    disabled={loading || !query.trim()}
+                                    className="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:bg-slate-300 disabled:cursor-not-allowed font-semibold flex items-center gap-2"
+                                >
+                                    {loading ? (
+                                        <>
+                                            <Icon name="RefreshCw" className="w-4 h-4 animate-spin" />
+                                            Thinking...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Icon name="Search" className="w-4 h-4" />
+                                            Search
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+
+                            {/* Example Queries */}
+                            {!results && !error && (
+                                <div className="bg-blue-50 rounded-lg p-4">
+                                    <p className="text-sm font-semibold text-blue-900 mb-2">Try these examples:</p>
+                                    <div className="space-y-2">
+                                        {exampleQueries.map((example, idx) => (
+                                            <button
+                                                key={idx}
+                                                onClick={() => setQuery(example)}
+                                                className="block w-full text-left text-sm text-blue-700 hover:text-blue-900 hover:bg-blue-100 p-2 rounded transition-colors"
+                                            >
+                                                "{example}"
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Error Display */}
+                            {error && (
+                                <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded">
+                                    <div className="flex items-start gap-2">
+                                        <Icon name="AlertCircle" className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+                                        <div>
+                                            <p className="font-bold text-red-900">Query Error</p>
+                                            <p className="text-sm text-red-800">{error}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Results Display */}
+                            {results && (
+                                <div className="space-y-4">
+                                    <div className="bg-green-50 border-l-4 border-green-500 p-4 rounded">
+                                        <p className="font-bold text-green-900">Found {results.count} result{results.count !== 1 ? 's' : ''}</p>
+                                        <p className="text-sm text-green-800 mt-1">{results.explanation}</p>
+                                    </div>
+
+                                    {results.count > 0 ? (
+                                        <div className="border border-slate-200 rounded-lg overflow-hidden">
+                                            <div className="overflow-x-auto max-h-96">
+                                                <table className="min-w-full divide-y divide-slate-200">
+                                                    <thead className="bg-slate-50">
+                                                        <tr>
+                                                            {Object.keys(results.data[0]).map((key) => (
+                                                                <th key={key} className="px-4 py-3 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                                                                    {key}
+                                                                </th>
+                                                            ))}
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody className="bg-white divide-y divide-slate-200">
+                                                        {results.data.map((row, idx) => (
+                                                            <tr key={idx} className="hover:bg-slate-50">
+                                                                {Object.values(row).map((value, vidx) => (
+                                                                    <td key={vidx} className="px-4 py-3 text-sm text-slate-900">
+                                                                        {value !== null && value !== undefined ? String(value) : '-'}
+                                                                    </td>
+                                                                ))}
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="text-center py-8 text-slate-500">
+                                            <Icon name="Search" className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                                            <p>No results found matching your query</p>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            {/* Privacy Notice */}
+                            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-xs text-amber-900">
+                                <div className="flex items-start gap-2">
+                                    <Icon name="Shield" className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                                    <div>
+                                        <p className="font-bold mb-1">Privacy Protected</p>
+                                        <p>Only your question text and database schema are sent to Claude. No personal cadet data leaves your browser or Supabase database.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // Simple Home Component
+        const HomeView = () => {
+            return (
+                <div className="space-y-6">
+                    <div className="bg-white p-8 rounded-lg shadow-xl border border-blue-200">
+                        <h1 className="text-3xl font-bold text-blue-900 mb-4">Sea Cadet Training Dashboard</h1>
+                        <p className="text-slate-700 mb-4">
+                            Welcome to your Supabase-powered training dashboard with natural language query capabilities.
+                        </p>
+                        <div className="bg-purple-50 border-l-4 border-purple-500 p-4 rounded">
+                            <p className="font-bold text-purple-900 mb-2">✨ New Feature: Ask Your Data</p>
+                            <p className="text-purple-800 text-sm">
+                                Click the "Ask Your Data" button in the sidebar to query your cadet information using plain English.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // Main App Component
+        const App = () => {
+            const [view, setView] = useState('home');
+            const [showNLQ, setShowNLQ] = useState(false);
+
+            useEffect(() => { lucide.createIcons(); }, [view, showNLQ]);
+
+            const NavItem = ({ id, icon, label, onClick }) => (
+                <button 
+                    onClick={onClick || (() => setView(id))} 
+                    className={`flex items-center gap-3 w-full p-3 rounded-lg transition-all ${view === id ? 'bg-blue-800 text-white' : 'text-blue-100 hover:bg-blue-800/50'}`}
+                >
+                    <Icon name={icon} className="w-5 h-5" />
+                    <span>{label}</span>
+                </button>
+            );
+
+            return (
+                <div className="min-h-screen bg-slate-100 flex">
+                    {/* Sidebar */}
+                    <aside className="w-80 bg-blue-900 text-white flex flex-col shadow-2xl fixed h-full z-10">
+                        <div className="p-6 border-b border-blue-800">
+                            <h1 className="text-2xl font-bold">TS Dashboard</h1>
+                            <p className="text-xs text-blue-300">Natural Language Query Edition</p>
+                        </div>
+                        <nav className="flex-1 p-4 space-y-1 overflow-auto">
+                            <NavItem id="home" icon="Home" label="Home" />
+                            <button
+                                onClick={() => setShowNLQ(true)}
+                                className="flex items-center gap-3 w-full p-3 rounded-lg transition-all bg-purple-600 hover:bg-purple-700 text-white"
+                            >
+                                <Icon name="Sparkles" className="w-5 h-5" />
+                                <span>Ask Your Data</span>
+                            </button>
+                        </nav>
+                        <div className="p-4 border-t border-blue-800 text-xs text-blue-300 text-center">
+                            v{DATA_VERSION}
+                        </div>
+                    </aside>
+
+                    {/* Main Content */}
+                    <main className="flex-1 ml-80 p-8 overflow-y-auto">
+                        {view === 'home' && <HomeView />}
+                    </main>
+
+                    {/* NLQ Modal */}
+                    {showNLQ && <NaturalLanguageQuery onClose={() => setShowNLQ(false)} />}
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+        
+        console.log(`Dashboard loaded with Natural Language Query! Version: ${DATA_VERSION}`);
+    </script>
+</body>
+</html>

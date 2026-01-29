@@ -8555,7 +8555,10 @@
                                 rank: row.rank,
                                 unit: row.unit,
                                 section: row.section,
-                                dob: row.dob || null
+                                dob: row.dob || null,
+                                tos: row.tos || null,
+                                rankDate: row.rank_date || null,
+                                cvqo: row.cvqo || null
                             }));
                             
                             const qData = (qualsRows || []).map(row => ({

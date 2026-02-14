@@ -4297,6 +4297,12 @@
 
                 const getWaterborneDisc = (modName) => {
                     const m = modName.toLowerCase();
+                    
+                    // Exclude land-based Seamanship specialisations (Class 1/2/3) from waterborne
+                    if (m.includes('seamanship - advanced') || m.includes('seamanship - intermediate') || m.includes('seamanship - basic')) {
+                        return null; // These are land-based specialisations, not waterborne
+                    }
+                    
                     if(m.includes('rowing') || m.includes('row ')) return "Rowing";
                     if(m.includes('paddle') || m.includes('canoe') || m.includes('kayak') || m.includes('sup ')) return "Paddling";
                     if(m.includes('sail') || m.includes('dinghy') || m.includes('spinnaker') || m.includes('seamanship')) return "Sailing";

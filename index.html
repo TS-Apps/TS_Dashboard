@@ -139,7 +139,7 @@
         // CONSTANTS & DATA
         // ═══════════════════════════════════════════════════════════════════════════
         
-        const DATA_VERSION = "V2.3.1-Cloud-AI"; // Fixed swim test equivalencies and module name variations
+        const DATA_VERSION = "V2.5.0-Cloud-AI"; // Enhanced with official CTP knowledge and actual Westminster data patterns
  
         // Badge & Rank Image Maps
         const RANK_IMG_MAP = {
@@ -2486,14 +2486,38 @@
                     },
                     
                     businessLogic: [
-                        'Junior Cadets are under 12 years old (calculate from dob)',
+                        'AGE GROUPS:',
+                        'Junior Cadets are aged 9 to 12th birthday (calculate from dob)',
                         'Standard cadets are aged 12-17',
                         'Adults/Staff are 18+',
+                        
+                        'JUNIOR RANKS (age 9-11):',
+                        'Junior Cadet (new entry)',
+                        'Junior Cadet 1st Class (Red Core + 6 months)',
+                        'Able Junior Cadet (Blue Core + 12 months + 1 proficiency)',
+                        'Leading Junior Cadet (all 4 sections + 2 profs + age 11+ + JTO recommendation)',
+                        
+                        'STANDARD CADET RANKS (age 12+):',
+                        'New Entry Cadet (transition from juniors at age 12)',
+                        'Ordinary Cadet (entry rank for new cadets 12+)',
+                        'Able Cadet (second rank)',
+                        'Leading Cadet (third rank)',
+                        'Petty Officer Cadet (senior rank)',
+                        'Chief Petty Officer Cadet (highest cadet rank)',
+                        
+                        'RANK PROGRESSION:',
+                        'Juniors: progress based on time + module badges',
+                        'Standards: Ordinary → Able → Leading → Petty Officer → Chief Petty Officer',
+                        
                         'tos = Time of Service (tenure in months)',
                         'rank_date = date when current rank was awarded',
-                        'Rank progression: Junior → Ordinary → Able → Leading → Petty Officer → Chief Petty Officer',
                         'Unit name format: "TS [Location]" (Training Ship)',
-                        'p_number is the primary identifier, always use this for joins'
+                        'p_number is the primary identifier, always use this for joins',
+                        
+                        'CRITICAL TRANSITION:',
+                        'At 12th birthday, juniors become New Entry Cadets',
+                        'Junior module progress does NOT transfer to senior progression',
+                        'New Entry must complete NE10-NE16 before promotion to Ordinary Cadet'
                     ],
                     
                     notes: [
@@ -2505,46 +2529,76 @@
                 
                 qualifications: {
                     columns: ['p_number', 'module', 'date', 'result'],
-                    description: 'Completed training modules and qualifications for standard cadets (12+). Each row represents one completed module.',
+                    description: 'Completed training modules and qualifications for standard cadets (12+). Westminster uses summary codes for CTP rank progression. Each row represents one completed module or qualification.',
                     
                     sampleValues: {
                         module: [
-                            // Core modules by rank
-                            'OC1', 'OC2', 'OC3', 'OC4',  // Ordinary Cadet
-                            'AC1', 'AC2', 'AC3', 'AC4',  // Able Cadet
-                            'LC1', 'LC2', 'LC3', 'LC4',  // Leading Cadet
-                            'POC1', 'POC2', 'POC3', 'POC4', // Petty Officer Cadet
+                            // CTP RANK PROGRESSION - Westminster Summary Codes (these appear when all rank modules complete)
+                            'SCC CTP1 - New Entry to Cadet',
+                            'SCC CTP2 - Cadet to Cadet 1st Class',
+                            'SCC CTP3 - Cadet 1st Class to Ordinary Cadet',
+                            'SCC CTP4 - Ordinary Cadet to Able Cadet',
+                            'SCC CTP5 - Able Cadet to Leading Cadet',
+                            'SCC CTP6 - Leading Cadet to Petty Officer Cadet',
                             
-                            // Proficiencies (with variations)
+                            // INDIVIDUAL MODULE CODES (tracked in training spreadsheets, may or may not appear in qualifications table)
+                            // New Entry: NE01-NE16
+                            'NE01', 'NE02', 'NE07', 'NE14', 'NE16',
+                            // Cadet modules: CAV01, CWB01, CA01, CK01-08, CV01, DR01-04, ES01-04, FA01-12, HS01, MT01-03, etc.
+                            'CAV01', 'CWB01', 'CA01', 'CK01', 'CV01', 'DR01', 'ES01', 'FA01', 'HS01', 'MT01', 'SM01', 'WB01',
+                            // Cadet 1st Class: CAV02, CWB02, CA02, CK09-12, CV02-03, DR05-07, ES05-08, FA13-26, LT01-03, etc.
+                            'CAV02', 'CK09', 'DR05', 'FA13', 'LT01', 'SM05',
+                            // Ordinary Cadet: CAV03, CA03, CWB03, CK13-16, CV04-05, DR08-12, LT04-06, etc.
+                            'CAV03', 'CK13', 'DR08', 'LT04', 'SM10',
+                            // Able Cadet: BP01-08 (Basic Peer Educator), CA04-05, CK17-20, DR13-16, LT07-12, PD01-03, WB12-15
+                            'BP01', 'BP08', 'DR13', 'LT07', 'PD01',
+                            // Leading Cadet: AP01-11 (Advanced Peer Educator), CA06-07, CK21-24, DR17-20, LT13-17, PD04-06, WB16-19
+                            'AP01', 'AP11', 'DR17', 'LT13', 'PD04',
+                            // Petty Officer Cadet: POC01-POC15 (self-guided development modules)
+                            'POC01', 'POC05', 'POC10', 'POC15',
+                            
+                            // SPECIALISATIONS - ACTUAL FORMAT FROM WESTMINSTER: "SCC [Level] [Subject]"
+                            'SCC Basic Navigation', 'SCC Basic Seamanship', 'SCC Basic Communications',
+                            'SCC Intermediate Navigation', 'SCC Intermediate Seamanship',
+                            'SCC Advanced Navigation', 'SCC Advanced Communications', 'SCC Advanced Marine Engineering',
+                            
+                            // WATERBORNE PROFICIENCIES - ACTUAL FORMAT
+                            'Pathway - Dinghy Sailing Beginner', 'Pathway - Powerboat Beginner',
+                            'Pathway - Rowing Beginner', 'Pathway - Windsurfing Beginner', 'Pathway - Paddlesport Beginner',
+                            'RYA Sailing (Sail)', 'RYA Windsurfing (Wind)', 'Rowing',
+                            'Kayaking & Canoeing - National Governing Body', 'Offshore', 'Navigation',
+                            
+                            // INSTRUCTOR QUALIFICATIONS
+                            'Pathway - Dinghy Sailing Instructor', 'Pathway - Powerboat Instructor',
+                            'Pathway - Rowing Instructor', 'Pathway - Windsurfing Instructor',
+                            
+                            // WATER SAFETY - CONFIRMED FROM ACTUAL DATA
+                            'CF Water Safety Test',  // MOST COMMON in database
+                            'CF Swimming Test',
+                            'Swimming (Swim)',
+                            
+                            // PERSONAL DEVELOPMENT - ACTUAL FORMAT
+                            'Citizenship - Basic (Cadet)',
+                            'Peer Support - Basic',
+                            
+                            // FIRST AID
+                            'First Aid',
+                            
+                            // AWARDS
+                            "Duke of Edinburgh's Award (DofE) - Bronze",
+                            "Duke of Edinburgh's Award (DofE) - Silver",
+                            "Duke of Edinburgh's Award (DofE) - Gold",
+                            
+                            // PROFICIENCIES (exact format needs confirmation - legacy codes may exist)
                             'Prof 1', 'Prof 2', 'Prof 3', 'Prof 4',
-                            'Proficiency 1', 'Proficiency 2',
                             
-                            // Specialisations - Basic level (with CF prefix)
-                            'CF Basic Seamanship', 'Basic Seamanship',
-                            'CF Basic Navigation', 'Basic Navigation',
-                            'CF Basic Communications', 'Basic Communications',
-                            'CF Basic Marine Engineering', 'Basic Marine Engineering',
-                            'CF Basic PTI', 'Basic PTI',
-                            'CF Basic Catering', 'Basic Catering',
+                            // COXSWAIN/MASTER
+                            'Coxswain Pending', 'Coxswain Awarded',
+                            'Master Pending', 'Master Awarded',
                             
-                            // Specialisations - Intermediate
-                            'CF Int Seamanship', 'Int Seamanship',
-                            'CF Int Navigation', 'Int Navigation',
-                            'CF Int Communications', 'Int Communications',
-                            'CF Int Marine Engineering', 'Int Marine Engineering',
-                            
-                            // Specialisations - Advanced
-                            'CF Adv Seamanship', 'Adv Seamanship',
-                            'CF Adv Navigation', 'Adv Navigation',
-                            'CF Adv Communications', 'Adv Communications',
-                            'CF Adv Marine Engineering', 'Adv Marine Engineering',
-                            
-                            // Essential qualifications (multiple variations)
-                            'Swim Test', 'CF Swimming Test', 'CF Water Safety Test',
-                            'First Aid', 'CF First Aid', 'Emergency Aid',
-                            
-                            // RMC (Royal Marines Cadets) modules
-                            'RMC OC1', 'RMC OC2', 'RMC AC1', 'RMC AC2'
+                            // ROYAL MARINES CADETS (separate syllabus)
+                            'RMC CTS1-Recruit to RM Cadet', 'RMC CTS2-RM Cadet to Lance Corporal',
+                            'RMC CTS3-Lance Corporal to Corporal', 'RMC CTS4-Corporal to Sergeant'
                         ],
                         result: ['Pass', 'Achieved', 'Completed']
                     },
@@ -2554,77 +2608,271 @@
                     },
                     
                     businessLogic: [
-                        'Module names starting with OC = Ordinary Cadet level',
-                        'Module names starting with AC = Able Cadet level',
-                        'Module names starting with LC = Leading Cadet level',
-                        'Module names starting with POC = Petty Officer Cadet level',
-                        'Module names starting with RMC = Royal Marines Cadets pathway',
+                        'WESTMINSTER TRACKING SYSTEM:',
+                        'Westminster uses SUMMARY CODES for rank progression tracking',
+                        'Individual modules (NE01, DR01, SM01, etc.) are tracked in training spreadsheets',
+                        'Summary codes appear in qualifications table when all rank modules complete',
                         
-                        'Proficiencies (Prof 1-4) are additional skills beyond core modules',
+                        'RANK PROGRESSION REQUIREMENTS (from official CTP):',
                         
-                        'Specialisations have 3 levels: Basic, Intermediate (Int), Advanced (Adv)',
-                        'Common specialisation subjects: Seamanship, Navigation, Communications, Marine Engineering, PTI, Catering',
-                        'A cadet can hold multiple specialisations',
+                        'New Entry → Cadet:',
+                        '- Age minimum: 12 years',
+                        '- Complete: SCC CTP1 - New Entry to Cadet (all NE01-NE16 modules)',
+                        '- Water Safety Test (NE07) is MANDATORY',
+                        '- No time requirement - can progress immediately upon completion',
                         
-                        'Swim Test is mandatory for rank progression',
-                        'First Aid is highly recommended',
+                        'Cadet → Cadet 1st Class:',
+                        '- Age minimum: 13 years',
+                        '- Time minimum: 6 months at Cadet rank',
+                        '- Complete: SCC CTP2 - Cadet to Cadet 1st Class (~53 modules)',
+                        '- 60 Boating Hours between New Entry → Cadet',
+                        '- 1 Basic specialisation or proficiency qualification',
+                        '- 1 Basic waterborne proficiency qualification',
+                        '- Basic First Aid course (FA01-FA12) required',
                         
+                        'Cadet 1st Class → Ordinary Cadet:',
+                        '- Age minimum: 14 years',
+                        '- Time minimum: 6 months at Cadet 1st Class',
+                        '- Complete: SCC CTP3 - Cadet 1st Class to Ordinary Cadet (~50 modules)',
+                        '- Intermediate First Aid course (FA13-FA26) required',
+                        
+                        'Ordinary Cadet → Able Cadet:',
+                        '- Age minimum: 14 years',
+                        '- Time minimum: 6 months at Ordinary Cadet',
+                        '- Complete: SCC CTP4 - Ordinary Cadet to Able Cadet (~37 modules)',
+                        '- 60 Boating Hours between Cadet 1st Class → Ordinary Cadet',
+                        '- 2 Basic/Intermediate specialisation or proficiency qualifications',
+                        '- 2 Basic/Intermediate waterborne proficiency qualifications',
+                        
+                        'Able Cadet → Leading Cadet:',
+                        '- Complete: SCC CTP5 - Able Cadet to Leading Cadet (~31 modules)',
+                        '- Basic Peer Educator course REQUIRED (BP01-BP08)',
+                        '- Advancement board may be required (unit decision)',
+                        
+                        'Leading Cadet → Petty Officer Cadet:',
+                        '- Complete: SCC CTP6 - Leading Cadet to Petty Officer Cadet (~33 modules)',
+                        '- Advanced Peer Educator course REQUIRED (AP01-AP11)',
+                        '- Advancement board MANDATORY',
+                        
+                        'MODULE NAMING CONVENTIONS:',
+                        'NE01-NE16 = New Entry modules',
+                        'CAV = Cadet Voice, CWB = Cadet Wellbeing, CA = Community Activity',
+                        'CK = Corps Knowledge, CV = Corps Values',
+                        'DR = Drill, ES = Expedition Skills, FA = First Aid',
+                        'HS = Health & Safety, LT = Leadership & Teamwork',
+                        'MT = Meteorology, NAV = Navigation, PIP = Piping',
+                        'RA = Recreational Activities, SM = Seamanship, WB = Waterborne',
+                        'BP = Basic Peer Educator, AP = Advanced Peer Educator',
+                        'PD = Personal Development, POC = Petty Officer Cadet',
+                        
+                        'SPECIALISATIONS:',
+                        'Format: "SCC [Level] [Subject]"',
+                        'Levels: Basic, Intermediate, Advanced',
+                        'Common subjects: Navigation, Seamanship, Communications, Marine Engineering, PTI, Catering',
+                        'Requirement: 1 Basic for Cadet 1st Class, 2 Basic/Int for Able Cadet',
+                        
+                        'WATERBORNE PROFICIENCIES:',
+                        'Format: "Pathway - [Activity] Beginner/Instructor"',
+                        'Examples: Dinghy Sailing, Powerboat, Rowing, Windsurfing, Paddlesport',
+                        'Also: RYA qualifications, Kayaking & Canoeing, Offshore, Navigation',
+                        'Requirement: 1 Basic waterborne for Cadet 1st Class, 2 Basic/Int for Able Cadet',
+                        
+                        'WATER SAFETY:',
+                        'Primary format in database: "CF Water Safety Test"',
+                        'MANDATORY for New Entry promotion (part of NE07)',
+                        'Also appears as: "CF Swimming Test", "Swimming (Swim)"',
+                        
+                        'FIRST AID:',
+                        'Basic First Aid (FA01-FA12): Required for Cadet → Cadet 1st Class',
+                        'Intermediate First Aid (FA13-FA26): Required for Cadet 1st Class → Ordinary Cadet',
+                        'These are formal registered courses, not just module completion',
+                        
+                        'PEER EDUCATOR COURSES:',
+                        'Basic Peer Educator (BP01-BP08): MANDATORY for Able → Leading',
+                        'Advanced Peer Educator (AP01-AP11): MANDATORY for Leading → Petty Officer',
+                        'Must be delivered by qualified instructors at district/area courses',
+                        'Advanced Peer Educator provides RPLE for "Working with Young People" volunteer module',
+                        
+                        'QUERY PATTERNS:',
+                        'Check rank readiness: Look for summary code (SCC CTP1-6) + age + time at rank',
+                        'Missing swim test: NOT EXISTS with pattern matching on "Water Safety" or "Swimming"',
+                        'Count specialisations: Count modules LIKE "SCC Basic %" or "SCC Intermediate %"',
+                        'Count waterborne: Count modules LIKE "Pathway - % Beginner" or "RYA %"',
+                        
+                        'CRITICAL NOTES:',
                         'Module completion is recorded by date field',
                         'result field indicates pass status (usually "Pass" or "Achieved")',
-                        
-                        'To find missing qualifications: use NOT EXISTS or LEFT JOIN with NULL check'
+                        'NOT all cadets have all modules - gaps are normal during training progression',
+                        'ALWAYS use LIKE pattern matching for qualifications, NOT exact equals',
+                        'Check equivalencies object for known variations before writing SQL'
                     ],
                     
                     equivalencies: {
                         swimTest: {
-                            description: 'Swim test has multiple equivalent names in the database',
-                            moduleNames: ['Swim Test', 'CF Swimming Test', 'CF Water Safety Test'],
-                            searchPattern: "module LIKE '%Swim%' OR module LIKE '%Water Safety%'",
-                            note: 'When searching for swim test, use pattern matching to catch all variations'
+                            description: 'Water safety test variations in database',
+                            moduleNames: ['CF Water Safety Test', 'CF Swimming Test', 'Swimming (Swim)'],
+                            primaryFormat: 'CF Water Safety Test',
+                            searchPattern: "module LIKE '%Water Safety%' OR module LIKE '%Swimming%'",
+                            note: 'CF Water Safety Test is most common in database. ALWAYS use pattern matching to catch all variations.'
                         },
-                        firstAid: {
-                            description: 'First aid qualifications have variations',
-                            moduleNames: ['First Aid', 'CF First Aid', 'Emergency Aid'],
-                            searchPattern: "module LIKE '%First Aid%' OR module LIKE '%Emergency Aid%'"
+                        
+                        ctpProgression: {
+                            description: 'Westminster summary codes for rank progression',
+                            newEntry: 'SCC CTP1 - New Entry to Cadet',
+                            cadet: 'SCC CTP2 - Cadet to Cadet 1st Class',
+                            cadet1stClass: 'SCC CTP3 - Cadet 1st Class to Ordinary Cadet',
+                            ordinaryCadet: 'SCC CTP4 - Ordinary Cadet to Able Cadet',
+                            ableCadet: 'SCC CTP5 - Able Cadet to Leading Cadet',
+                            leadingCadet: 'SCC CTP6 - Leading Cadet to Petty Officer Cadet',
+                            note: 'These appear in qualifications when all rank modules complete. Use exact match for these.'
                         },
-                        proficiencies: {
-                            description: 'Proficiency naming patterns',
-                            note: 'Prof vs Proficiency - both formats exist in database',
-                            searchPattern: "module LIKE 'Prof%' OR module LIKE '%Proficiency%'"
-                        },
+                        
                         specialisations: {
-                            description: 'Specialisations may have CF prefix',
-                            examples: ['CF Basic Seamanship', 'Basic Seamanship', 'Seamanship Basic'],
-                            searchPattern: "Use LIKE '%[subject]%' AND LIKE '%[level]%' for reliable matching"
+                            description: 'Specialisation naming pattern in Westminster',
+                            format: 'SCC [Level] [Subject]',
+                            levels: ['Basic', 'Intermediate', 'Advanced'],
+                            commonSubjects: ['Navigation', 'Seamanship', 'Communications', 'Marine Engineering', 'PTI', 'Catering', 'Meteorology', 'Drill'],
+                            examples: [
+                                'SCC Basic Navigation',
+                                'SCC Basic Seamanship',
+                                'SCC Intermediate Navigation',
+                                'SCC Advanced Communications'
+                            ],
+                            searchPattern: {
+                                basic: "module LIKE 'SCC Basic %'",
+                                intermediate: "module LIKE 'SCC Intermediate %'",
+                                advanced: "module LIKE 'SCC Advanced %'",
+                                anyLevel: "module LIKE 'SCC % Navigation' (replace Navigation with subject)"
+                            },
+                            note: 'Use LIKE pattern matching. Format is consistent: "SCC [Level] [Subject]"'
+                        },
+                        
+                        waterborne: {
+                            description: 'Waterborne proficiency naming patterns',
+                            pathwayFormat: 'Pathway - [Activity] Beginner/Instructor',
+                            examples: [
+                                'Pathway - Dinghy Sailing Beginner',
+                                'Pathway - Powerboat Beginner',
+                                'Pathway - Rowing Beginner',
+                                'Pathway - Windsurfing Beginner',
+                                'Pathway - Paddlesport Beginner',
+                                'RYA Sailing (Sail)',
+                                'Kayaking & Canoeing - National Governing Body'
+                            ],
+                            searchPattern: {
+                                pathwayBeginner: "module LIKE 'Pathway - % Beginner'",
+                                pathwayInstructor: "module LIKE 'Pathway - % Instructor'",
+                                rya: "module LIKE 'RYA %'",
+                                anyWaterborne: "module LIKE 'Pathway - %' OR module LIKE 'RYA %' OR module LIKE '%Kayaking%' OR module = 'Rowing' OR module = 'Offshore'"
+                            }
+                        },
+                        
+                        firstAid: {
+                            description: 'First aid qualification',
+                            moduleNames: ['First Aid'],
+                            courseCodes: ['FA01-FA12 = Basic First Aid', 'FA13-FA26 = Intermediate First Aid'],
+                            searchPattern: "module LIKE '%First Aid%'",
+                            note: 'First Aid courses are formal qualifications. Basic required for Cadet 1st Class, Intermediate for Ordinary Cadet.'
+                        },
+                        
+                        peerEducator: {
+                            description: 'Peer Educator courses',
+                            basic: 'BP01-BP08 (Basic Peer Educator) - MANDATORY for Able → Leading progression',
+                            advanced: 'AP01-AP11 (Advanced Peer Educator) - MANDATORY for Leading → Petty Officer progression',
+                            searchPattern: {
+                                basic: "module LIKE 'BP0%'",
+                                advanced: "module LIKE 'AP0%' OR module LIKE 'AP1%'"
+                            },
+                            note: 'These are formal district/area courses, not individual unit modules'
+                        },
+                        
+                        personalDevelopment: {
+                            description: 'Personal development qualifications',
+                            examples: [
+                                'Citizenship - Basic (Cadet)',
+                                'Peer Support - Basic'
+                            ],
+                            searchPattern: "module LIKE '%Citizenship%' OR module LIKE '%Peer Support%'"
+                        },
+                        
+                        proficiencies: {
+                            description: 'Proficiency qualifications (legacy - exact format needs confirmation)',
+                            possibleFormats: ['Prof 1', 'Prof 2', 'Proficiency 1', 'Proficiency 2'],
+                            searchPattern: "module LIKE 'Prof%' OR module LIKE '%Proficiency%'",
+                            note: 'Format may vary. Use broad pattern matching.'
                         }
                     },
                     
                     notes: [
-                        'NOT all cadets have all modules - gaps are normal during training progression',
-                        'Junior cadets do NOT appear here - check junior_modules table instead',
-                        'Module names are case-sensitive but have variations',
-                        'CRITICAL: Many modules have "CF" prefix (Combined Forces) in database',
-                        'When searching for specific qualifications, use LIKE pattern matching, NOT exact equals',
-                        'Example: Instead of module = "Swim Test", use module LIKE "%Swim%" OR module LIKE "%Water Safety%"',
-                        'Always check equivalencies object above for known variations before writing SQL'
+                        'WESTMINSTER DATA STRUCTURE:',
+                        'Westminster tracks rank progression with summary codes (SCC CTP1-6)',
+                        'Individual module codes (NE01, DR01, SM01) tracked in training spreadsheets',
+                        'Qualifications table contains summary codes + specialisations + proficiencies + awards',
+                        
+                        'CRITICAL SEARCH PATTERNS:',
+                        'Water Safety: Use LIKE "%Water Safety%" OR LIKE "%Swimming%" - primary is "CF Water Safety Test"',
+                        'Specialisations: Use LIKE "SCC Basic %" or "SCC Intermediate %" - format is consistent',
+                        'Waterborne: Use LIKE "Pathway - % Beginner" - catches all beginner courses',
+                        'CTP Progress: Use exact match on "SCC CTP1 - New Entry to Cadet" etc.',
+                        
+                        'NEVER use exact equals for qualifications unless its a summary CTP code',
+                        'ALWAYS check equivalencies object above before writing SQL queries',
+                        'Module names are case-sensitive but pattern matching with LIKE helps',
+                        
+                        'PROGRESSION TRACKING:',
+                        'Check summary code exists (e.g., SCC CTP1) to verify rank completion',
+                        'Check age: EXTRACT(YEAR FROM AGE(CURRENT_DATE, dob)) for age calculations',
+                        'Check time at rank: (CURRENT_DATE - rank_date) for months served',
+                        'Count qualifications: Use LIKE patterns to count specialisations and waterborne',
+                        
+                        'COMMON QUERY PATTERNS:',
+                        'Ready for promotion: EXISTS(summary code) + age check + time check + qualification count',
+                        'Missing swim test: NOT EXISTS with LIKE "%Water Safety%" OR LIKE "%Swimming%"',
+                        'Specialisation count: COUNT(*) WHERE module LIKE "SCC Basic %" or "SCC Intermediate %"',
+                        'Waterborne count: COUNT(*) WHERE module LIKE "Pathway - % Beginner" OR LIKE "RYA %"',
+                        
+                        'DATA GAPS ARE NORMAL:',
+                        'NOT all cadets have all modules - they progress through ranks at different speeds',
+                        'Junior cadets do NOT appear in this table - check junior_modules table instead',
+                        'Some cadets may have legacy module codes if they joined before current CTP system',
+                        
+                        'BOATING HOURS:',
+                        '60 hours required New Entry → Cadet (for Cadet 1st Class promotion)',
+                        '60 hours required Cadet 1st Class → Ordinary Cadet (for Able Cadet promotion)',
+                        'May be tracked separately or calculated from WB (Waterborne) module completions',
+                        
+                        'FIRST AID COURSES:',
+                        'Basic First Aid (FA01-FA12): Formal course required for Cadet → Cadet 1st Class',
+                        'Intermediate First Aid (FA13-FA26): Formal course required for Cadet 1st Class → Ordinary Cadet',
+                        'These are registered courses with assessments, not just module ticks'
                     ]
                 },
                 
                 junior_modules: {
                     columns: ['p_number', 'section', 'module_code', 'date_completed'],
-                    description: 'Module completions for Junior Sea Cadets (under 12). Organised by colour-coded sections with specific module codes.',
+                    description: 'Module completions for Junior Sea Cadets (under 12). Organised by colour-coded sections with specific module codes. Total of 341 modules across all sections.',
                     
                     sampleValues: {
                         section: [
-                            'RED', 'ORANGE', 'YELLOW', 'GREEN', 'BLUE', 'PURPLE'
+                            'RED',    // The Unit (15 modules for Red Badge)
+                            'BLUE',   // Waterborne (15 modules for Blue Badge)
+                            'GREEN',  // Outdoor & Recreation (15 modules for Green Badge)
+                            'YELLOW'  // Community & Citizenship (15 modules for Yellow Badge)
                         ],
                         module_code: [
-                            'RED 1', 'RED 2', 'RED 3',
-                            'ORANGE 1', 'ORANGE 2',
-                            'YELLOW 1', 'YELLOW 2',
-                            'GREEN 1', 'GREEN 2',
-                            'BLUE 1', 'BLUE 2',
-                            'PURPLE 1', 'PURPLE 2'
+                            // RED Section examples
+                            'RED 1', 'RED 1.1', 'RED 1.2', 'RED 2', 'RED 3', 'RED 4', 'RED 6',
+                            'Core Red 1', 'Core Red 2', 'Core Red 6',
+                            
+                            // BLUE Section examples
+                            'BLUE 1', 'BLUE 1.1', 'BLUE 9', 'BLUE 21', 'BLUE 25',
+                            'Core Blue 1', 'Core Blue 2',
+                            
+                            // GREEN Section examples
+                            'GREEN 1', 'GREEN 2', 'GREEN 14',
+                            
+                            // YELLOW Section examples
+                            'YELLOW 1', 'YELLOW 2', 'YELLOW 23'
                         ]
                     },
                     
@@ -2633,23 +2881,71 @@
                     },
                     
                     businessLogic: [
-                        'Junior cadets complete colour-coded sections: RED, ORANGE, YELLOW, GREEN, BLUE, PURPLE',
-                        'Each section contains multiple numbered modules',
-                        'Sections are progressive - complete RED before ORANGE, etc.',
-                        'Total of 341 junior modules across all sections',
+                        'Junior cadets are aged 9 to 12th birthday',
+                        'Transition to New Entry Cadet on or around 12th birthday',
+                        '341 total junior modules across all sections',
                         
-                        'module_code format: "[COLOUR] [NUMBER]" (e.g., "RED 1", "BLUE 5")',
-                        'section field stores the colour category',
-                        'date_completed records when module was finished',
+                        'SECTION STRUCTURE:',
+                        'RED section = The Unit (getting to know unit)',
+                        'BLUE section = Waterborne (water-based activities)',
+                        'GREEN section = Outdoor & Recreation (camping, navigation)',
+                        'YELLOW section = Community & Citizenship (community engagement)',
                         
-                        'Junior cadets only appear in this table, NOT in qualifications table',
-                        'Age boundary: under 12 = junior, 12+ = standard cadet'
+                        'BADGE REQUIREMENTS:',
+                        'Red Badge = complete 15 RED modules (including Core Red modules)',
+                        'Blue Badge = complete 15 BLUE modules (including Core Blue modules)',
+                        'Green Badge = complete 15 GREEN modules',
+                        'Yellow Badge = complete 15 YELLOW modules',
+                        'Commodore Broad Pennant = all 4 badges + 8 extra from EACH section (92 modules total)',
+                        
+                        'CORE MODULES (MANDATORY):',
+                        'Core Red modules (RED 1-6): MUST complete within first 6 months of joining',
+                        'Core Blue modules (BLUE 1, 9, 21, 25): MUST complete within first 12 months',
+                        'RED 6 (Safeguarding) must be completed within first 8 weeks',
+                        
+                        'RANK PROGRESSION:',
+                        'Junior Sea Cadet = new entry (no badge)',
+                        'Junior Sea Cadet 1st Class = Red Core complete + 6 months service',
+                        'Able Junior Cadet = Blue Core complete + 12 months service + 1 proficiency',
+                        'Leading Junior Cadet = all 4 sections complete + 2 proficiencies + age 11+ + JTO recommendation',
+                        
+                        'MODULE NAMING:',
+                        'Format: SECTION NUMBER or SECTION NUMBER.SUBSECTION',
+                        'Example: RED 1, BLUE 15.2, GREEN 3, YELLOW 23',
+                        'Sub-modules (e.g., RED 1.1, RED 1.2) each count as 1 module',
+                        'If module takes 2 parade nights, count as 2 modules',
+                        
+                        'WATER SAFETY CRITICAL:',
+                        'BLUE 1 = Water Safety Test (with buoyancy aid) - required for boating',
+                        'Swimming Test (without aid) - required for competitions',
+                        
+                        'RESTRICTIONS:',
+                        'Juniors should NOT work toward specialisations (Basic/Int/Adv)',
+                        'Juniors should NOT complete senior CTP modules',
+                        'Junior progress does NOT transfer to senior progression at age 12',
+                        
+                        'TRANSITION AT AGE 12:',
+                        'Juniors become New Entry Cadets (not Ordinary Cadet)',
+                        'Some junior modules map to New Entry CTP modules NE01-NE09',
+                        'Must complete NE10-NE16 as senior before promotion to Cadet rank'
                     ],
                     
                     notes: [
-                        'A junior cadet may have modules in multiple sections simultaneously',
-                        'Progress is tracked by counting completed modules per section',
-                        'Total modules completed = good progress indicator for juniors'
+                        'Junior cadets use junior_modules table, NOT qualifications table',
+                        'Age boundary: under 12 = junior, 12+ = standard cadet',
+                        'Calculate age: EXTRACT(YEAR FROM AGE(CURRENT_DATE, dob)) < 12',
+                        
+                        'Module completion is cumulative (not reset between badges)',
+                        'Progress tracked by counting modules per section',
+                        
+                        'Common queries:',
+                        '- Who needs RED modules for 1st Class promotion? (Red Core + 6 months)',
+                        '- Who is ready for Able Junior Cadet? (Blue Core + 12 months + 1 prof)',
+                        '- Which juniors are close to section badges? (count by section)',
+                        '- Who has completed water safety test? (check BLUE 1)',
+                        
+                        'Section field contains: RED, BLUE, GREEN, YELLOW',
+                        'Module_code contains full code like "RED 1" or "BLUE 15.2"'
                     ]
                 }
             };

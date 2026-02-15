@@ -139,7 +139,7 @@
         // CONSTANTS & DATA
         // ═══════════════════════════════════════════════════════════════════════════
         
-        const DATA_VERSION = "V2.2.1-Cloud"; // Added tracking of who added junior modules (added_by_email, added_at)
+        const DATA_VERSION = "V2.3.0-Cloud-AI"; // Enhanced Natural Language Query with comprehensive Claude AI schema
  
         // Badge & Rank Image Maps
         const RANK_IMG_MAP = {
@@ -2442,7 +2442,7 @@
         };
 
         // ========================================================================
-        // NATURAL LANGUAGE QUERY COMPONENT
+        // NATURAL LANGUAGE QUERY COMPONENT - ENHANCED WITH CLAUDE AI
         // ========================================================================
         
         const NaturalLanguageQuery = () => {
@@ -2451,12 +2451,166 @@
             const [loading, setLoading] = useState(false);
             const [error, setError] = useState(null);
 
+            // Enhanced example queries with more variety
             const exampleQueries = [
                 "Find Able Cadets who don't have an Advanced specialisation",
                 "Show cadets without a swim test",
                 "List Leading Cadets with no proficiencies",
                 "Find juniors who need RED module 1",
+                "Which cadets are ready for their next rank?",
+                "Show me all cadets with Seamanship qualifications",
+                "Who has completed the most modules in the last 3 months?",
             ];
+
+            // Enhanced schema with full business logic
+            const schema = {
+                personnel: {
+                    columns: ['p_number', 'name', 'rank', 'dob', 'unit', 'tos', 'rank_date'],
+                    description: 'Cadet personnel records. Each cadet has a unique p_number (personnel number).',
+                    
+                    sampleValues: {
+                        rank: [
+                            'Junior Cadet',      // Under 12
+                            'Ordinary Cadet',    // Entry rank (12+)
+                            'Able Cadet',        // Second rank
+                            'Leading Cadet',     // Third rank
+                            'Petty Officer Cadet', // Senior rank
+                            'Chief Petty Officer Cadet' // Highest cadet rank
+                        ],
+                        unit: 'TS Market Harborough'
+                    },
+                    
+                    relationships: {
+                        qualifications: 'p_number links to qualifications.p_number',
+                        junior_modules: 'p_number links to junior_modules.p_number'
+                    },
+                    
+                    businessLogic: [
+                        'Junior Cadets are under 12 years old (calculate from dob)',
+                        'Standard cadets are aged 12-17',
+                        'Adults/Staff are 18+',
+                        'tos = Time of Service (tenure in months)',
+                        'rank_date = date when current rank was awarded',
+                        'Rank progression: Junior → Ordinary → Able → Leading → Petty Officer → Chief Petty Officer',
+                        'Unit name format: "TS [Location]" (Training Ship)',
+                        'p_number is the primary identifier, always use this for joins'
+                    ],
+                    
+                    notes: [
+                        'Age calculated from dob field (date of birth)',
+                        'Current date for age calculations: use CURRENT_DATE or NOW()',
+                        'Junior cadets do NOT appear in qualifications table, use junior_modules instead'
+                    ]
+                },
+                
+                qualifications: {
+                    columns: ['p_number', 'module', 'date', 'result'],
+                    description: 'Completed training modules and qualifications for standard cadets (12+). Each row represents one completed module.',
+                    
+                    sampleValues: {
+                        module: [
+                            // Core modules by rank
+                            'OC1', 'OC2', 'OC3', 'OC4',  // Ordinary Cadet
+                            'AC1', 'AC2', 'AC3', 'AC4',  // Able Cadet
+                            'LC1', 'LC2', 'LC3', 'LC4',  // Leading Cadet
+                            'POC1', 'POC2', 'POC3', 'POC4', // Petty Officer Cadet
+                            
+                            // Proficiencies
+                            'Prof 1', 'Prof 2', 'Prof 3', 'Prof 4',
+                            
+                            // Specialisations (Basic, Intermediate, Advanced)
+                            'Basic Seamanship', 'Int Seamanship', 'Adv Seamanship',
+                            'Basic Navigation', 'Int Navigation', 'Adv Navigation',
+                            'Basic Communications', 'Int Communications', 'Adv Communications',
+                            'Basic Marine Engineering', 'Int Marine Engineering', 'Adv Marine Engineering',
+                            
+                            // Essential qualifications
+                            'Swim Test',
+                            'First Aid',
+                            
+                            // RMC (Royal Marines Cadets) modules
+                            'RMC OC1', 'RMC OC2', 'RMC AC1', 'RMC AC2'
+                        ],
+                        result: ['Pass', 'Achieved', 'Completed']
+                    },
+                    
+                    relationships: {
+                        personnel: 'p_number links to personnel.p_number'
+                    },
+                    
+                    businessLogic: [
+                        'Module names starting with OC = Ordinary Cadet level',
+                        'Module names starting with AC = Able Cadet level',
+                        'Module names starting with LC = Leading Cadet level',
+                        'Module names starting with POC = Petty Officer Cadet level',
+                        'Module names starting with RMC = Royal Marines Cadets pathway',
+                        
+                        'Proficiencies (Prof 1-4) are additional skills beyond core modules',
+                        
+                        'Specialisations have 3 levels: Basic, Intermediate (Int), Advanced (Adv)',
+                        'Common specialisation subjects: Seamanship, Navigation, Communications, Marine Engineering, PTI, Catering',
+                        'A cadet can hold multiple specialisations',
+                        
+                        'Swim Test is mandatory for rank progression',
+                        'First Aid is highly recommended',
+                        
+                        'Module completion is recorded by date field',
+                        'result field indicates pass status (usually "Pass" or "Achieved")',
+                        
+                        'To find missing qualifications: use NOT EXISTS or LEFT JOIN with NULL check'
+                    ],
+                    
+                    notes: [
+                        'NOT all cadets have all modules - gaps are normal during training progression',
+                        'Junior cadets do NOT appear here - check junior_modules table instead',
+                        'Module names are case-sensitive',
+                        'Some modules may have variations in naming (e.g., "Basic Seamanship" vs "Seamanship Basic")'
+                    ]
+                },
+                
+                junior_modules: {
+                    columns: ['p_number', 'section', 'module_code', 'date_completed'],
+                    description: 'Module completions for Junior Sea Cadets (under 12). Organised by colour-coded sections with specific module codes.',
+                    
+                    sampleValues: {
+                        section: [
+                            'RED', 'ORANGE', 'YELLOW', 'GREEN', 'BLUE', 'PURPLE'
+                        ],
+                        module_code: [
+                            'RED 1', 'RED 2', 'RED 3',
+                            'ORANGE 1', 'ORANGE 2',
+                            'YELLOW 1', 'YELLOW 2',
+                            'GREEN 1', 'GREEN 2',
+                            'BLUE 1', 'BLUE 2',
+                            'PURPLE 1', 'PURPLE 2'
+                        ]
+                    },
+                    
+                    relationships: {
+                        personnel: 'p_number links to personnel.p_number (where age < 12)'
+                    },
+                    
+                    businessLogic: [
+                        'Junior cadets complete colour-coded sections: RED, ORANGE, YELLOW, GREEN, BLUE, PURPLE',
+                        'Each section contains multiple numbered modules',
+                        'Sections are progressive - complete RED before ORANGE, etc.',
+                        'Total of 341 junior modules across all sections',
+                        
+                        'module_code format: "[COLOUR] [NUMBER]" (e.g., "RED 1", "BLUE 5")',
+                        'section field stores the colour category',
+                        'date_completed records when module was finished',
+                        
+                        'Junior cadets only appear in this table, NOT in qualifications table',
+                        'Age boundary: under 12 = junior, 12+ = standard cadet'
+                    ],
+                    
+                    notes: [
+                        'A junior cadet may have modules in multiple sections simultaneously',
+                        'Progress is tracked by counting completed modules per section',
+                        'Total modules completed = good progress indicator for juniors'
+                    ]
+                }
+            };
 
             const handleQuery = async () => {
                 if (!query.trim()) return;
@@ -2466,30 +2620,22 @@
                 setResults(null);
 
                 try {
-                    // Define database schema for Claude
-                    const schema = {
-                        personnel: {
-                            columns: ['p_number', 'name', 'rank', 'dob', 'unit', 'tos', 'rank_date'],
-                            description: 'Cadet personnel records'
-                        },
-                        qualifications: {
-                            columns: ['p_number', 'module', 'date', 'result'],
-                            description: 'Cadet qualifications and completions'
-                        },
-                        junior_modules: {
-                            columns: ['p_number', 'section', 'module_code', 'date_completed'],
-                            description: 'Junior Sea Cadet module completions'
-                        }
-                    };
-
-                    // Call Edge Function
+                    // Call Edge Function with enhanced schema
                     const response = await fetch(`${SUPABASE_URL}/functions/v1/nlq-query`, {
                         method: 'POST',
                         headers: {
                             'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
                             'Content-Type': 'application/json'
                         },
-                        body: JSON.stringify({ query, schema })
+                        body: JSON.stringify({ 
+                            query, 
+                            schema,
+                            // Add metadata about your unit
+                            metadata: {
+                                unitName: 'TS Market Harborough',
+                                currentDate: new Date().toISOString().split('T')[0]
+                            }
+                        })
                     });
 
                     if (!response.ok) {
@@ -2525,7 +2671,7 @@
                         <Icon name="Command" className="w-6 h-6 text-blue-600" />
                         <div>
                             <h2 className="text-xl font-bold text-slate-900">Ask a Question</h2>
-                            <p className="text-sm text-slate-600">Query your cadet data in plain English - supports negation, joins, and pattern matching</p>
+                            <p className="text-sm text-slate-600">Query your cadet data in plain English. Powered by Claude AI with deep knowledge of Sea Cadet training systems.</p>
                         </div>
                     </div>
                     
@@ -2604,10 +2750,10 @@
                                         </thead>
                                         <tbody>
                                             {results.data.map((row, idx) => (
-                                                <tr key={idx} className="border-t hover:bg-slate-50">
+                                                <tr key={idx} className="border-t border-slate-200 hover:bg-slate-50">
                                                     {Object.values(row).map((val, i) => (
-                                                        <td key={i} className="px-3 py-2 text-slate-700">
-                                                            {val !== null && val !== undefined ? String(val) : '-'}
+                                                        <td key={i} className="px-3 py-2 text-slate-800">
+                                                            {val === null ? <span className="text-slate-400 italic">null</span> : String(val)}
                                                         </td>
                                                     ))}
                                                 </tr>
@@ -2616,7 +2762,9 @@
                                     </table>
                                 </div>
                             ) : (
-                                <p className="text-center text-slate-500 py-8">No results found</p>
+                                <div className="p-4 bg-slate-50 rounded text-center text-slate-600">
+                                    No results found
+                                </div>
                             )}
                         </div>
                     )}

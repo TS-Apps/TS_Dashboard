@@ -139,7 +139,7 @@
         // CONSTANTS & DATA
         // ═══════════════════════════════════════════════════════════════════════════
         
-        const DATA_VERSION = "V2.3.0-Cloud-AI"; // Enhanced Natural Language Query with comprehensive Claude AI schema
+        const DATA_VERSION = "V2.3.1-Cloud-AI"; // Fixed swim test equivalencies and module name variations
  
         // Badge & Rank Image Maps
         const RANK_IMG_MAP = {
@@ -2515,18 +2515,33 @@
                             'LC1', 'LC2', 'LC3', 'LC4',  // Leading Cadet
                             'POC1', 'POC2', 'POC3', 'POC4', // Petty Officer Cadet
                             
-                            // Proficiencies
+                            // Proficiencies (with variations)
                             'Prof 1', 'Prof 2', 'Prof 3', 'Prof 4',
+                            'Proficiency 1', 'Proficiency 2',
                             
-                            // Specialisations (Basic, Intermediate, Advanced)
-                            'Basic Seamanship', 'Int Seamanship', 'Adv Seamanship',
-                            'Basic Navigation', 'Int Navigation', 'Adv Navigation',
-                            'Basic Communications', 'Int Communications', 'Adv Communications',
-                            'Basic Marine Engineering', 'Int Marine Engineering', 'Adv Marine Engineering',
+                            // Specialisations - Basic level (with CF prefix)
+                            'CF Basic Seamanship', 'Basic Seamanship',
+                            'CF Basic Navigation', 'Basic Navigation',
+                            'CF Basic Communications', 'Basic Communications',
+                            'CF Basic Marine Engineering', 'Basic Marine Engineering',
+                            'CF Basic PTI', 'Basic PTI',
+                            'CF Basic Catering', 'Basic Catering',
                             
-                            // Essential qualifications
-                            'Swim Test',
-                            'First Aid',
+                            // Specialisations - Intermediate
+                            'CF Int Seamanship', 'Int Seamanship',
+                            'CF Int Navigation', 'Int Navigation',
+                            'CF Int Communications', 'Int Communications',
+                            'CF Int Marine Engineering', 'Int Marine Engineering',
+                            
+                            // Specialisations - Advanced
+                            'CF Adv Seamanship', 'Adv Seamanship',
+                            'CF Adv Navigation', 'Adv Navigation',
+                            'CF Adv Communications', 'Adv Communications',
+                            'CF Adv Marine Engineering', 'Adv Marine Engineering',
+                            
+                            // Essential qualifications (multiple variations)
+                            'Swim Test', 'CF Swimming Test', 'CF Water Safety Test',
+                            'First Aid', 'CF First Aid', 'Emergency Aid',
                             
                             // RMC (Royal Marines Cadets) modules
                             'RMC OC1', 'RMC OC2', 'RMC AC1', 'RMC AC2'
@@ -2560,11 +2575,38 @@
                         'To find missing qualifications: use NOT EXISTS or LEFT JOIN with NULL check'
                     ],
                     
+                    equivalencies: {
+                        swimTest: {
+                            description: 'Swim test has multiple equivalent names in the database',
+                            moduleNames: ['Swim Test', 'CF Swimming Test', 'CF Water Safety Test'],
+                            searchPattern: "module LIKE '%Swim%' OR module LIKE '%Water Safety%'",
+                            note: 'When searching for swim test, use pattern matching to catch all variations'
+                        },
+                        firstAid: {
+                            description: 'First aid qualifications have variations',
+                            moduleNames: ['First Aid', 'CF First Aid', 'Emergency Aid'],
+                            searchPattern: "module LIKE '%First Aid%' OR module LIKE '%Emergency Aid%'"
+                        },
+                        proficiencies: {
+                            description: 'Proficiency naming patterns',
+                            note: 'Prof vs Proficiency - both formats exist in database',
+                            searchPattern: "module LIKE 'Prof%' OR module LIKE '%Proficiency%'"
+                        },
+                        specialisations: {
+                            description: 'Specialisations may have CF prefix',
+                            examples: ['CF Basic Seamanship', 'Basic Seamanship', 'Seamanship Basic'],
+                            searchPattern: "Use LIKE '%[subject]%' AND LIKE '%[level]%' for reliable matching"
+                        }
+                    },
+                    
                     notes: [
                         'NOT all cadets have all modules - gaps are normal during training progression',
                         'Junior cadets do NOT appear here - check junior_modules table instead',
-                        'Module names are case-sensitive',
-                        'Some modules may have variations in naming (e.g., "Basic Seamanship" vs "Seamanship Basic")'
+                        'Module names are case-sensitive but have variations',
+                        'CRITICAL: Many modules have "CF" prefix (Combined Forces) in database',
+                        'When searching for specific qualifications, use LIKE pattern matching, NOT exact equals',
+                        'Example: Instead of module = "Swim Test", use module LIKE "%Swim%" OR module LIKE "%Water Safety%"',
+                        'Always check equivalencies object above for known variations before writing SQL'
                     ]
                 },
                 

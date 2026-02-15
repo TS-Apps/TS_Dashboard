@@ -139,7 +139,7 @@
         // CONSTANTS & DATA
         // ═══════════════════════════════════════════════════════════════════════════
         
-        const DATA_VERSION = "V2.6.0-Cloud-AI"; // OPTIMIZED: Reduced schema tokens by ~60%, added token usage display
+        const DATA_VERSION = "V2.7.0-Cloud-AI"; // Added cost display badge showing query cost in cents/dollars
  
         // Badge & Rank Image Maps
         const RANK_IMG_MAP = {
@@ -2767,9 +2767,24 @@
                                     {results.count} result{results.count !== 1 ? 's' : ''}
                                 </span>
                                 {results.tokens && (
-                                    <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-xs font-semibold flex-shrink-0 ml-2" title="Tokens used for this query">
-                                        {results.tokens.input.toLocaleString()} in • {results.tokens.output.toLocaleString()} out
-                                    </span>
+                                    <>
+                                        <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-xs font-semibold flex-shrink-0 ml-2" title="Tokens used for this query">
+                                            {results.tokens.input.toLocaleString()} in • {results.tokens.output.toLocaleString()} out
+                                        </span>
+                                        <span className="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-xs font-semibold flex-shrink-0 ml-2" title="Cost for this query (Anthropic Claude Sonnet 4: $3/M input, $15/M output)">
+                                            {(() => {
+                                                const inputCost = (results.tokens.input / 1000000) * 3;
+                                                const outputCost = (results.tokens.output / 1000000) * 15;
+                                                const totalCost = inputCost + outputCost;
+                                                // Show in cents if under $0.10, otherwise dollars
+                                                if (totalCost < 0.10) {
+                                                    return `${(totalCost * 100).toFixed(1)}¢`;
+                                                } else {
+                                                    return `$${totalCost.toFixed(3)}`;
+                                                }
+                                            })()}
+                                        </span>
+                                    </>
                                 )}
                             </div>
                             

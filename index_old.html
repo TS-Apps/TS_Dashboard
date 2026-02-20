@@ -139,7 +139,7 @@
         // CONSTANTS & DATA
         // ═══════════════════════════════════════════════════════════════════════════
         
-        const DATA_VERSION = "V2.2.1-Cloud"; // Added tracking of who added junior modules (added_by_email, added_at)
+        const DATA_VERSION = "V2.7.0-Cloud-AI"; // Added cost display badge showing query cost in cents/dollars
  
         // Badge & Rank Image Maps
         const RANK_IMG_MAP = {
@@ -2442,7 +2442,7 @@
         };
 
         // ========================================================================
-        // NATURAL LANGUAGE QUERY COMPONENT
+        // NATURAL LANGUAGE QUERY COMPONENT - ENHANCED WITH CLAUDE AI
         // ========================================================================
         
         const NaturalLanguageQuery = () => {
@@ -2451,12 +2451,197 @@
             const [loading, setLoading] = useState(false);
             const [error, setError] = useState(null);
 
+            // Enhanced example queries with more variety
             const exampleQueries = [
                 "Find Able Cadets who don't have an Advanced specialisation",
                 "Show cadets without a swim test",
                 "List Leading Cadets with no proficiencies",
                 "Find juniors who need RED module 1",
+                "Which cadets are ready for their next rank?",
+                "Show me all cadets with Seamanship qualifications",
+                "Who has completed the most modules in the last 3 months?",
             ];
+
+            // Enhanced schema with full business logic
+            const schema = {
+                personnel: {
+                    columns: ['p_number', 'name', 'rank', 'dob', 'unit', 'tos', 'rank_date'],
+                    description: 'Cadet personnel records. Each cadet has a unique p_number (personnel number).',
+                    
+                    sampleValues: {
+                        rank: [
+                            'Junior Cadet',      // Under 12
+                            'Ordinary Cadet',    // Entry rank (12+)
+                            'Able Cadet',        // Second rank
+                            'Leading Cadet',     // Third rank
+                            'Petty Officer Cadet', // Senior rank
+                            'Chief Petty Officer Cadet' // Highest cadet rank
+                        ],
+                        unit: 'TS Market Harborough'
+                    },
+                    
+                    relationships: {
+                        qualifications: 'p_number links to qualifications.p_number',
+                        junior_modules: 'p_number links to junior_modules.p_number'
+                    },
+                    
+                    businessLogic: [
+                        'AGE GROUPS:',
+                        'Junior Cadets are aged 9 to 12th birthday (calculate from dob)',
+                        'Standard cadets are aged 12-17',
+                        'Adults/Staff are 18+',
+                        
+                        'JUNIOR RANKS (age 9-11):',
+                        'Junior Cadet (new entry)',
+                        'Junior Cadet 1st Class (Red Core + 6 months)',
+                        'Able Junior Cadet (Blue Core + 12 months + 1 proficiency)',
+                        'Leading Junior Cadet (all 4 sections + 2 profs + age 11+ + JTO recommendation)',
+                        
+                        'STANDARD CADET RANKS (age 12+):',
+                        'New Entry Cadet (transition from juniors at age 12)',
+                        'Ordinary Cadet (entry rank for new cadets 12+)',
+                        'Able Cadet (second rank)',
+                        'Leading Cadet (third rank)',
+                        'Petty Officer Cadet (senior rank)',
+                        'Chief Petty Officer Cadet (highest cadet rank)',
+                        
+                        'RANK PROGRESSION:',
+                        'Juniors: progress based on time + module badges',
+                        'Standards: Ordinary → Able → Leading → Petty Officer → Chief Petty Officer',
+                        
+                        'tos = Time of Service (tenure in months)',
+                        'rank_date = date when current rank was awarded',
+                        'Unit name format: "TS [Location]" (Training Ship)',
+                        'p_number is the primary identifier, always use this for joins',
+                        
+                        'CRITICAL TRANSITION:',
+                        'At 12th birthday, juniors become New Entry Cadets',
+                        'Junior module progress does NOT transfer to senior progression',
+                        'New Entry must complete NE10-NE16 before promotion to Ordinary Cadet'
+                    ],
+                    
+                    notes: [
+                        'Age calculated from dob field (date of birth)',
+                        'Current date for age calculations: use CURRENT_DATE or NOW()',
+                        'Junior cadets do NOT appear in qualifications table, use junior_modules instead'
+                    ]
+                },
+                
+                qualifications: {
+                    columns: ['p_number', 'module', 'date_achieved', 'result', 'syllabus'],
+                    description: 'Completed training modules and qualifications for standard cadets (12+). Westminster uses summary codes for CTP rank progression. Each row represents one completed module or qualification. CRITICAL: Date column is called date_achieved, NOT date.',
+                    
+                    sampleValues: {
+                        module: [
+                            // CTP RANK PROGRESSION - Westminster Summary Codes
+                            'SCC CTP1 - New Entry to Cadet', 'SCC CTP2 - Cadet to Cadet 1st Class',
+                            'SCC CTP3 - Cadet 1st Class to Ordinary Cadet', 'SCC CTP4 - Ordinary Cadet to Able Cadet',
+                            'SCC CTP5 - Able Cadet to Leading Cadet', 'SCC CTP6 - Leading Cadet to Petty Officer Cadet',
+                            
+                            // INDIVIDUAL MODULE CODES (examples only - full list too long)
+                            'NE01', 'CAV01', 'DR01', 'SM01', 'FA01', 'BP01', 'AP01', 'POC01',
+                            
+                            // SPECIALISATIONS - Format: "SCC [Level] [Subject]"
+                            'SCC Basic Navigation', 'SCC Intermediate Seamanship', 'SCC Advanced Communications',
+                            
+                            // WATERBORNE - Format: "Pathway - [Activity] Beginner/Instructor"
+                            'Pathway - Dinghy Sailing Beginner', 'Pathway - Powerboat Instructor', 'RYA Sailing (Sail)',
+                            
+                            // WATER SAFETY (CRITICAL)
+                            'CF Water Safety Test', 'CF Swimming Test',
+                            
+                            // OTHER
+                            'Citizenship - Basic (Cadet)', 'First Aid', "Duke of Edinburgh's Award (DofE) - Bronze"
+                        ]
+                    },
+                    
+                    relationships: {
+                        personnel: 'p_number links to personnel.p_number'
+                    },
+                    
+                    businessLogic: [
+                        'CRITICAL: Date column is date_achieved, NEVER use q.date',
+                        
+                        'RANK PROGRESSION (age + time + modules):',
+                        'NE→Cadet: Age 12 + SCC CTP1',
+                        'Cadet→1st Class: Age 13 + 6mo + SCC CTP2 + 60hrs + 2quals',
+                        '1st Class→OC: Age 14 + 6mo + SCC CTP3 + Int First Aid',
+                        'OC→Able: Age 14 + 6mo + SCC CTP4 + 60hrs + 4quals',
+                        'Able→Leading: SCC CTP5 + Basic Peer Educator (BP01-08)',
+                        'Leading→POC: SCC CTP6 + Advanced Peer Educator (AP01-11) + board',
+                        
+                        'MODULES: NE=New Entry, CAV=Voice, DR=Drill, SM=Seamanship, FA=First Aid, BP=Basic Peer, AP=Adv Peer, POC=Petty Officer',
+                        
+                        'SPECIALISATIONS: Format "SCC [Level] [Subject]". Levels: Basic, Intermediate, Advanced',
+                        
+                        'WATERBORNE: Format "Pathway - [Activity] Beginner/Instructor" or "RYA [Activity]"',
+                        
+                        'SWIM TEST: Primary="CF Water Safety Test", also "CF Swimming Test"'
+                    ],
+                    
+                    equivalencies: {
+                        swimTest: ['CF Water Safety Test', 'CF Swimming Test', 'Swimming (Swim)'],
+                        ctpProgression: ['SCC CTP1 - New Entry to Cadet', 'SCC CTP2 - Cadet to Cadet 1st Class', 'SCC CTP3 - Cadet 1st Class to Ordinary Cadet', 'SCC CTP4 - Ordinary Cadet to Able Cadet', 'SCC CTP5 - Able Cadet to Leading Cadet', 'SCC CTP6 - Leading Cadet to Petty Officer Cadet'],
+                        specialisationPattern: "module LIKE 'SCC Basic %' OR module LIKE 'SCC Intermediate %' OR module LIKE 'SCC Advanced %'",
+                        waterbornePattern: "module LIKE 'Pathway - % Beginner' OR module LIKE 'RYA %'"
+                    },
+                    
+                    notes: [
+                        'CRITICAL: Date column is date_achieved (NOT date)',
+                        'Use pattern matching with LIKE for module searches',
+                        'CTP summary codes (SCC CTP1-6) = exact match, all others = LIKE patterns'
+                    ]
+                },
+                
+                junior_modules: {
+                    columns: ['p_number', 'section', 'module_code', 'date_completed'],
+                    description: 'Module completions for Junior Sea Cadets (under 12). Organised by colour-coded sections with specific module codes. Total of 341 modules across all sections.',
+                    
+                    sampleValues: {
+                        section: [
+                            'RED',    // The Unit (15 modules for Red Badge)
+                            'BLUE',   // Waterborne (15 modules for Blue Badge)
+                            'GREEN',  // Outdoor & Recreation (15 modules for Green Badge)
+                            'YELLOW'  // Community & Citizenship (15 modules for Yellow Badge)
+                        ],
+                        module_code: [
+                            // RED Section examples
+                            'RED 1', 'RED 1.1', 'RED 1.2', 'RED 2', 'RED 3', 'RED 4', 'RED 6',
+                            'Core Red 1', 'Core Red 2', 'Core Red 6',
+                            
+                            // BLUE Section examples
+                            'BLUE 1', 'BLUE 1.1', 'BLUE 9', 'BLUE 21', 'BLUE 25',
+                            'Core Blue 1', 'Core Blue 2',
+                            
+                            // GREEN Section examples
+                            'GREEN 1', 'GREEN 2', 'GREEN 14',
+                            
+                            // YELLOW Section examples
+                            'YELLOW 1', 'YELLOW 2', 'YELLOW 23'
+                        ]
+                    },
+                    
+                    relationships: {
+                        personnel: 'p_number links to personnel.p_number (where age < 12)'
+                    },
+                    
+                    businessLogic: [
+                        'Junior cadets: age 9-12, transition to New Entry at 12',
+                        '341 modules across 4 sections: RED (Unit), BLUE (Waterborne), GREEN (Outdoor), YELLOW (Community)',
+                        'Badge requirement: 15 modules per section. Commodore Pennant: all 4 badges + 32 extra (92 total)',
+                        'Core modules: RED 1-6 (6mo), BLUE 1,9,21,25 (12mo), RED 6 (8 weeks)',
+                        'Ranks: Junior→1st Class(Red Core+6mo)→Able(Blue Core+12mo+1prof)→Leading(4badges+2prof+age11+rec)',
+                        'Module format: SECTION NUMBER or SECTION NUMBER.SUBSECTION',
+                        'BLUE 1 = Water Safety Test (CRITICAL)',
+                        'At age 12: become New Entry Cadet, junior progress does NOT transfer'
+                    ],
+                    
+                    notes: [
+                        'Juniors use junior_modules table (NOT qualifications)',
+                        'Age < 12 = junior, calculate: EXTRACT(YEAR FROM AGE(CURRENT_DATE, dob)) < 12'
+                    ]
+                }
+            };
 
             const handleQuery = async () => {
                 if (!query.trim()) return;
@@ -2466,30 +2651,22 @@
                 setResults(null);
 
                 try {
-                    // Define database schema for Claude
-                    const schema = {
-                        personnel: {
-                            columns: ['p_number', 'name', 'rank', 'dob', 'unit', 'tos', 'rank_date'],
-                            description: 'Cadet personnel records'
-                        },
-                        qualifications: {
-                            columns: ['p_number', 'module', 'date', 'result'],
-                            description: 'Cadet qualifications and completions'
-                        },
-                        junior_modules: {
-                            columns: ['p_number', 'section', 'module_code', 'date_completed'],
-                            description: 'Junior Sea Cadet module completions'
-                        }
-                    };
-
-                    // Call Edge Function
+                    // Call Edge Function with enhanced schema
                     const response = await fetch(`${SUPABASE_URL}/functions/v1/nlq-query`, {
                         method: 'POST',
                         headers: {
                             'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
                             'Content-Type': 'application/json'
                         },
-                        body: JSON.stringify({ query, schema })
+                        body: JSON.stringify({ 
+                            query, 
+                            schema,
+                            // Add metadata about your unit
+                            metadata: {
+                                unitName: 'TS Market Harborough',
+                                currentDate: new Date().toISOString().split('T')[0]
+                            }
+                        })
                     });
 
                     if (!response.ok) {
@@ -2508,7 +2685,8 @@
                         sql: data.sql,
                         explanation: data.explanation,
                         data: data.data,
-                        count: data.count
+                        count: data.count,
+                        tokens: data.tokens // Add token usage from Edge Function
                     });
                     
                 } catch (err) {
@@ -2525,7 +2703,7 @@
                         <Icon name="Command" className="w-6 h-6 text-blue-600" />
                         <div>
                             <h2 className="text-xl font-bold text-slate-900">Ask a Question</h2>
-                            <p className="text-sm text-slate-600">Query your cadet data in plain English - supports negation, joins, and pattern matching</p>
+                            <p className="text-sm text-slate-600">Query your cadet data in plain English. Powered by Claude AI with deep knowledge of Sea Cadet training systems.</p>
                         </div>
                     </div>
                     
@@ -2588,6 +2766,26 @@
                                 <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-semibold flex-shrink-0 ml-3">
                                     {results.count} result{results.count !== 1 ? 's' : ''}
                                 </span>
+                                {results.tokens && (
+                                    <>
+                                        <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-xs font-semibold flex-shrink-0 ml-2" title="Tokens used for this query">
+                                            {results.tokens.input.toLocaleString()} in • {results.tokens.output.toLocaleString()} out
+                                        </span>
+                                        <span className="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-xs font-semibold flex-shrink-0 ml-2" title="Cost for this query (Anthropic Claude Sonnet 4: $3/M input, $15/M output)">
+                                            {(() => {
+                                                const inputCost = (results.tokens.input / 1000000) * 3;
+                                                const outputCost = (results.tokens.output / 1000000) * 15;
+                                                const totalCost = inputCost + outputCost;
+                                                // Show in cents if under $0.10, otherwise dollars
+                                                if (totalCost < 0.10) {
+                                                    return `${(totalCost * 100).toFixed(1)}¢`;
+                                                } else {
+                                                    return `$${totalCost.toFixed(3)}`;
+                                                }
+                                            })()}
+                                        </span>
+                                    </>
+                                )}
                             </div>
                             
                             {results.count > 0 ? (
@@ -2604,10 +2802,10 @@
                                         </thead>
                                         <tbody>
                                             {results.data.map((row, idx) => (
-                                                <tr key={idx} className="border-t hover:bg-slate-50">
+                                                <tr key={idx} className="border-t border-slate-200 hover:bg-slate-50">
                                                     {Object.values(row).map((val, i) => (
-                                                        <td key={i} className="px-3 py-2 text-slate-700">
-                                                            {val !== null && val !== undefined ? String(val) : '-'}
+                                                        <td key={i} className="px-3 py-2 text-slate-800">
+                                                            {val === null ? <span className="text-slate-400 italic">null</span> : String(val)}
                                                         </td>
                                                     ))}
                                                 </tr>
@@ -2616,7 +2814,9 @@
                                     </table>
                                 </div>
                             ) : (
-                                <p className="text-center text-slate-500 py-8">No results found</p>
+                                <div className="p-4 bg-slate-50 rounded text-center text-slate-600">
+                                    No results found
+                                </div>
                             )}
                         </div>
                     )}

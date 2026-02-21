@@ -2400,8 +2400,22 @@
         };
 
         // Module Drill-Down Component
+        const getModuleUrl = (code) => {
+            if (!code) return null;
+            const upper = code.toUpperCase().trim();
+            // Community Activities
+            if (/^CA\d+$/.test(upper)) return 'https://pol.sea-cadets.org/ssc/programmes?s=ca&session_type_id=14';
+            // Recreational Activities
+            if (/^RA\d+$/.test(upper)) return 'https://pol.sea-cadets.org/ssc/programmes?s=ra&session_type_id=42';
+            // Waterborne Activities
+            if (/^WB\d+$/.test(upper)) return 'https://pol.sea-cadets.org/ssc/programmes?s=wb&session_type_id=30';
+            // All other modules use the code directly
+            return `https://pol.sea-cadets.org/ssc/programmes?s=${upper}`;
+        };
+
         const ModuleDrillDown = ({ info, onClose }) => {
             if (!info) return null;
+            const portalUrl = getModuleUrl(info.module.code);
 
             return (
                 <div className="fixed inset-0 bg-slate-900 bg-opacity-75 z-[100] flex items-center justify-center p-4" onClick={onClose}>
@@ -2431,7 +2445,18 @@
                                 </ul>
                             )}
                         </div>
-                        <div className="p-4 border-t border-slate-200 bg-slate-50 flex justify-end rounded-b-xl">
+                        <div className="p-4 border-t border-slate-200 bg-slate-50 flex justify-between items-center rounded-b-xl">
+                            {portalUrl ? (
+                                <a
+                                    href={portalUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition-colors flex items-center gap-2 text-sm"
+                                >
+                                    <Icon name="ExternalLink" className="w-4 h-4" />
+                                    View on Portal
+                                </a>
+                            ) : <span />}
                             <button onClick={onClose} className="px-6 py-2 bg-blue-700 hover:bg-blue-800 text-white font-bold rounded-lg transition-colors">
                                 Close
                             </button>

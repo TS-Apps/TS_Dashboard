@@ -4,31 +4,23 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sea Cadet Training Dashboard - Cloud</title>
-
-    <!-- Security Headers -->
-    <!-- X-Frame-Options cannot be set via meta tag - covered by frame-ancestors in CSP below instead -->
-    <meta http-equiv="X-Content-Type-Options" content="nosniff">
-    <meta name="referrer" content="strict-origin-when-cross-origin">
-    <!-- CSP Notes:
-         - frame-ancestors 'self': replaces X-Frame-Options, blocks clickjacking
-         - script-src 'unsafe-inline': required for the inline <script type="text/babel"> block
-         - script-src 'unsafe-eval': required for Babel to compile JSX at runtime
-         - connect-src includes unpkg.com and cdnjs for .map source files fetched by browser devtools
-         - Tailwind CDN has no SRI hash support (generates CSS dynamically)
-    -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://unpkg.com https://cdn.tailwindcss.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://unpkg.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; img-src 'self' data:; font-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self';">
-
+    
     <!-- Favicon -->
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚓</text></svg>" />
-
-    <script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js" integrity="sha384-DGyLxAyjq0f9SPpVevD6IgztCFlnMF6oW/XQGmfe+IsZ8TqEiDrcHkMLKI6fiB/Z" crossorigin="anonymous"></script>
-    <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js" integrity="sha384-gTGxhz21lVGYNMcdJOyq01Edg0jhn/c22nsx0kyqP0TxaV5WVdsSH1fSDUf5YJj1" crossorigin="anonymous"></script>
-    <script src="https://unpkg.com/@babel/standalone@7.26.4/babel.min.js" integrity="sha384-x/ilTFv/u/eu6YSmkFDZl5V5Mm/pkxxcVv2cVJOrr1J0rvILhMvRBCy6yA75wYBj" crossorigin="anonymous"></script>
+    
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@0.469.0/dist/umd/lucide.min.js" integrity="sha384-hJnF5AwidE18GSWTAGHv3ByzzvfNZ1Tcx5y1UUV3WkauuMCEzBJBMSwSt/PUPXnM" crossorigin="anonymous"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" integrity="sha384-JcnsjUPPylna1s1fvi1u12X5qjY5OL56iySh75FdtrwhO/SWXgMjoVqcKyIIWOLk" crossorigin="anonymous"></script>
+    
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    
     <!-- Supabase Client -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.1/dist/umd/supabase.min.js" integrity="sha384-YieCqqg9gQufX7+5HcFvCEg/n3KUEdl8/Jb+A6J0npf1mB740VayvwKjTrtCeUoy" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <style>
         body { background-color: #f1f5f9; }
@@ -2762,14 +2754,6 @@
                             <div className="flex justify-between items-start mb-3">
                                 <div className="flex-1">
                                     <p className="text-sm text-slate-600 mb-1">{results.explanation}</p>
-                                    {results.sql && (
-                                        <details className="mt-2">
-                                            <summary className="text-xs text-blue-600 cursor-pointer hover:underline select-none">Show SQL query</summary>
-                                            <code className="block mt-2 p-2 bg-slate-50 rounded text-xs font-mono text-slate-700 overflow-x-auto whitespace-pre-wrap break-all">
-                                                {results.sql}
-                                            </code>
-                                        </details>
-                                    )}
                                 </div>
                                 <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-semibold flex-shrink-0 ml-3">
                                     {results.count} result{results.count !== 1 ? 's' : ''}
@@ -6260,7 +6244,7 @@
         // DATA / UTILITIES VIEW COMPONENT
         // ============================================================================
         
-        const DataUtilitiesView = ({ clearData, wipeAllData, setView, personnel, isAdmin }) => {
+        const DataUtilitiesView = ({ clearData, wipeAllData, setView, personnel, isAdmin, onResetComplete }) => {
             const [uploadStatus, setUploadStatus] = useState('');
             const [uploadHistory, setUploadHistory] = useState([]);
             const [showLogoUpdate, setShowLogoUpdate] = useState(false);
@@ -6412,6 +6396,178 @@
                 setTimeout(() => setUploadStatus(''), 3000);
             };
             
+            const [resetPersonnel, setResetPersonnel] = useState(false);
+            const [resetQuals, setResetQuals] = useState(false);
+
+            // ---- Full Backup ----
+            const exportFullBackup = async () => {
+                setUploadStatus('Preparing full backup, please wait...');
+                try {
+                    const { data: personnelRows, error: pError } = await supabase.from('personnel').select('*');
+                    if (pError) throw pError;
+
+                    let qualsRows = [];
+                    const pageSize = 1000;
+                    let page = 0;
+                    let hasMore = true;
+                    while (hasMore) {
+                        const { data: batch, error: qError } = await supabase
+                            .from('qualifications').select('*')
+                            .range(page * pageSize, (page + 1) * pageSize - 1);
+                        if (qError) throw qError;
+                        if (batch && batch.length > 0) {
+                            qualsRows = [...qualsRows, ...batch];
+                            page++;
+                            hasMore = batch.length === pageSize;
+                        } else {
+                            hasMore = false;
+                        }
+                    }
+
+                    const junior = await getJuniorData();
+
+                    const backup = {
+                        exportedAt: new Date().toISOString(),
+                        version: '1.0',
+                        personnel: personnelRows || [],
+                        qualifications: qualsRows || [],
+                        juniorModuleCompletions: junior.moduleCompletions || [],
+                        juniorRankHistory: junior.rankHistory || [],
+                        juniorSectionBadges: junior.sectionBadges || []
+                    };
+
+                    const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+                    a.download = `tsfernie_full_backup_${ts}.json`;
+                    a.click();
+                    URL.revokeObjectURL(url);
+
+                    await recordUpload('full_backup_export');
+                    setUploadStatus(`Backup complete: ${(personnelRows||[]).length} personnel, ${qualsRows.length} qualifications, ${junior.moduleCompletions.length} junior records.`);
+                    setTimeout(() => setUploadStatus(''), 6000);
+                } catch (err) {
+                    console.error('Backup error:', err);
+                    setUploadStatus('Backup failed. Check console for details.');
+                    setTimeout(() => setUploadStatus(''), 4000);
+                }
+            };
+
+            const importFullBackup = (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                e.target.value = '';
+                const reader = new FileReader();
+                reader.onload = async (event) => {
+                    try {
+                        const backup = JSON.parse(event.target.result);
+                        const pCount = backup.personnel?.length || 0;
+                        const qCount = backup.qualifications?.length || 0;
+                        const jCount = backup.juniorModuleCompletions?.length || 0;
+                        const exportDate = backup.exportedAt ? new Date(backup.exportedAt).toLocaleString('en-GB') : 'unknown date';
+
+                        if (!confirm(
+                            `Restore full backup from ${exportDate}?\n\n` +
+                            `This will overwrite:\n` +
+                            `  - ${pCount} personnel records\n` +
+                            `  - ${qCount} qualification records\n` +
+                            `  - ${jCount} junior module records\n\n` +
+                            `All existing data will be replaced. This cannot be undone.`
+                        )) return;
+
+                        setUploadStatus('Restoring backup...');
+
+                        const { data: { user } } = await supabase.auth.getUser();
+                        if (!user) { alert('Not logged in. Please refresh and try again.'); return; }
+
+                        if (pCount > 0) {
+                            const { error: delP } = await supabase.from('personnel').delete().neq('p_number', '');
+                            if (delP) throw delP;
+                            const batchSize = 500;
+                            for (let i = 0; i < backup.personnel.length; i += batchSize) {
+                                const { error } = await supabase.from('personnel').insert(backup.personnel.slice(i, i + batchSize));
+                                if (error) throw error;
+                            }
+                        }
+
+                        if (qCount > 0) {
+                            const { error: delQ } = await supabase.from('qualifications').delete().neq('p_number', '');
+                            if (delQ) throw delQ;
+                            const batchSize = 500;
+                            for (let i = 0; i < backup.qualifications.length; i += batchSize) {
+                                const { error } = await supabase.from('qualifications').insert(backup.qualifications.slice(i, i + batchSize));
+                                if (error) throw error;
+                            }
+                        }
+
+                        if (jCount > 0) {
+                            const result = await saveJuniorData(user.id, {
+                                moduleCompletions: backup.juniorModuleCompletions,
+                                rankHistory: backup.juniorRankHistory || [],
+                                sectionBadges: backup.juniorSectionBadges || []
+                            });
+                            if (!result.success) throw new Error('Failed to restore junior data');
+                        }
+
+                        await recordUpload('full_backup_import');
+                        alert(`Restore complete!\n\n${pCount} personnel, ${qCount} qualifications, ${jCount} junior records restored.\n\nPage will reload.`);
+                        window.location.reload();
+                    } catch (err) {
+                        console.error('Restore error:', err);
+                        setUploadStatus('Restore failed. Check console for details.');
+                        setTimeout(() => setUploadStatus(''), 4000);
+                    }
+                };
+                reader.readAsText(file);
+            };
+
+            const handleSelectiveReset = async () => {
+                if (!resetPersonnel && !resetQuals) {
+                    alert('Please tick at least one option (Personnel or Qualifications) before resetting.');
+                    return;
+                }
+                const parts = [];
+                if (resetPersonnel) parts.push('personnel');
+                if (resetQuals) parts.push('qualifications');
+                if (!confirm(`Reset ${parts.join(' and ')}? This cannot be undone. Logos are preserved.`)) return;
+
+                setUploadStatus('Resetting, please wait...');
+                let hadError = false;
+
+                // Attempt Supabase deletes - log errors but do not block navigation.
+                // Any data not cleared here will be replaced when the user uploads fresh CSVs.
+                try {
+                    if (resetPersonnel) {
+                        const { error } = await supabase.from('personnel').delete().neq('p_number', '');
+                        if (error) { console.warn('Personnel delete warning:', error); hadError = true; }
+                    }
+                    if (resetQuals) {
+                        const { error } = await supabase.from('qualifications').delete().neq('p_number', '');
+                        if (error) { console.warn('Qualifications delete warning:', error); hadError = true; }
+                    }
+                } catch (err) {
+                    console.warn('Reset warning:', err);
+                    hadError = true;
+                }
+
+                const msg = hadError
+                    ? `Database returned a warning during reset. Your next CSV upload will replace the data regardless. Heading to upload screen...`
+                    : `Reset complete: ${parts.join(' and ')} cleared. Heading to upload screen...`;
+
+                setUploadStatus(msg);
+                setResetPersonnel(false);
+                setResetQuals(false);
+
+                // After a short pause, clear in-memory state in the parent and navigate to upload.
+                // No page reload needed - this is reliable regardless of DB errors.
+                setTimeout(() => {
+                    setUploadStatus('');
+                    onResetComplete(resetPersonnel, resetQuals);
+                }, 1800);
+            };
+
             const exportJuniorData = async () => {
                 if (loadingJuniorData) {
                     setUploadStatus('Please wait, loading data...');
@@ -6796,6 +6952,39 @@
                     </div>
                     )}
                     
+                    {/* Full Backup / Restore */}
+                    <div className="bg-amber-50 rounded-lg shadow p-6 border-l-4 border-amber-500">
+                        <h2 className="text-2xl font-bold text-amber-900 mb-2 flex items-center gap-2">
+                            <Icon name="Shield" className="w-6 h-6 text-amber-600" />
+                            Full Backup / Restore
+                        </h2>
+                        <p className="text-slate-700 mb-6 text-sm">
+                            Export everything, including personnel, qualifications, and all junior module data, to a single JSON file. Use this as a safety net before major uploads or if you need to recover from user error.
+                        </p>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="bg-white p-4 rounded-lg border border-amber-200">
+                                <h3 className="font-bold text-amber-900 mb-1">Export Full Backup</h3>
+                                <p className="text-xs text-slate-600 mb-3">Downloads a timestamped JSON file containing all three data tables.</p>
+                                <button
+                                    onClick={exportFullBackup}
+                                    className="bg-amber-600 text-white px-4 py-2 rounded-lg hover:bg-amber-700 font-semibold w-full flex items-center justify-center gap-2"
+                                >
+                                    <Icon name="Download" className="w-4 h-4" />
+                                    Export Full Backup
+                                </button>
+                            </div>
+                            <div className="bg-white p-4 rounded-lg border border-amber-200">
+                                <h3 className="font-bold text-amber-900 mb-1">Restore from Backup</h3>
+                                <p className="text-xs text-slate-600 mb-3">Loads a previously exported backup file. All existing data in the restored tables will be replaced.</p>
+                                <label className="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 font-semibold cursor-pointer flex items-center justify-center gap-2 w-full">
+                                    <Icon name="Upload" className="w-4 h-4" />
+                                    Restore from Backup
+                                    <input type="file" accept=".json" className="hidden" onChange={importFullBackup} />
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
                     {/* Data Management Actions */}
                     <div className="bg-white rounded-lg shadow p-6">
                         <h2 className="text-2xl font-bold text-slate-900 mb-4 flex items-center gap-2">
@@ -6810,26 +6999,45 @@
                                     <Icon name="RefreshCw" className="w-6 h-6 text-blue-600 flex-shrink-0 mt-1" />
                                     <div>
                                         <h3 className="font-bold text-blue-900 text-lg mb-2">Reset Cadet Data</h3>
-                                        <p className="text-sm text-slate-700 mb-4">
-                                            Clears personnel, qualifications, and junior module data. <strong>Keeps logos and settings.</strong>
+                                        <p className="text-sm text-slate-700 mb-3">
+                                            Choose which tables to clear. <strong>Logos and settings are always preserved.</strong>
                                         </p>
-                                        <p className="text-xs text-blue-800 mb-4">
-                                            Use this when you want to upload fresh Westminster data without losing your unit logo.
+                                        <div className="space-y-2 mb-4">
+                                            <label className="flex items-center gap-2 cursor-pointer text-sm text-slate-700">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={resetPersonnel}
+                                                    onChange={e => setResetPersonnel(e.target.checked)}
+                                                    className="w-4 h-4 accent-blue-600"
+                                                />
+                                                Personnel
+                                            </label>
+                                            <label className="flex items-center gap-2 cursor-pointer text-sm text-slate-700">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={resetQuals}
+                                                    onChange={e => setResetQuals(e.target.checked)}
+                                                    className="w-4 h-4 accent-blue-600"
+                                                />
+                                                Qualifications
+                                            </label>
+                                        </div>
+                                        <p className="text-xs text-blue-800">
+                                            Tick one or both before clicking Reset.
                                         </p>
                                     </div>
                                 </div>
                                 <button
-                                    onClick={() => {
-                                        if (confirm('Reset cadet data? This will clear personnel, qualifications, and junior module completions. Logos will be preserved.')) {
-                                            clearData();
-                                            setUploadStatus('Cadet data reset successfully!');
-                                            setTimeout(() => setUploadStatus(''), 3000);
-                                        }
-                                    }}
-                                    className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 font-semibold w-full flex items-center justify-center gap-2"
+                                    onClick={handleSelectiveReset}
+                                    disabled={!resetPersonnel && !resetQuals}
+                                    className={`px-4 py-2 rounded-lg font-semibold w-full flex items-center justify-center gap-2 transition-colors ${
+                                        (resetPersonnel || resetQuals)
+                                            ? 'bg-blue-600 text-white hover:bg-blue-700'
+                                            : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                                    }`}
                                 >
                                     <Icon name="RefreshCw" className="w-4 h-4" />
-                                    Reset Cadet Data
+                                    Reset Selected Data
                                 </button>
                             </div>
                             
@@ -8888,6 +9096,7 @@
         
         const App = ({ user }) => {
             const [view, setView] = useState('upload'); 
+            const [forceUploadView, setForceUploadView] = useState(false);
             const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
             const [personnelData, setPersonnelData] = useState([]);
             const [qualsData, setQualsData] = useState([]);
@@ -8973,7 +9182,10 @@
                             
                             setPersonnelData(pData);
                             setQualsData(qData);
-                            setView('home');
+                            if (!forceUploadView) {
+                                setView('home');
+                            }
+                            // If forceUploadView is true, stay on upload screen so user can upload fresh files
                         }
                     } catch (error) {
                         console.error('Error loading data:', error);
@@ -9111,6 +9323,7 @@
                     pData.sort((a, b) => a.name.localeCompare(b.name));
                     setPersonnelData(pData);
                     setQualsData(qData);
+                    setForceUploadView(false);
                     setView('home');
                 } catch (error) {
                     console.error('Error saving data:', error);
@@ -9194,8 +9407,8 @@
                 );
             }
             
-            // Show upload page only if no data exists after loading
-            if (view === 'upload' && personnelData.length === 0) {
+            // Show upload page if no data, or if we've just done a selective reset
+            if ((view === 'upload' && personnelData.length === 0) || forceUploadView) {
                 return (
                     <div>
                         <ImportWarningsBanner />
@@ -9291,7 +9504,7 @@
                             {(view === 'planner') && <TrainingPlanner personnel={personnelData} getCadetProgress={getCadetProgress} qualsData={qualsData} title="SCC CTP Progress" rankOrder={SCC_RANK_ORDER} syllabus={SCC_SYLLABUS} iconName="ShipWheel" onModuleClick={handleModuleDrillDown} />}
                             {(view === 'rmc_planner') && <TrainingPlanner personnel={personnelData} getCadetProgress={getCadetProgress} qualsData={qualsData} title="RMC CTS Progress" rankOrder={RMC_RANK_ORDER} syllabus={RMC_SYLLABUS} colorTheme="green" iconName="Target" onModuleClick={handleModuleDrillDown} />}
                             {(view === 'suggestions') && <TrainingSuggestions personnel={personnelData} getCadetProgress={getCadetProgress} qualsData={qualsData} />}
-                            {view === 'data_utilities' && <DataUtilitiesView clearData={clearData} wipeAllData={wipeAllData} setView={setView} personnel={personnelData} isAdmin={isAdmin} />}
+                            {view === 'data_utilities' && <DataUtilitiesView clearData={clearData} wipeAllData={wipeAllData} setView={setView} personnel={personnelData} isAdmin={isAdmin} onResetComplete={(rP, rQ) => { if (rP) setPersonnelData([]); if (rQ) setQualsData([]); setForceUploadView(true); setView('upload'); }} />}
                         </main>
                     </div>
                     {/* Render the Drill Down Modal */}

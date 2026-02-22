@@ -139,7 +139,7 @@
         // CONSTANTS & DATA
         // ═══════════════════════════════════════════════════════════════════════════
         
-        const DATA_VERSION = "V2.7.4-Cloud-AI"; // Added RMC CTS Module URL links (120 modules) to RMC CTS Progress planner
+        const DATA_VERSION = "V2.8.8-Cloud-AI"; // Attendance: full names, cards in CadetFocus+JuniorDetail above stats
  
         // Badge & Rank Image Maps
         const RANK_IMG_MAP = {
@@ -1498,6 +1498,238 @@
             'SGT15': 'https://pol.sea-cadets.org/rm/programmes/sgt15-specialisationproficiency-instructor-qualification',
         };
 
+        // SCC CTP Module URLs - links to Programmes Online
+        const SCC_MODULE_URLS = {
+            'AP01': 'https://pol.sea-cadets.org/ssc/programmes/ap01-role-of-the-advanced-peer-educator',
+            'AP02': 'https://pol.sea-cadets.org/ssc/programmes/ap02-communication-skills',
+            'AP03': 'https://pol.sea-cadets.org/ssc/programmes/ap03-team-working-and-1-2-1-skills',
+            'AP04': 'https://pol.sea-cadets.org/ssc/programmes/ap04-motivating-and-encouraging-peers',
+            'AP05': 'https://pol.sea-cadets.org/ssc/programmes/ap05-health-and-safety-in-the-classroom',
+            'AP06': 'https://pol.sea-cadets.org/ssc/programmes/ap06-making-learning-inclusive',
+            'AP07': 'https://pol.sea-cadets.org/ssc/programmes/ap07-leadership',
+            'AP08': 'https://pol.sea-cadets.org/ssc/programmes/ap08-using-subject-knowledge',
+            'AP09': 'https://pol.sea-cadets.org/ssc/programmes/ap09-what-next-and-evaluation',
+            'AP10': 'https://pol.sea-cadets.org/ssc/programmes/ap10-advanced-peer-educator-development',
+            'AP11': 'https://pol.sea-cadets.org/ssc/programmes/ap11-advanced-peer-educator-delivery',
+            'BP01': 'https://pol.sea-cadets.org/ssc/programmes/bp01-what-is-a-peer-educator-updated',
+            'BP02': 'https://pol.sea-cadets.org/ssc/programmes/bp02-roles-and-reponsibilities-of-a-peer-educator-updated',
+            'BP03': 'https://pol.sea-cadets.org/ssc/programmes/bp03-learning-styles-updated',
+            'BP04': 'https://pol.sea-cadets.org/ssc/programmes/bp04-skills-of-an-instructor-updated',
+            'BP05': 'https://pol.sea-cadets.org/ssc/programmes/bp05-session-planning-updated',
+            'BP06': 'https://pol.sea-cadets.org/ssc/programmes/bp06-giving-and-receiving-feedback-updated',
+            'BP07': 'https://pol.sea-cadets.org/ssc/programmes/bp07-keeping-peers-engaged-by-making-learning-fun-updated',
+            'BP08': 'https://pol.sea-cadets.org/ssc/programmes/bp08-using-feedback-to-aid-reflection-updated',
+            'C2V01': 'https://pol.sea-cadets.org/ssc/programmes/c2v01-roles-and-responsibilities-of-a-volunteer',
+            'C2V02': 'https://pol.sea-cadets.org/ssc/programmes/c2v02-safeguarding',
+            'C2V03': 'https://pol.sea-cadets.org/ssc/programmes/c2v03-action-learning-set',
+            'C2V04': 'https://pol.sea-cadets.org/ssc/programmes/c2v04-challenging-situations',
+            'C2V05': 'https://pol.sea-cadets.org/ssc/programmes/c2v05-build-your-toolkit',
+            'C2V06': 'https://pol.sea-cadets.org/ssc/programmes/c2v06-action-learning-set',
+            'CAV01': 'https://pol.sea-cadets.org/ssc/programmes/cav01-a-introduction-to-cadet-voice',
+            'CAV02': 'https://pol.sea-cadets.org/ssc/programmes/cav02-a-cadet-voice-prioritisation-and-district-meetings',
+            'CAV03': 'https://pol.sea-cadets.org/ssc/programmes/cav03-cadet-voice-and-unit-management-teams',
+            'CK01': 'https://pol.sea-cadets.org/ssc/programmes/ck01-b-sea-cadets-and-unit-history',
+            'CK02': 'https://pol.sea-cadets.org/ssc/programmes/ck02-a-rn-rm-ranks-and-rates',
+            'CK03': 'https://pol.sea-cadets.org/ssc/programmes/ck03-a-unit-duties-and-ships-routine',
+            'CK04': 'https://pol.sea-cadets.org/ssc/programmes/ck04-a-todays-naval-terms-and-customs',
+            'CK05': 'https://pol.sea-cadets.org/ssc/programmes/ck05-a-types-of-ship',
+            'CK06': 'https://pol.sea-cadets.org/ssc/programmes/ck06-a-phonetic-alphabet',
+            'CK07': 'https://pol.sea-cadets.org/ssc/programmes/ck07-a-introduction-to-the-duke-of-edinburghs-awards',
+            'CK08': 'https://pol.sea-cadets.org/ssc/programmes/ck08-a-introduction-to-specialisations-and-proficiencies',
+            'CK09': 'https://pol.sea-cadets.org/ssc/programmes/ck09-a-royal-navy-history',
+            'CK10': 'https://pol.sea-cadets.org/ssc/programmes/ck10-b-times-watches-and-bells',
+            'CK11': 'https://pol.sea-cadets.org/ssc/programmes/ck11-a-practical-piping-unit-ceremonial',
+            'CK12': 'https://pol.sea-cadets.org/ssc/programmes/ck12-a-ranks-of-the-army-and-raf',
+            'CK13': 'https://pol.sea-cadets.org/ssc/programmes/ck13-b-maritime-careers-speakers',
+            'CK14': 'https://pol.sea-cadets.org/ssc/programmes/ck14-a-vocational-qualifications',
+            'CK15': 'https://pol.sea-cadets.org/ssc/programmes/ck15-c-famous-naval-battles-research-project',
+            'CK16': 'https://pol.sea-cadets.org/ssc/programmes/ck16-naval-battles-show-and-tell',
+            'CK17': 'https://pol.sea-cadets.org/ssc/programmes/ck17-my-senior-cadet-pathway',
+            'CK18': 'https://pol.sea-cadets.org/ssc/programmes/ck18-a-organisation-of-sea-cadets-at-area-level',
+            'CK19': 'https://pol.sea-cadets.org/ssc/programmes/ck19-a-safeguarding-as-a-senior-cadet',
+            'CK20': 'https://pol.sea-cadets.org/ssc/programmes/ck20-a-volunteer-for-a-day',
+            'CK21': 'https://pol.sea-cadets.org/ssc/programmes/ck21-a-supporting-a-unit-fundraising-event',
+            'CK22': 'https://pol.sea-cadets.org/ssc/programmes/ck22-a-growing-my-unit',
+            'CK23': 'https://pol.sea-cadets.org/ssc/programmes/ck23-a-roles-and-responsibilities-of-a-poc-and-cadet-instructor',
+            'CK24': 'https://pol.sea-cadets.org/ssc/programmes/ck24-a-organisation-of-scc-at-a-national-level',
+            'CV01': 'https://pol.sea-cadets.org/ssc/programmes/cv01-a-commitment',
+            'CV02': 'https://pol.sea-cadets.org/ssc/programmes/cv02-a-self-discipline-and-honesty-and-integrity',
+            'CV03': 'https://pol.sea-cadets.org/ssc/programmes/cv03-a-cadet-development-evening-cadet-first-class',
+            'CV04': 'https://pol.sea-cadets.org/ssc/programmes/cv04-a-loyalty-respect-and-courage',
+            'CV05': 'https://pol.sea-cadets.org/ssc/programmes/cv05-a-cadet-development-evening-ordinary-cadet',
+            'CWB01': 'https://pol.sea-cadets.org/ssc/programmes/cwb01-a-cadet-wellbeing-stress',
+            'CWB02': 'https://pol.sea-cadets.org/ssc/programmes/cwb02-a-cadet-wellbeing-healthy-habits',
+            'CWB03': 'https://pol.sea-cadets.org/ssc/programmes/cwb03-a-wellbeing-and-communication',
+            'DR01': 'https://pol.sea-cadets.org/ssc/programmes/dr01-a-revision-of-basic-drill',
+            'DR02': 'https://pol.sea-cadets.org/ssc/programmes/dr02-a-foot-drill-marching-theory',
+            'DR03': 'https://pol.sea-cadets.org/ssc/programmes/dr03-a-foot-drill-marching-practice',
+            'DR04': 'https://pol.sea-cadets.org/ssc/programmes/dr04-a-foot-drill-squad-theory',
+            'DR05': 'https://pol.sea-cadets.org/ssc/programmes/dr05-a-squad-drill-direction-and-speed-changes',
+            'DR06': 'https://pol.sea-cadets.org/ssc/programmes/dr06-a-squad-drill-formation-changes',
+            'DR07': 'https://pol.sea-cadets.org/ssc/programmes/dr07-a-squad-drill-introduction-to-parade-drill',
+            'DR08': 'https://pol.sea-cadets.org/ssc/programmes/dr08-fitting-and-wearing-white-webbing',
+            'DR09': 'https://pol.sea-cadets.org/ssc/programmes/dr09-rifle-drill-safety-and-familiarisation',
+            'DR10': 'https://pol.sea-cadets.org/ssc/programmes/dr10-rifle-drill-guard',
+            'DR11': 'https://pol.sea-cadets.org/ssc/programmes/dr11-rifle-drill-ceremonial',
+            'DR12': 'https://pol.sea-cadets.org/ssc/programmes/dr12-rifle-drill-consolidation',
+            'DR13': 'https://pol.sea-cadets.org/ssc/programmes/dr13-taking-charge-of-a-squad-clap',
+            'DR14': 'https://pol.sea-cadets.org/ssc/programmes/dr14-basic-instruction-theory-deip',
+            'DR15': 'https://pol.sea-cadets.org/ssc/programmes/dr15-basic-instruction-delivery',
+            'DR16': 'https://pol.sea-cadets.org/ssc/programmes/dr16-board-drill-practice-and-standout',
+            'DR17': 'https://pol.sea-cadets.org/ssc/programmes/dr17-drill-power-of-command',
+            'DR18': 'https://pol.sea-cadets.org/ssc/programmes/dr18-drill-delivery',
+            'DR19': 'https://pol.sea-cadets.org/ssc/programmes/dr19-drill-fault-finding',
+            'DR20': 'https://pol.sea-cadets.org/ssc/programmes/dr20-drill-final-consolidation-new',
+            'ES01': 'https://pol.sea-cadets.org/ssc/programmes/es01-a-environment-and-countryside-code',
+            'ES02': 'https://pol.sea-cadets.org/ssc/programmes/es02-a-clothing-and-equipment',
+            'ES03': 'https://pol.sea-cadets.org/ssc/programmes/es03-a-kit-packing-and-carrying',
+            'ES04': 'https://pol.sea-cadets.org/ssc/programmes/es04-a-introduction-to-map-work-conventional-signs',
+            'ES05': 'https://pol.sea-cadets.org/ssc/programmes/es05-a-introduction-to-map-work-grid-references',
+            'ES06': 'https://pol.sea-cadets.org/ssc/programmes/es06-a-map-work-measuring-distance',
+            'ES07': 'https://pol.sea-cadets.org/ssc/programmes/es07-a-contours-and-relief',
+            'ES08': 'https://pol.sea-cadets.org/ssc/programmes/es08-a-using-a-compass-and-bearings',
+            'ES09': 'https://pol.sea-cadets.org/ssc/programmes/es09-tents-and-campsite-selection',
+            'ES10': 'https://pol.sea-cadets.org/ssc/programmes/es10-food-and-cooking',
+            'ES11': 'https://pol.sea-cadets.org/ssc/programmes/es11-emergency-action-plan',
+            'ES12': 'https://pol.sea-cadets.org/ssc/programmes/es12-route-planning',
+            'FA01': 'https://pol.sea-cadets.org/ssc/programmes/fa01-introduction-to-basic-first-aid-coping-in-an-emergency',
+            'FA02': 'https://pol.sea-cadets.org/ssc/programmes/fa02-communication-and-casualty-care',
+            'FA03': 'https://pol.sea-cadets.org/ssc/programmes/fa03-primary-survey-and-recovery-1',
+            'FA04': 'https://pol.sea-cadets.org/ssc/programmes/fa04-primary-survey-and-recovery-2',
+            'FA05': 'https://pol.sea-cadets.org/ssc/programmes/fa05-minor-bleeding',
+            'FA06': 'https://pol.sea-cadets.org/ssc/programmes/fa06-bleeding-shock-1',
+            'FA07': 'https://pol.sea-cadets.org/ssc/programmes/fa07-bleeding-shock-2',
+            'FA08': 'https://pol.sea-cadets.org/ssc/programmes/fa08-bites-stings-and-foreign-objects',
+            'FA09': 'https://pol.sea-cadets.org/ssc/programmes/fa09-choking',
+            'FA10': 'https://pol.sea-cadets.org/ssc/programmes/fa10-chest-pain',
+            'FA11': 'https://pol.sea-cadets.org/ssc/programmes/fa11-resuscitation-1',
+            'FA12': 'https://pol.sea-cadets.org/ssc/programmes/fa12-resuscitation-2',
+            'FA13': 'https://pol.sea-cadets.org/ssc/programmes/fa13-introduction-to-intermediate-first-aid-first-aid-kits',
+            'FA14': 'https://pol.sea-cadets.org/ssc/programmes/fa14-asthma-and-low-blood-sugar',
+            'FA15': 'https://pol.sea-cadets.org/ssc/programmes/fa15-electric-shock-burns-and-scalds',
+            'FA16': 'https://pol.sea-cadets.org/ssc/programmes/fa16-fainting-and-seizures',
+            'FA17': 'https://pol.sea-cadets.org/ssc/programmes/fa17-poisons-and-severe-allergic-reactions',
+            'FA18': 'https://pol.sea-cadets.org/ssc/programmes/fa18-hypothermia-and-heat-exhaustion',
+            'FA19': 'https://pol.sea-cadets.org/ssc/programmes/fa19-muscle-and-joint-injuries',
+            'FA20': 'https://pol.sea-cadets.org/ssc/programmes/fa20-head-injuries',
+            'FA21': 'https://pol.sea-cadets.org/ssc/programmes/fa21-spinal-injuries',
+            'FA22': 'https://pol.sea-cadets.org/ssc/programmes/fa22-revision-bleeding-severe-and-shock',
+            'FA23': 'https://pol.sea-cadets.org/ssc/programmes/fa23-revision-primary-survey-and-recovery-position',
+            'FA24': 'https://pol.sea-cadets.org/ssc/programmes/fa24-revision-adult-resuscitation',
+            'FA25': 'https://pol.sea-cadets.org/ssc/programmes/fa25-formal-assessment-1',
+            'FA26': 'https://pol.sea-cadets.org/ssc/programmes/fa26-formal-assessment-2',
+            'HS01': 'https://pol.sea-cadets.org/ssc/programmes/hs01-a-health-and-safety-signage',
+            'HS02': 'https://pol.sea-cadets.org/ssc/programmes/hs02-a-unit-health-and-safety-check',
+            'HS03': 'https://pol.sea-cadets.org/ssc/programmes/hs03-fire-prevention',
+            'LT01': 'https://pol.sea-cadets.org/ssc/programmes/lt01-a-what-does-good-teamwork-look-like',
+            'LT02': 'https://pol.sea-cadets.org/ssc/programmes/lt02-a-practical-leadership-task-initial-attempt',
+            'LT03': 'https://pol.sea-cadets.org/ssc/programmes/lt03-a-practical-leadership-task-lessons-learned',
+            'LT04': 'https://pol.sea-cadets.org/ssc/programmes/lt04-a-leadership-and-team-roles',
+            'LT05': 'https://pol.sea-cadets.org/ssc/programmes/lt05-a-leadership-project-planning',
+            'LT06': 'https://pol.sea-cadets.org/ssc/programmes/lt06-a-leadership-and-teamwork-project-delivery-reflection',
+            'LT07': 'https://pol.sea-cadets.org/ssc/programmes/lt07-a-what-makes-a-great-leader',
+            'LT08': 'https://pol.sea-cadets.org/ssc/programmes/lt08-a-leadership-styles',
+            'LT09': 'https://pol.sea-cadets.org/ssc/programmes/lt09-a-being-a-positive-role-model',
+            'LT10': 'https://pol.sea-cadets.org/ssc/programmes/lt10-a-facilitating-cadet-discussion',
+            'LT11': 'https://pol.sea-cadets.org/ssc/programmes/lt11-a-reflection-and-self-development',
+            'LT12': 'https://pol.sea-cadets.org/ssc/programmes/lt12-a-difference-between-a-leader-and-a-manager',
+            'LT13': 'https://pol.sea-cadets.org/ssc/programmes/lt13-a-active-listening',
+            'LT14': 'https://pol.sea-cadets.org/ssc/programmes/lt14-a-emotional-intelligence',
+            'LT15': 'https://pol.sea-cadets.org/ssc/programmes/lt15-a-conflict-resolution',
+            'LT16': 'https://pol.sea-cadets.org/ssc/programmes/lt16-a-motivating-self-and-others',
+            'LT17': 'https://pol.sea-cadets.org/ssc/programmes/lt17-effective-planning',
+            'MT01': 'https://pol.sea-cadets.org/ssc/programmes/mt01-a-introduction-to-meteorology-why-weather',
+            'MT02': 'https://pol.sea-cadets.org/ssc/programmes/mt02-a-getting-the-measure-of-things-measuring-instruments',
+            'MT03': 'https://pol.sea-cadets.org/ssc/programmes/mt03-a-make-your-own-weather-instrument-rain-gauge',
+            'MT04': 'https://pol.sea-cadets.org/ssc/programmes/mt04-a-cloud-watching-intro-to-clouds',
+            'MT05': 'https://pol.sea-cadets.org/ssc/programmes/mt05-a-under-pressure-highs-lows-and-charts',
+            'MT06': 'https://pol.sea-cadets.org/ssc/programmes/mt06-a-a-gentle-breeze-or-a-destructive-force',
+            'MT07': 'https://pol.sea-cadets.org/ssc/programmes/mt07-a-local-winds-in-context',
+            'MT08': 'https://pol.sea-cadets.org/ssc/programmes/mt08-a-warm-fronts-and-cold-fronts',
+            'MT09': 'https://pol.sea-cadets.org/ssc/programmes/mt09-a-the-shipping-forecast',
+            'MT10': 'https://pol.sea-cadets.org/ssc/programmes/mt10-a-on-the-lookout-weather-observations-in-unit',
+            'NAV01': 'https://pol.sea-cadets.org/ssc/programmes/nav01-basic-collision-regulations-rules-of-the-road-1',
+            'NAV02': 'https://pol.sea-cadets.org/ssc/programmes/nav02-introduction-to-charts',
+            'NAV03': 'https://pol.sea-cadets.org/ssc/programmes/nav03-introduction-to-tides',
+            'NE01': 'https://pol.sea-cadets.org/ssc/programmes/ne01-a-unit-introduction',
+            'NE02': 'https://pol.sea-cadets.org/ssc/programmes/ne02-a-general-sea-cadets-terms',
+            'NE03': 'https://pol.sea-cadets.org/ssc/programmes/ne03-a-sea-cadet-promise-and-values',
+            'NE04': 'https://pol.sea-cadets.org/ssc/programmes/ne04-a-ranks-rates-and-promotion',
+            'NE05': 'https://pol.sea-cadets.org/ssc/programmes/ne05-a-intro-to-cadet-wellbeing',
+            'NE06': 'https://pol.sea-cadets.org/ssc/programmes/ne06-a-introduction-to-expedition-skills-weather',
+            'NE07': 'https://pol.sea-cadets.org/ssc/programmes/ne07-test-sea-cadet-water-safety-test',
+            'NE08': 'https://pol.sea-cadets.org/ssc/programmes/ne08-a-introduction-to-bends-and-hitches-in-unit',
+            'NE09': 'https://pol.sea-cadets.org/ssc/programmes/ne09-a-introduction-to-foot-drill',
+            'NE10': 'https://pol.sea-cadets.org/ssc/programmes/ne10-history-of-your-uniform',
+            'NE11': 'https://pol.sea-cadets.org/ssc/programmes/ne11-a-uniform-boot-and-shoe-care',
+            'NE12': 'https://pol.sea-cadets.org/ssc/programmes/ne12-a-basic-saluting-and-compliments',
+            'NE13': 'https://pol.sea-cadets.org/ssc/programmes/ne13-a-intro-to-marching-halting-and-falling-inout',
+            'NE14': 'https://pol.sea-cadets.org/ssc/programmes/ne14-introduction-to-cadet-safeguarding-pocket-guide-shout',
+            'NE15': 'https://pol.sea-cadets.org/ssc/programmes/ne15-a-intro-to-the-sea-cadet-portal-opportunities',
+            'NE16': 'https://pol.sea-cadets.org/ssc/programmes/ne16-a-cadet-action-plan',
+            'PD01': 'https://pol.sea-cadets.org/ssc/programmes/pd01-demonstrating-my-skills-mock-promotion-board-interview',
+            'PD02': 'https://pol.sea-cadets.org/ssc/programmes/pd02-communication-skills',
+            'PD03': 'https://pol.sea-cadets.org/ssc/programmes/pd03-presentation-and-group-discussion-skills',
+            'PD04': 'https://pol.sea-cadets.org/ssc/programmes/pd04-writing-a-cv-and-cover-letter',
+            'PD05': 'https://pol.sea-cadets.org/ssc/programmes/pd05-presenting-my-sea-cadet-experience',
+            'PD06': 'https://pol.sea-cadets.org/ssc/programmes/pd06-interview-skills',
+            'PIP01': 'https://pol.sea-cadets.org/ssc/programmes/pip01-introduction-to-the-boatswains-call',
+            'PIP02': 'https://pol.sea-cadets.org/ssc/programmes/pip02-piping-unit-calls',
+            'POC01': 'https://pol.sea-cadets.org/ssc/programmes/poc01-personal-development-plan',
+            'POC02': 'https://pol.sea-cadets.org/ssc/programmes/poc02-shadow-a-volunteer-at-your-unit',
+            'POC03': 'https://pol.sea-cadets.org/ssc/programmes/poc03-meeting-with-your-co',
+            'POC04': 'https://pol.sea-cadets.org/ssc/programmes/poc04-meet-with-a-cadet-turned-volunteer',
+            'POC05': 'https://pol.sea-cadets.org/ssc/programmes/poc05-what-will-change-session',
+            'POC06': 'https://pol.sea-cadets.org/ssc/programmes/poc06-act-as-a-volunteer',
+            'POC07': 'https://pol.sea-cadets.org/ssc/programmes/poc07-write-a-risk-assessment',
+            'POC08': 'https://pol.sea-cadets.org/ssc/programmes/poc08-organise-an-event',
+            'POC09': 'https://pol.sea-cadets.org/ssc/programmes/poc09-lead-your-units-cadet-voice-meeting',
+            'POC10': 'https://pol.sea-cadets.org/ssc/programmes/poc10-attend-a-umt-meeting',
+            'POC11': 'https://pol.sea-cadets.org/ssc/programmes/poc11-use-programmes-online',
+            'POC12': 'https://pol.sea-cadets.org/ssc/programmes/poc12-session-creation',
+            'POC13': 'https://pol.sea-cadets.org/ssc/programmes/poc13-plan-leadership-tasks',
+            'POC14': 'https://pol.sea-cadets.org/ssc/programmes/poc14-shadow-roles-on-beyond-unit-training',
+            'POC15': 'https://pol.sea-cadets.org/ssc/programmes/poc15-specialisationproficiency-instructor-qualification',
+            'RA01': 'https://pol.sea-cadets.org/ssc/programmes/ra01-recreational-activities',
+            'RA01-PT': 'https://pol.sea-cadets.org/ssc/programmes/ra01-pt-introduction-to-physical-activity-and-health',
+            'RA02': 'https://pol.sea-cadets.org/ssc/programmes/ra02-recreational-activities',
+            'RA02-PT': 'https://pol.sea-cadets.org/ssc/programmes/ra02-pt-effective-warm-up-cool-down-and-safe-lifting',
+            'RA03': 'https://pol.sea-cadets.org/ssc/programmes/ra03-recreational-activities',
+            'RA03-PT': 'https://pol.sea-cadets.org/ssc/programmes/ra03-pt-components-of-fitness',
+            'RA04': 'https://pol.sea-cadets.org/ssc/programmes/ra04-recreational-activities',
+            'RA04-PT': 'https://pol.sea-cadets.org/ssc/programmes/ra04-pt-effects-of-exercise',
+            'RA05': 'https://pol.sea-cadets.org/ssc/programmes/ra05-recreational-activities',
+            'RA05-PT': 'https://pol.sea-cadets.org/ssc/programmes/ra05-pt-principles-of-training',
+            'RA06': 'https://pol.sea-cadets.org/ssc/programmes/ra06-recreational-activities',
+            'RA06-PT': 'https://pol.sea-cadets.org/ssc/programmes/ra06-pt-personal-fitness-development-aerobic-fitness',
+            'RA07': 'https://pol.sea-cadets.org/ssc/programmes/ra07-recreational-activities',
+            'RA07-PT': 'https://pol.sea-cadets.org/ssc/programmes/ra07-pt-eating-for-health',
+            'RA08': 'https://pol.sea-cadets.org/ssc/programmes/ra08-recreational-activities',
+            'RA08-PT': 'https://pol.sea-cadets.org/ssc/programmes/ra08-pt-exercises-stress-and-relaxation',
+            'RA09': 'https://pol.sea-cadets.org/ssc/programmes/ra09-recreational-activities',
+            'RA09-PT': 'https://pol.sea-cadets.org/ssc/programmes/ra09-pt-personal-fitness-development-basic-personal-fitness',
+            'RA10': 'https://pol.sea-cadets.org/ssc/programmes/ra10-recreational-activities',
+            'RA10-PT': 'https://pol.sea-cadets.org/ssc/programmes/ra10-pt-injury-prevention-and-goal-setting',
+            'RA11': 'https://pol.sea-cadets.org/ssc/programmes/ra11-recreational-activities',
+            'RA11-PT': 'https://pol.sea-cadets.org/ssc/programmes/ra11-pt-aerobic-and-anaerobic-fitness-and-skill-related-fitness',
+            'RA12': 'https://pol.sea-cadets.org/ssc/programmes/ra12-recreational-activities',
+            'RA12-PT': 'https://pol.sea-cadets.org/ssc/programmes/ra12-pt-training-for-overall-fitness',
+            'RA13': 'https://pol.sea-cadets.org/ssc/programmes/ra13-recreational-activities',
+            'RA13-PT': 'https://pol.sea-cadets.org/ssc/programmes/ra13-pt-personal-fitness-development-goal-setting',
+            'SM01': 'https://pol.sea-cadets.org/ssc/programmes/sm01-a-general-sea-terms',
+            'SM02': 'https://pol.sea-cadets.org/ssc/programmes/sm02-b-essential-bends-and-hitches',
+            'SM03': 'https://pol.sea-cadets.org/ssc/programmes/sm03-a-intro-to-safe-handling-of-ropes',
+            'SM04': 'https://pol.sea-cadets.org/ssc/programmes/sm04-a-bowline-clove-hitch-and-sheet-bend',
+            'SM05': 'https://pol.sea-cadets.org/ssc/programmes/sm05-cadet-review-and-types-of-rope',
+            'SM06': 'https://pol.sea-cadets.org/ssc/programmes/sm06-a-fishermansdouble-sheet-bends-rollingtimber-hitches',
+            'SM07': 'https://pol.sea-cadets.org/ssc/programmes/sm07-a-introduction-to-blocks-and-tackles',
+            'SM08': 'https://pol.sea-cadets.org/ssc/programmes/sm08-a-heaving-lines',
+            'SM09': 'https://pol.sea-cadets.org/ssc/programmes/sm09-a-consolidation-session',
+            'SM10': 'https://pol.sea-cadets.org/ssc/programmes/sm10-a-parts-of-a-tackle-and-rigging',
+            'SM11': 'https://pol.sea-cadets.org/ssc/programmes/sm11-handling-of-ropes',
+            'SM12': 'https://pol.sea-cadets.org/ssc/programmes/sm12-consolidation-session',
+        };
+
         const JUNIOR_RANK_ORDER = ["Junior Cadet", "Junior Cadet 1st Class", "Able Junior Cadet", "Leading Junior Cadet"];
         
         // Junior Sea Cadets Modules Database (341 modules across 5 sections)
@@ -2782,7 +3014,24 @@
                                              try {
                                                  const text = await readFile(personnelFile);
                                                  const personnelData = await processPersonnelFile(text);
-                                                 onDataLoaded(personnelData, JSON.parse(localStorage.getItem('scc_quals') || '[]'));
+                                                 // Load current quals from Supabase, not localStorage
+                                                 let qualsRows = [];
+                                                 const pageSize = 1000;
+                                                 let page = 0, hasMore = true;
+                                                 while (hasMore) {
+                                                     const { data: batch, error: qErr } = await supabase.from('qualifications').select('*').range(page * pageSize, (page + 1) * pageSize - 1);
+                                                     if (qErr) throw qErr;
+                                                     if (batch && batch.length > 0) { qualsRows = [...qualsRows, ...batch]; page++; hasMore = batch.length === pageSize; }
+                                                     else hasMore = false;
+                                                 }
+                                                 const qualsData = qualsRows.map(row => ({
+                                                     pNumber: row.p_number,
+                                                     module: row.module,
+                                                     date: row.date_achieved ? new Date(row.date_achieved) : null,
+                                                     result: row.result,
+                                                     syllabus: row.syllabus
+                                                 }));
+                                                 onDataLoaded(personnelData, qualsData);
                                                  setPersonnelFile(null);
                                              } catch (err) {
                                                  setError(err.message);
@@ -2811,7 +3060,21 @@
                                              try {
                                                  const text = await readFile(qualsFile);
                                                  const qualsData = await processQualsFile(text);
-                                                 onDataLoaded(JSON.parse(localStorage.getItem('scc_personnel') || '[]'), qualsData);
+                                                 // Load current personnel from Supabase, not localStorage
+                                                 const { data: personnelRows, error: pErr } = await supabase.from('personnel').select('*');
+                                                 if (pErr) throw pErr;
+                                                 const personnelData = (personnelRows || []).map(row => ({
+                                                     pNumber: row.p_number,
+                                                     name: row.name,
+                                                     rank: row.rank,
+                                                     unit: row.unit,
+                                                     section: row.section,
+                                                     dob: row.dob || null,
+                                                     tos: row.tos || null,
+                                                     rankDate: row.rank_date || null,
+                                                     cvqo: row.cvqo || null
+                                                 }));
+                                                 onDataLoaded(personnelData, qualsData);
                                                  setQualsFile(null);
                                              } catch (err) {
                                                  setError(err.message);
@@ -3312,7 +3575,309 @@
         };
 
         // Home View Component
-        const HomeView = ({ personnel }) => {
+        // ── Attendance View ──────────────────────────────────────────────────────
+        const AttendanceView = ({ personnel, attendanceData }) => {
+            const THRESHOLD = 60;
+
+            const cadets = useMemo(() =>
+                personnel.filter(p => isCadet(p)).sort((a,b) => a.name.localeCompare(b.name))
+            , [personnel]);
+
+            const cadetPNums = useMemo(() => new Set(cadets.map(c => c.pNumber)), [cadets]);
+
+            // Derive section for each p_number directly from attendance rows
+            // (tagged at upload time from Rank Type column)
+            const pNumSection = useMemo(() => {
+                const map = {};
+                attendanceData.forEach(r => {
+                    if (!map[r.p_number] && r.section) map[r.p_number] = r.section;
+                });
+                // Fallback: infer from rank for any cadet not yet in attendance data
+                cadets.forEach(c => {
+                    if (!map[c.pNumber]) {
+                        const r = c.rank || '';
+                        map[c.pNumber] = JUNIOR_RANK_ORDER.includes(r) ? 'jsc'
+                                       : RMC_RANK_ORDER.includes(r) ? 'rmc'
+                                       : 'scc';
+                    }
+                });
+                return map;
+            }, [attendanceData, cadets]);
+
+            // TOS map: pNumber -> 'YYYY-MM' (first month cadet was active), or null
+            const tosMonthMap = useMemo(() => {
+                const map = {};
+                cadets.forEach(c => {
+                    map[c.pNumber] = c.tos ? c.tos.slice(0, 7) : null;
+                });
+                return map;
+            }, [cadets]);
+
+            const { months, cadetMonthMap, cadetTotalMap, sectionNightCounts } = useMemo(() => {
+                const monthSet = new Set();
+                const cadetMonthMap = {};
+                // sectionDates[section][month] = Set of dates
+                const sectionDates = { scc: {}, jsc: {}, rmc: {} };
+
+                attendanceData.forEach(r => {
+                    if (!cadetPNums.has(r.p_number)) return;
+                    const month = r.attendance_date.slice(0, 7);
+                    const sec   = r.section || pNumSection[r.p_number] || 'scc';
+                    monthSet.add(month);
+
+                    if (!sectionDates[sec][month]) sectionDates[sec][month] = new Set();
+                    sectionDates[sec][month].add(r.attendance_date);
+
+                    if (!cadetMonthMap[r.p_number]) cadetMonthMap[r.p_number] = {};
+                    cadetMonthMap[r.p_number][month] = (cadetMonthMap[r.p_number][month] || 0) + 1;
+                });
+
+                const months = [...monthSet].sort();
+
+                const sectionNightCounts = { scc: {}, jsc: {}, rmc: {} };
+                ['scc','jsc','rmc'].forEach(sec => {
+                    months.forEach(m => {
+                        sectionNightCounts[sec][m] = sectionDates[sec][m]?.size || 0;
+                    });
+                });
+
+                const cadetTotalMap = {};
+                cadets.forEach(c => {
+                    const sec    = pNumSection[c.pNumber] || 'scc';
+                    const tosMon = tosMonthMap[c.pNumber]; // 'YYYY-MM' or null
+                    let attended = 0, possible = 0;
+                    months.forEach(m => {
+                        // Skip months entirely before the cadet's TOS month
+                        if (tosMon && m < tosMon) return;
+                        possible += sectionNightCounts[sec][m] || 0;
+                        attended += cadetMonthMap[c.pNumber]?.[m] || 0;
+                    });
+                    cadetTotalMap[c.pNumber] = {
+                        attended, possible,
+                        pct: possible > 0 ? Math.round(attended / possible * 100) : null
+                    };
+                });
+
+                return { months, cadetMonthMap, cadetTotalMap, sectionNightCounts };
+            }, [attendanceData, cadets, cadetPNums, pNumSection, tosMonthMap]);
+
+            const formatMonth = m => {
+                const [y, mo] = m.split('-');
+                return new Date(y, mo - 1).toLocaleString('default', { month: 'short', year: 'numeric' });
+            };
+
+            const pctColor = pct => {
+                if (pct === null) return 'text-slate-300';
+                if (pct >= 75) return 'text-green-700 font-bold';
+                if (pct >= THRESHOLD) return 'text-amber-600 font-semibold';
+                return 'text-red-600 font-bold';
+            };
+
+            const pctBg = pct => {
+                if (pct === null) return '';
+                if (pct >= 75) return 'bg-green-50';
+                if (pct >= THRESHOLD) return 'bg-amber-50';
+                return 'bg-red-50';
+            };
+
+            const unitMonthStats = months.map(m => {
+                // Per-section stats
+                const secStats = { scc: { attended: 0, possible: 0 }, rmc: { attended: 0, possible: 0 }, jsc: { attended: 0, possible: 0 } };
+                cadets.forEach(c => {
+                    const sec = pNumSection[c.pNumber] || 'scc';
+                    secStats[sec].possible += sectionNightCounts[sec][m] || 0;
+                    secStats[sec].attended += cadetMonthMap[c.pNumber]?.[m] || 0;
+                });
+                const pctOf = s => secStats[s].possible > 0 ? Math.round(secStats[s].attended / secStats[s].possible * 100) : null;
+                const totalPossible = secStats.scc.possible + secStats.rmc.possible + secStats.jsc.possible;
+                const totalAttended = secStats.scc.attended + secStats.rmc.attended + secStats.jsc.attended;
+                return {
+                    unit: totalPossible > 0 ? Math.round(totalAttended / totalPossible * 100) : null,
+                    scc:  pctOf('scc'),
+                    rmc:  pctOf('rmc'),
+                    jsc:  pctOf('jsc'),
+                    nights: {
+                        scc: sectionNightCounts.scc[m] || 0,
+                        rmc: sectionNightCounts.rmc[m] || 0,
+                        jsc: sectionNightCounts.jsc[m] || 0,
+                    }
+                };
+            });
+
+            const belowThreshold = cadets
+                .filter(c => { const t = cadetTotalMap[c.pNumber]; return t?.pct !== null && t.pct < THRESHOLD; })
+                .sort((a, b) => cadetTotalMap[a.pNumber].pct - cadetTotalMap[b.pNumber].pct);
+
+            if (attendanceData.length === 0) {
+                return (
+                    <div className="space-y-6">
+                        <div className="bg-white rounded-lg shadow p-8 text-center border-l-4 border-orange-500">
+                            <Icon name="CalendarCheck" className="w-16 h-16 mx-auto text-slate-300 mb-4" />
+                            <h2 className="text-2xl font-bold text-slate-700 mb-2">No Attendance Data</h2>
+                            <p className="text-slate-500">Upload parade night CSV files via Data / Utilities to see attendance statistics.</p>
+                        </div>
+                    </div>
+                );
+            }
+
+            return (
+                <div className="space-y-6">
+                    <div className="bg-white rounded-lg shadow p-6 border-l-4 border-orange-500">
+                        <div className="flex items-center gap-4">
+                            <div className="p-3 bg-orange-100 rounded-full">
+                                <Icon name="CalendarCheck" className="w-8 h-8 text-orange-700" />
+                            </div>
+                            <div>
+                                <h1 className="text-3xl font-extrabold text-slate-900">Parade Night Attendance</h1>
+                                <p className="text-slate-500 text-sm">{months.length} month{months.length !== 1 ? 's' : ''} of data &mdash; {cadets.length} cadets &mdash; below-threshold flag at {THRESHOLD}%</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Unit monthly summary - months across, 4 bars per month, latest first, max 6 */}
+                    <div className="bg-white rounded-lg shadow p-6">
+                        <h2 className="text-lg font-bold text-slate-800 mb-1">Unit Attendance by Month</h2>
+                        <div className="flex flex-wrap gap-4 mb-4 text-xs font-semibold">
+                            <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm bg-amber-400 inline-block"></span>Whole Unit</span>
+                            <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm bg-blue-700 inline-block"></span>Sea Cadets</span>
+                            <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm bg-green-600 inline-block"></span>Marines</span>
+                            <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm bg-sky-400 inline-block"></span>Juniors</span>
+                        </div>
+                        {(() => {
+                            const recent = [...months].reverse().slice(0, 6);
+                            const COLS = [
+                                { key: 'unit', label: 'Unit',  bar: 'bg-amber-400',  text: 'text-amber-700',  nightsKey: null },
+                                { key: 'scc',  label: 'SCC',   bar: 'bg-blue-700',   text: 'text-blue-800',   nightsKey: 'scc' },
+                                { key: 'rmc',  label: 'RMC',   bar: 'bg-green-600',  text: 'text-green-700',  nightsKey: 'rmc' },
+                                { key: 'jsc',  label: 'JSC',   bar: 'bg-sky-400',    text: 'text-sky-700',    nightsKey: 'jsc' },
+                            ];
+                            return (
+                                <div className="overflow-x-auto">
+                                    <div className="flex gap-3 min-w-0" style={{minWidth: `${recent.length * 120}px`}}>
+                                        {recent.map((m, i) => {
+                                            const s = unitMonthStats[months.indexOf(m)];
+                                            return (
+                                                <div key={m} className="flex-1 min-w-0">
+                                                    <div className="text-xs font-bold text-slate-600 mb-2 text-center whitespace-nowrap">{formatMonth(m)}</div>
+                                                    <div className="grid grid-cols-4 gap-1">
+                                                        {COLS.map(({ key, label, bar, text, nightsKey }) => {
+                                                            const pct = s[key];
+                                                            const nights = nightsKey ? s.nights[nightsKey] : null;
+                                                            return (
+                                                                <div key={key} className="text-center">
+                                                                    <div className="relative bg-slate-100 rounded h-20 overflow-hidden">
+                                                                        <div className={`absolute bottom-0 w-full ${bar}`} style={{height: (pct || 0) + '%'}} />
+                                                                        <div className="absolute inset-0 flex items-center justify-center">
+                                                                            <span className={`text-xs font-extrabold ${text}`}>
+                                                                                {pct !== null ? pct + '%' : '—'}
+                                                                            </span>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div className="text-[9px] text-slate-500 font-semibold mt-0.5">{label}</div>
+                                                                    {nights !== null && <div className="text-[9px] text-slate-400">{nights}n</div>}
+                                                                </div>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            );
+                        })()}
+                    </div>
+
+                    {belowThreshold.length > 0 && (
+                        <div className="bg-red-50 rounded-lg shadow p-5 border-l-4 border-red-500">
+                            <h2 className="text-base font-bold text-red-800 mb-3 flex items-center gap-2">
+                                <Icon name="AlertTriangle" className="w-5 h-5" />
+                                {belowThreshold.length} cadet{belowThreshold.length !== 1 ? 's' : ''} below {THRESHOLD}% attendance
+                            </h2>
+                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                                {belowThreshold.map(c => {
+                                    const t = cadetTotalMap[c.pNumber];
+                                    return (
+                                        <div key={c.pNumber} className="bg-white rounded p-2 border border-red-200 text-xs">
+                                            <div className="font-bold text-slate-700 truncate">{(() => { const p = c.name.split(','); return p.length > 1 ? p[1].trim() + ' ' + p[0].trim() : c.name; })()}</div>
+                                            <div className="text-slate-500 text-[10px] truncate">{c.rank}</div>
+                                            <div className="text-red-600 font-bold text-sm mt-1">
+                                                {t.pct}% <span className="font-normal text-slate-400">({t.attended}/{t.possible})</span>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    )}
+
+                    <div className="bg-white rounded-lg shadow overflow-hidden">
+                        <div className="px-6 py-4 border-b border-slate-200">
+                            <h2 className="text-lg font-bold text-slate-800">All Cadets</h2>
+                            <p className="text-xs text-slate-400 mt-0.5">Each cadet is measured against their own section's parade nights (SCC / JSC / RMC).</p>
+                        </div>
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-sm">
+                                <thead className="bg-slate-50 text-xs text-slate-500 uppercase">
+                                    <tr>
+                                        <th className="px-4 py-3 text-left sticky left-0 bg-slate-50 z-10">Cadet</th>
+                                        <th className="px-3 py-3 text-left">Section</th>
+                                        {months.map(m => (
+                                            <th key={m} className="px-3 py-3 text-center whitespace-nowrap">{formatMonth(m)}</th>
+                                        ))}
+                                        <th className="px-4 py-3 text-center bg-slate-100 whitespace-nowrap">Overall</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100">
+                                    {cadets.map(c => {
+                                        const sec = pNumSection[c.pNumber] || 'scc';
+                                        const t   = cadetTotalMap[c.pNumber];
+                                        return (
+                                            <tr key={c.pNumber} className={`hover:bg-slate-50 ${t?.pct !== null && t?.pct < THRESHOLD ? 'bg-red-50/40' : ''}`}>
+                                                <td className="px-4 py-2 font-semibold text-slate-800 sticky left-0 bg-white z-10 whitespace-nowrap">
+                                                    {(() => { const p = c.name.split(','); return p.length > 1 ? p[1].trim() + ' ' + p[0].trim() : c.name; })()}
+                                                </td>
+                                                <td className="px-3 py-2">
+                                                    <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold uppercase ${sec === 'jsc' ? 'bg-purple-100 text-purple-700' : sec === 'rmc' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>
+                                                        {sec}
+                                                    </span>
+                                                </td>
+                                                {months.map(m => {
+                                                    const tosMon = tosMonthMap[c.pNumber];
+                                                    const preTOS = tosMon && m < tosMon;
+                                                    const nights   = preTOS ? 0 : (sectionNightCounts[sec]?.[m] || 0);
+                                                    const attended = cadetMonthMap[c.pNumber]?.[m] || 0;
+                                                    const pct = preTOS ? null : nights > 0 ? Math.round(attended / nights * 100) : null;
+                                                    return (
+                                                        <td key={m} className={`px-3 py-2 text-center text-xs ${preTOS ? 'bg-slate-50' : pctBg(pct)}`}>
+                                                            <span className={preTOS ? 'text-slate-300' : pctColor(pct)}>
+                                                                {preTOS ? '—' : pct !== null ? pct + '%' : nights > 0 ? '0%' : '—'}
+                                                            </span>
+                                                            <div className="text-[9px] text-slate-400">
+                                                                {!preTOS && nights > 0 ? `${attended}/${nights}` : ''}
+                                                            </div>
+                                                        </td>
+                                                    );
+                                                })}
+                                                <td className={`px-4 py-2 text-center font-bold text-sm ${pctBg(t?.pct)} ${pctColor(t?.pct)}`}>
+                                                    {t?.pct !== null ? t.pct + '%' : '—'}
+                                                    <div className="text-[9px] font-normal text-slate-400">
+                                                        {t?.possible > 0 ? `${t.attended}/${t.possible}` : ''}
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+
+        const HomeView = ({ personnel, attendanceData }) => {
             const unitName = personnel.length > 0 ? cleanUnitName(personnel[0].unit || "Your Unit") : "Sea Cadets";
 
             return (
@@ -3350,6 +3915,77 @@
                             <p>All data shown here is derived from the CSV reports you uploaded and may not reflect real-time changes if new reports have not been synced.</p>
                         </div>
                     </div>
+
+                    {/* Attendance summary card */}
+                    {attendanceData && attendanceData.length > 0 && (() => {
+                        const cadets = personnel.filter(p => isCadet(p));
+                        const cadetPNums = new Set(cadets.map(p => p.pNumber));
+                        const months = [...new Set(attendanceData.filter(r => cadetPNums.has(r.p_number)).map(r => r.attendance_date.slice(0,7)))].sort();
+                        const latestMonth = months[months.length - 1];
+                        if (!latestMonth) return null;
+
+                        // Section nights from tagged attendance rows
+                        const secNights = { scc: new Set(), jsc: new Set(), rmc: new Set() };
+                        attendanceData.filter(r => r.attendance_date.startsWith(latestMonth) && cadetPNums.has(r.p_number)).forEach(r => {
+                            const sec = r.section || 'scc';
+                            secNights[sec].add(r.attendance_date);
+                        });
+
+                        // Unit attendance for latest month (section-aware)
+                        let totalPossible = 0, totalAttended = 0;
+                        cadets.forEach(c => {
+                            // Get section from any attendance row for this cadet
+                            const secRow = attendanceData.find(r => r.p_number === c.pNumber);
+                            const sec = secRow?.section || (() => {
+                                const r = c.rank || '';
+                                return JUNIOR_RANK_ORDER.includes(r) ? 'jsc' : RMC_RANK_ORDER.includes(r) ? 'rmc' : 'scc';
+                            })();
+                            totalPossible += secNights[sec].size;
+                            totalAttended += attendanceData.filter(r => r.p_number === c.pNumber && r.attendance_date.startsWith(latestMonth)).length;
+                        });
+                        const nights = Math.max(secNights.scc.size, secNights.jsc.size, secNights.rmc.size);
+                        const pct = totalPossible > 0 ? Math.round(totalAttended/totalPossible*100) : 0;
+
+                        // Overall below-threshold count (section-aware across all months)
+                        const below = cadets.filter(c => {
+                            const secRow = attendanceData.find(r => r.p_number === c.pNumber);
+                            const sec = secRow?.section || (() => {
+                                const r = c.rank || '';
+                                return JUNIOR_RANK_ORDER.includes(r) ? 'jsc' : RMC_RANK_ORDER.includes(r) ? 'rmc' : 'scc';
+                            })();
+                            const possible = months.reduce((sum, m) => {
+                                const dates = new Set(attendanceData.filter(r => r.attendance_date.startsWith(m) && cadetPNums.has(r.p_number) && (r.section || 'scc') === sec).map(r => r.attendance_date));
+                                return sum + dates.size;
+                            }, 0);
+                            const attended = attendanceData.filter(r => r.p_number === c.pNumber).length;
+                            const cp = possible > 0 ? Math.round(attended/possible*100) : null;
+                            return cp !== null && cp < 60;
+                        }).length;
+                        const monthLabel = new Date(latestMonth + '-01').toLocaleString('default', {month:'long',year:'numeric'});
+                        return (
+                            <div className="bg-white p-6 rounded-lg shadow border-l-4 border-orange-500">
+                                <div className="flex items-center gap-3 mb-4">
+                                    <Icon name="CalendarCheck" className="w-6 h-6 text-orange-600" />
+                                    <h3 className="text-lg font-bold text-slate-800">Parade Night Attendance</h3>
+                                    <span className="text-xs text-slate-400 ml-auto">{months.length} months loaded</span>
+                                </div>
+                                <div className="grid grid-cols-3 gap-4">
+                                    <div className="text-center">
+                                        <div className={`text-3xl font-extrabold ${pct >= 75 ? 'text-green-600' : pct >= 60 ? 'text-amber-500' : 'text-red-600'}`}>{pct}%</div>
+                                        <div className="text-xs text-slate-500 mt-1">Unit attendance<br/>{monthLabel}</div>
+                                    </div>
+                                    <div className="text-center">
+                                        <div className="text-3xl font-extrabold text-slate-700">{nights}</div>
+                                        <div className="text-xs text-slate-500 mt-1">Parade nights<br/>{monthLabel}</div>
+                                    </div>
+                                    <div className="text-center">
+                                        <div className={`text-3xl font-extrabold ${below > 0 ? 'text-red-600' : 'text-green-600'}`}>{below}</div>
+                                        <div className="text-xs text-slate-500 mt-1">Cadets below<br/>60% overall</div>
+                                    </div>
+                                </div>
+                            </div>
+                        );
+                    })()}
 
                     {/* Disclaimer Section */}
                     <div className="mt-10 max-w-4xl mx-auto text-center text-xs text-slate-400 p-4 border-t border-slate-300">
@@ -4476,7 +5112,7 @@
         };
         
         // Cadet Focus Component
-        const CadetFocus = ({ personnel, qualsData, setView }) => {
+        const CadetFocus = ({ personnel, qualsData, setView, attendanceData }) => {
             // Filter to only show cadets aged 12-17 (not juniors under 12, not adults 18+)
             const cadets = useMemo(() => personnel.filter(c => {
                 if (!c.dob) return false; // Exclude if no DOB - can't determine age
@@ -5188,6 +5824,58 @@
                             </div>
                         </div>
                     </div>
+
+                    {/* Per-cadet attendance card */}
+                    {attendanceData && attendanceData.length > 0 && selectedCadet && (() => {
+                        const cadetAtt = attendanceData.filter(r => r.p_number === selectedCadet.pNumber);
+                        if (cadetAtt.length === 0) return null;
+                        const allMonths = [...new Set(attendanceData.map(r => r.attendance_date.slice(0,7)))].sort();
+                        const thisSec = cadetAtt[0]?.section || (() => {
+                            const r = selectedCadet.rank || '';
+                            return JUNIOR_RANK_ORDER.includes(r) ? 'jsc' : RMC_RANK_ORDER.includes(r) ? 'rmc' : 'scc';
+                        })();
+                        const tosMon = selectedCadet.tos ? selectedCadet.tos.slice(0,7) : null;
+                        const sectionNights = {};
+                        allMonths.forEach(m => {
+                            sectionNights[m] = new Set(
+                                attendanceData.filter(r => r.attendance_date.startsWith(m) && (r.section || 'scc') === thisSec).map(r => r.attendance_date)
+                            ).size;
+                        });
+                        const monthRows = allMonths.map(m => {
+                            const preTOS = tosMon && m < tosMon;
+                            const nights = preTOS ? 0 : sectionNights[m] || 0;
+                            const attended = cadetAtt.filter(r => r.attendance_date.startsWith(m)).length;
+                            const pct = preTOS ? null : nights > 0 ? Math.round(attended/nights*100) : null;
+                            return { m, nights, attended, pct, preTOS };
+                        });
+                        const totalNights = monthRows.reduce((s,r) => s + r.nights, 0);
+                        const totalAttended = monthRows.reduce((s,r) => s + r.attended, 0);
+                        const overallPct = totalNights > 0 ? Math.round(totalAttended/totalNights*100) : null;
+                        const fmtMon = m => new Date(m+'-01').toLocaleString('default',{month:'short',year:'numeric'});
+                        const pCol = p => p === null ? 'text-slate-300' : p >= 75 ? 'text-green-700' : p >= 60 ? 'text-amber-600' : 'text-red-600';
+                        return (
+                            <div className="bg-white rounded-lg shadow p-5 border-l-4 border-orange-500">
+                                <div className="flex items-center justify-between mb-3">
+                                    <h3 className="font-bold text-slate-800 flex items-center gap-2">
+                                        <Icon name="CalendarCheck" className="w-5 h-5 text-orange-600" />
+                                        Parade Night Attendance
+                                    </h3>
+                                    <span className={`text-lg font-extrabold ${pCol(overallPct)}`}>
+                                        {overallPct !== null ? overallPct + '%' : '—'} <span className="text-xs font-normal text-slate-400">overall ({totalAttended}/{totalNights})</span>
+                                    </span>
+                                </div>
+                                <div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-6 gap-2">
+                                    {monthRows.map(({m, nights, attended, pct, preTOS}) => (
+                                        <div key={m} className={`text-center rounded p-2 ${preTOS ? 'bg-slate-50' : 'bg-slate-50'}`}>
+                                            <div className="text-[10px] font-semibold text-slate-500 mb-1">{fmtMon(m)}</div>
+                                            <div className={`text-base font-extrabold ${pCol(pct)}`}>{preTOS ? '—' : pct !== null ? pct+'%' : nights > 0 ? '0%' : '—'}</div>
+                                            <div className="text-[9px] text-slate-400">{!preTOS && nights > 0 ? attended+'/'+nights : ''}</div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        );
+                    })()}
                     
                     <div className="bg-white p-6 rounded-lg shadow border border-slate-200">
                         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
@@ -5392,6 +6080,7 @@
                                         </div>
                                     </div>
                                 )}
+
                             </div>
                         </div>
                     </div>
@@ -5724,13 +6413,26 @@
                         </div>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        {suggestions.length === 0 ? <div className="col-span-full text-center py-12 bg-white rounded border border-dashed text-slate-400">No suggestions.</div> : suggestions.map(mod => (
-                            <div key={mod.code} className="bg-white p-4 rounded shadow border-l-4 border-purple-500">
-                                <div className="flex justify-between mb-2"><h3 className="font-bold">{mod.code}</h3><span className="bg-purple-100 text-purple-800 text-xs font-bold px-2 py-1 rounded-full">{mod.count} Cadets</span></div>
-                                <p className="text-sm text-slate-600 truncate mb-2">{mod.title}</p>
-                                <div className="text-[10px] text-slate-400">Ready: {mod.students.slice(0,3).map(s=>s.split(',')[0]).join(', ')}{mod.students.length>3 && '...'}</div>
-                            </div>
-                        ))}
+                        {suggestions.length === 0 ? <div className="col-span-full text-center py-12 bg-white rounded border border-dashed text-slate-400">No suggestions.</div> : (() => {
+                            const isRMCSuggestions = RMC_RANK_ORDER.includes(selectedRank);
+                            const urlLookup = isRMCSuggestions ? RMC_MODULE_URLS : SCC_MODULE_URLS;
+                            return suggestions.map(mod => {
+                                const polUrl = urlLookup[mod.code];
+                                return (
+                                    <div key={mod.code} className="bg-white p-4 rounded shadow border-l-4 border-purple-500">
+                                        <div className="flex justify-between mb-2">
+                                            {polUrl
+                                                ? <a href={polUrl} target="_blank" rel="noopener noreferrer" className="font-bold hover:underline hover:text-purple-700" title="View on Programmes Online">{mod.code}</a>
+                                                : <h3 className="font-bold">{mod.code}</h3>
+                                            }
+                                            <span className="bg-purple-100 text-purple-800 text-xs font-bold px-2 py-1 rounded-full">{mod.count} Cadets</span>
+                                        </div>
+                                        <p className="text-sm text-slate-600 truncate mb-2">{mod.title}</p>
+                                        <div className="text-[10px] text-slate-400">Ready: {mod.students.slice(0,3).map(s=>s.split(',')[0]).join(', ')}{mod.students.length>3 && '...'}</div>
+                                    </div>
+                                );
+                            });
+                        })()}
                     </div>
                 </div>
             );
@@ -6752,6 +7454,10 @@
             const [juniorData, setJuniorData] = useState({ moduleCompletions: [], rankHistory: [], sectionBadges: [] });
             const [loadingJuniorData, setLoadingJuniorData] = useState(true);
             const [pendingRequests, setPendingRequests] = useState([]);
+            const [attendanceFiles, setAttendanceFiles] = useState([]);
+            const [attendanceMonth, setAttendanceMonth] = useState('');
+            const [attendanceStatus, setAttendanceStatus] = useState('');
+            const [attendanceUploading, setAttendanceUploading] = useState(false);
             
             // Fetch pending access requests (admin only)
             const fetchPendingRequests = async () => {
@@ -7145,6 +7851,96 @@
                 reader.readAsText(file);
             };
             
+            const handleAttendanceUpload = async () => {
+                if (!attendanceMonth) {
+                    setAttendanceStatus('error:Please select a month and year first.');
+                    return;
+                }
+                if (attendanceFiles.length === 0) {
+                    setAttendanceStatus('error:Please select at least one attendance CSV file.');
+                    return;
+                }
+                setAttendanceUploading(true);
+                setAttendanceStatus('Parsing files...');
+                try {
+                    // Parse all files, deduplicate by (pNumber, date)
+                    const recordMap = new Map(); // key: "pNumber|YYYY-MM-DD"
+
+                    for (const file of attendanceFiles) {
+                        const text = await file.text();
+                        const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+                        if (lines.length < 2) continue;
+
+                        // Parse header: PNumber,Person Type,Abbrev,Surname,First Names,Rank Type,[day1],[day2],...
+                        // Westminster exports as either comma or tab-separated - detect from header
+                        const delim = lines[0].includes('\t') ? '\t' : ',';
+                        const headers = lines[0].split(delim);
+                        const dayColumns = headers.slice(6); // day numbers after Rank Type
+
+                        for (let i = 1; i < lines.length; i++) {
+                            const cols = lines[i].split(delim);
+                            if (cols.length < 7) continue;
+
+                            const pNumber    = cols[0].trim();
+                            const personType = cols[1].trim();
+                            const rankType   = cols[5].trim();
+
+                            // Active cadets only: Person Type = Cadet AND Rank Type != Civilian
+                            if (personType !== 'Cadet') continue;
+                            if (rankType === 'Civilian') continue;
+
+                            // Derive section from Rank Type
+                            const section = rankType === 'Junior' ? 'jsc'
+                                          : rankType === 'Marine Cadet' ? 'rmc'
+                                          : 'scc';
+
+                            // For each day column, if value is "1" record an attendance
+                            dayColumns.forEach((day, idx) => {
+                                const dayNum = day.trim().padStart(2, '0');
+                                const value = (cols[6 + idx] || '').trim();
+                                if (value === '1' && dayNum) {
+                                    const dateStr = attendanceMonth + '-' + dayNum;
+                                    const key = pNumber + '|' + dateStr;
+                                    recordMap.set(key, { p_number: pNumber, attendance_date: dateStr, section });
+                                }
+                            });
+                        }
+                    }
+
+                    const records = Array.from(recordMap.values());
+
+                    if (records.length === 0) {
+                        setAttendanceStatus('error:No cadet attendance records found in the selected files.');
+                        setAttendanceUploading(false);
+                        return;
+                    }
+
+                    setAttendanceStatus('Saving ' + records.length + ' attendance records...');
+
+                    // UPSERT in batches of 500
+                    const batchSize = 500;
+                    let totalUpserted = 0;
+                    for (let i = 0; i < records.length; i += batchSize) {
+                        const batch = records.slice(i, i + batchSize);
+                        const { error } = await supabase
+                            .from('attendance')
+                            .upsert(batch, { onConflict: 'p_number,attendance_date' });
+                        if (error) throw error;
+                        totalUpserted += batch.length;
+                    }
+
+                    await recordUpload('attendance_' + attendanceMonth);
+                    setAttendanceFiles([]);
+                    setAttendanceStatus('success:' + totalUpserted + ' attendance records saved for ' + attendanceMonth + '.');
+                    setTimeout(() => setAttendanceStatus(''), 5000);
+                } catch (err) {
+                    console.error('Attendance upload error:', err);
+                    setAttendanceStatus('error:Upload failed: ' + err.message);
+                } finally {
+                    setAttendanceUploading(false);
+                }
+            };
+
             return (
                 <div className="space-y-6">
                     {/* Header */}
@@ -7186,6 +7982,74 @@
                         </button>
                     </div>
                     
+                    {/* Attendance Upload Section */}
+                    <div className="bg-white rounded-lg shadow p-6 border-l-4 border-orange-500">
+                        <h2 className="text-2xl font-bold text-slate-900 mb-2 flex items-center gap-2">
+                            <Icon name="CalendarCheck" className="w-6 h-6 text-orange-600" />
+                            Upload Parade Night Attendance
+                        </h2>
+                        <p className="text-slate-600 mb-5">
+                            Upload Westminster attendance CSV files for a given month. Upload all files for that month together (SCC, JSC, RMC). Staff records are ignored automatically. Re-uploading the same month is safe.
+                        </p>
+
+                        {attendanceStatus && (
+                            <div className={`mb-4 p-3 rounded-lg border-l-4 text-sm font-semibold ${
+                                attendanceStatus.startsWith('error:')
+                                    ? 'bg-red-50 border-red-500 text-red-800'
+                                    : attendanceStatus.startsWith('success:')
+                                    ? 'bg-green-50 border-green-500 text-green-800'
+                                    : 'bg-blue-50 border-blue-500 text-blue-800'
+                            }`}>
+                                {attendanceStatus.replace(/^(error:|success:)/, '')}
+                            </div>
+                        )}
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label className="block text-sm font-semibold text-slate-700 mb-1">Month and Year</label>
+                                <input
+                                    type="month"
+                                    value={attendanceMonth}
+                                    onChange={e => setAttendanceMonth(e.target.value)}
+                                    className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
+                                />
+                                <p className="text-xs text-slate-400 mt-1">Select the month the attendance data covers.</p>
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-semibold text-slate-700 mb-1">CSV Files</label>
+                                <input
+                                    type="file"
+                                    accept=".csv"
+                                    multiple
+                                    onChange={e => setAttendanceFiles(Array.from(e.target.files))}
+                                    className="block w-full text-xs text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100"
+                                />
+                                {attendanceFiles.length > 0 && (
+                                    <ul className="mt-2 space-y-0.5">
+                                        {attendanceFiles.map((f, i) => (
+                                            <li key={i} className="text-xs text-slate-500 flex items-center gap-1">
+                                                <Icon name="FileText" className="w-3 h-3 text-orange-400" />
+                                                {f.name}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                )}
+                            </div>
+                        </div>
+
+                        <button
+                            onClick={handleAttendanceUpload}
+                            disabled={attendanceUploading || !attendanceMonth || attendanceFiles.length === 0}
+                            className="mt-5 bg-orange-600 text-white px-6 py-2.5 rounded-lg hover:bg-orange-700 disabled:opacity-40 disabled:cursor-not-allowed font-semibold flex items-center gap-2 text-sm"
+                        >
+                            {attendanceUploading
+                                ? <><Icon name="Loader" className="w-4 h-4 animate-spin" />Uploading...</>
+                                : <><Icon name="Upload" className="w-4 h-4" />Save Attendance</>
+                            }
+                        </button>
+                    </div>
+
                     {/* Junior Data Management - ADMIN ONLY */}
                     {isAdmin && (
                         <div className="bg-blue-50 rounded-lg shadow p-6 border-l-4 border-blue-500">
@@ -7851,7 +8715,7 @@
         // JUNIORS VIEW COMPONENT
         // ============================================================================
         
-        const JuniorsView = ({ personnel, qualifications }) => {
+        const JuniorsView = ({ personnel, qualifications, attendanceData }) => {
             const [juniorData, setJuniorData] = useState({ moduleCompletions: [], rankHistory: [], sectionBadges: [] });
             const [loading, setLoading] = useState(true);
             
@@ -8344,13 +9208,13 @@
                     })()}
                     
                     {/* Junior Detail */}
-                    <JuniorDetail junior={selectedJunior} juniorData={juniorData} personnel={personnel} qualifications={qualifications} />
+                    <JuniorDetail junior={selectedJunior} juniorData={juniorData} personnel={personnel} qualifications={qualifications} attendanceData={attendanceData} />
                 </div>
             );
         };
         
         // Junior Detail Component
-        const JuniorDetail = ({ junior, juniorData, personnel, qualifications }) => {
+        const JuniorDetail = ({ junior, juniorData, personnel, qualifications, attendanceData }) => {
             const [section, setSection] = useState('red');
             const [moduleCode, setModuleCode] = useState('');
             const [dateCompleted, setDateCompleted] = useState(new Date().toISOString().split('T')[0]);
@@ -8705,6 +9569,55 @@
                         </div>
                     </div>
                     
+                    {/* Per-junior attendance card */}
+                    {attendanceData && attendanceData.length > 0 && junior && (() => {
+                        const cadetAtt = (attendanceData || []).filter(r => r.p_number === junior.pNumber);
+                        if (cadetAtt.length === 0) return null;
+                        const allMonths = [...new Set(attendanceData.map(r => r.attendance_date.slice(0,7)))].sort();
+                        const thisSec = cadetAtt[0]?.section || 'jsc';
+                        const tosMon = junior.tos ? junior.tos.slice(0,7) : null;
+                        const sectionNights = {};
+                        allMonths.forEach(m => {
+                            sectionNights[m] = new Set(
+                                attendanceData.filter(r => r.attendance_date.startsWith(m) && (r.section || 'jsc') === thisSec).map(r => r.attendance_date)
+                            ).size;
+                        });
+                        const monthRows = allMonths.map(m => {
+                            const preTOS = tosMon && m < tosMon;
+                            const nights = preTOS ? 0 : sectionNights[m] || 0;
+                            const attended = cadetAtt.filter(r => r.attendance_date.startsWith(m)).length;
+                            const pct = preTOS ? null : nights > 0 ? Math.round(attended/nights*100) : null;
+                            return { m, nights, attended, pct, preTOS };
+                        });
+                        const totalNights = monthRows.reduce((s,r) => s + r.nights, 0);
+                        const totalAttended = monthRows.reduce((s,r) => s + r.attended, 0);
+                        const overallPct = totalNights > 0 ? Math.round(totalAttended/totalNights*100) : null;
+                        const fmtMon = m => new Date(m+'-01').toLocaleString('default',{month:'short',year:'numeric'});
+                        const pCol = p => p === null ? 'text-slate-300' : p >= 75 ? 'text-green-700' : p >= 60 ? 'text-amber-600' : 'text-red-600';
+                        return (
+                            <div className="bg-white rounded-lg shadow p-5 border-l-4 border-orange-500">
+                                <div className="flex items-center justify-between mb-3">
+                                    <h3 className="font-bold text-slate-800 flex items-center gap-2">
+                                        <Icon name="CalendarCheck" className="w-5 h-5 text-orange-600" />
+                                        Parade Night Attendance
+                                    </h3>
+                                    <span className={`text-lg font-extrabold ${pCol(overallPct)}`}>
+                                        {overallPct !== null ? overallPct + '%' : '—'} <span className="text-xs font-normal text-slate-400">overall ({totalAttended}/{totalNights})</span>
+                                    </span>
+                                </div>
+                                <div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-6 gap-2">
+                                    {monthRows.map(({m, nights, attended, pct, preTOS}) => (
+                                        <div key={m} className="text-center bg-slate-50 rounded p-2">
+                                            <div className="text-[10px] font-semibold text-slate-500 mb-1">{fmtMon(m)}</div>
+                                            <div className={`text-base font-extrabold ${pCol(pct)}`}>{preTOS ? '—' : pct !== null ? pct+'%' : nights > 0 ? '0%' : '—'}</div>
+                                            <div className="text-[9px] text-slate-400">{!preTOS && nights > 0 ? attended+'/'+nights : ''}</div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        );
+                    })()}
+
                     {/* Section Progress */}
                     <div className="bg-white rounded-lg shadow p-6">
                         <h3 className="text-xl font-bold mb-4">Section Progress</h3>
@@ -9665,6 +10578,7 @@
             const [drillDownInfo, setDrillDownInfo] = useState(null); 
             const [loading, setLoading] = useState(true);
             const [isAdmin, setIsAdmin] = useState(false);
+            const [attendanceData, setAttendanceData] = useState([]);
             
             // Check admin status on mount
             useEffect(() => {
@@ -9742,6 +10656,45 @@
                             
                             pData.sort((a, b) => a.name.localeCompare(b.name));
                             
+                            // Load attendance for current personnel only, filtered to on/after each cadet's TOS
+                            const cadetPersonnel = pData.filter(p => p.pNumber && isCadet(p));
+                            const currentPNumbers = cadetPersonnel.map(p => p.pNumber);
+                            if (currentPNumbers.length > 0) {
+                                // Paginate attendance fetch - can exceed 1000 rows
+                                let attRows = [];
+                                let attPage = 0;
+                                const attPageSize = 1000;
+                                let attHasMore = true;
+                                while (attHasMore) {
+                                    const { data: batch } = await supabase
+                                        .from('attendance')
+                                        .select('p_number, attendance_date, section')
+                                        .in('p_number', currentPNumbers)
+                                        .range(attPage * attPageSize, (attPage + 1) * attPageSize - 1);
+                                    if (batch && batch.length > 0) {
+                                        attRows = [...attRows, ...batch];
+                                        attPage++;
+                                        attHasMore = batch.length === attPageSize;
+                                    } else {
+                                        attHasMore = false;
+                                    }
+                                }
+                                if (attRows.length > 0) {
+                                    // Build TOS lookup: pNumber -> 'YYYY-MM-DD' or null
+                                    const tosMap = {};
+                                    cadetPersonnel.forEach(p => {
+                                        tosMap[p.pNumber] = p.tos ? p.tos.slice(0, 10) : null;
+                                    });
+                                    // Exclude attendance records before cadet's TOS date
+                                    const filtered = attRows.filter(r => {
+                                        const tos = tosMap[r.p_number];
+                                        if (!tos) return true; // no TOS = include all
+                                        return r.attendance_date >= tos;
+                                    });
+                                    setAttendanceData(filtered);
+                                }
+                            }
+
                             setPersonnelData(pData);
                             setQualsData(qData);
                             if (!forceUploadView) {
@@ -10016,6 +10969,7 @@
                                 <NavItem id="waterborne" icon="Anchor" label="Waterborne" />
                                 <NavItem id="awards" icon="Award" label="Awards" />
                                 <NavItem id="suggestions" icon="ChartGantt" label="Training Plan" />
+                                <NavItem id="attendance" icon="CalendarCheck" label="Attendance" />
                                 <NavItem id="data_utilities" icon="Database" label="Data / Utilities" />
                             </nav>
                             <div className="p-3 border-t border-blue-800">
@@ -10057,15 +11011,16 @@
                             </div>
                         </aside>
                         <main className={`flex-1 ${sidebarCollapsed ? 'ml-20' : 'ml-64'} p-8 overflow-y-auto transition-all duration-300`}>
-                            {view === 'home' && <HomeView personnel={personnelData} />} 
-                            {view === 'cadet_focus' && <CadetFocus personnel={personnelData} qualsData={qualsData} setView={setView} />}
-                            {view === 'juniors' && <JuniorsView personnel={personnelData} qualifications={qualsData} />}
+                            {view === 'home' && <HomeView personnel={personnelData} attendanceData={attendanceData} />} 
+                            {view === 'cadet_focus' && <CadetFocus personnel={personnelData} qualsData={qualsData} setView={setView} attendanceData={attendanceData} />}
+                            {view === 'juniors' && <JuniorsView personnel={personnelData} qualifications={qualsData} attendanceData={attendanceData} />}
                             {view === 'junior_progress' && <JuniorProgressView personnel={personnelData} />}
                             {view === 'awards' && <AwardsView personnel={personnelData} quals={qualsData} />}
                             {(view === 'waterborne') && <WaterborneView personnel={personnelData} qualsData={qualsData} />}
-                            {(view === 'planner') && <TrainingPlanner personnel={personnelData} getCadetProgress={getCadetProgress} qualsData={qualsData} title="SCC CTP Progress" rankOrder={SCC_RANK_ORDER} syllabus={SCC_SYLLABUS} iconName="ShipWheel" onModuleClick={handleModuleDrillDown} />}
+                            {(view === 'planner') && <TrainingPlanner personnel={personnelData} getCadetProgress={getCadetProgress} qualsData={qualsData} title="SCC CTP Progress" rankOrder={SCC_RANK_ORDER} syllabus={SCC_SYLLABUS} iconName="ShipWheel" onModuleClick={handleModuleDrillDown} moduleUrls={SCC_MODULE_URLS} />}
                             {(view === 'rmc_planner') && <TrainingPlanner personnel={personnelData} getCadetProgress={getCadetProgress} qualsData={qualsData} title="RMC CTS Progress" rankOrder={RMC_RANK_ORDER} syllabus={RMC_SYLLABUS} colorTheme="green" iconName="Target" onModuleClick={handleModuleDrillDown} moduleUrls={RMC_MODULE_URLS} />}
                             {(view === 'suggestions') && <TrainingSuggestions personnel={personnelData} getCadetProgress={getCadetProgress} qualsData={qualsData} />}
+                            {view === 'attendance' && <AttendanceView personnel={personnelData} attendanceData={attendanceData} />}
                             {view === 'data_utilities' && <DataUtilitiesView clearData={clearData} wipeAllData={wipeAllData} setView={setView} personnel={personnelData} isAdmin={isAdmin} onResetComplete={(rP, rQ) => { if (rP) setPersonnelData([]); if (rQ) setQualsData([]); setForceUploadView(true); setView('upload'); }} />}
                         </main>
                     </div>

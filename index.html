@@ -7819,6 +7819,57 @@
                         );
                     })()}
                     
+                    {/* CREST Award / STEM Badge Notification */}
+                    {(() => {
+                        const crestNeeded = [];
+                        const stemNeeded = [];
+                        
+                        juniors.forEach(junior => {
+                            const juniorMods = juniorData?.moduleCompletions?.filter(m => m.pNumber === junior.pNumber) || [];
+                            const stemCount = juniorMods.filter(m => m.section === 'stem').length;
+                            const hasCrest = qualifications?.some(q => q.pNumber === junior.pNumber && q.module && q.module.includes('JSC Crest Award'));
+                            const hasSTEMBadge = qualifications?.some(q => q.pNumber === junior.pNumber && q.module && q.module.includes('JSC STEM Unit Activities Badge'));
+                            
+                            if (stemCount >= 15 && !hasSTEMBadge) {
+                                stemNeeded.push(junior.name);
+                            } else if (stemCount >= 8 && !hasCrest) {
+                                crestNeeded.push(junior.name);
+                            }
+                        });
+                        
+                        if (crestNeeded.length === 0 && stemNeeded.length === 0) return null;
+                        
+                        return (
+                            <div className="bg-gradient-to-r from-purple-50 to-violet-50 border-2 border-purple-300 rounded-lg p-4 shadow">
+                                <div className="flex items-center gap-3">
+                                    <Icon name="Award" className="w-6 h-6 text-purple-600" />
+                                    <div className="flex flex-col gap-1">
+                                        {stemNeeded.length > 0 && (
+                                            <div>
+                                                <p className="font-bold text-purple-900">
+                                                    {stemNeeded.length} junior{stemNeeded.length !== 1 ? 's' : ''} ready for the STEM Badge!
+                                                </p>
+                                                <p className="text-sm text-purple-800">
+                                                    {stemNeeded.join(', ')} {stemNeeded.length === 1 ? 'has' : 'have'} completed 15 STEM modules. Award SCC - JSC STEM Unit Activities Badge on Westminster.
+                                                </p>
+                                            </div>
+                                        )}
+                                        {crestNeeded.length > 0 && (
+                                            <div>
+                                                <p className="font-bold text-purple-900">
+                                                    {crestNeeded.length} junior{crestNeeded.length !== 1 ? 's' : ''} ready for the CREST Award!
+                                                </p>
+                                                <p className="text-sm text-purple-800">
+                                                    {crestNeeded.join(', ')} {crestNeeded.length === 1 ? 'has' : 'have'} completed 8 STEM modules. Award SCC - JSC Crest Award on Westminster.
+                                                </p>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        );
+                    })()}
+                    
                     {/* Junior Detail */}
                     <JuniorDetail junior={selectedJunior} juniorData={juniorData} personnel={personnel} qualifications={qualifications} />
                 </div>
@@ -8263,14 +8314,23 @@
                                 </div>
                                 {(() => {
                                     const stemBadge = qualifications?.find(q => q.pNumber === junior.pNumber && q.module.includes("JSC STEM Unit Activities Badge"));
-                                    if (stemBadge && stemBadge.date) {
-                                        return <p className="text-xs font-semibold text-purple-900 mt-2 bg-purple-100 py-1 px-2 rounded">STEM Awarded on {formatDate(stemBadge.date)}</p>;
-                                    } else if (stemModules >= 15) {
-                                        return <p className="text-xs font-bold text-purple-900 mt-2 bg-purple-100 py-1 px-2 rounded">STEM AWARD DUE</p>;
-                                    } else if (stemModules >= 8 && !qualifications?.some(q => q.pNumber === junior.pNumber && q.module.includes("JSC Crest Award"))) {
-                                        return <p className="text-xs font-bold text-purple-900 mt-2 bg-purple-100 py-1 px-2 rounded">CREST AWARD DUE</p>;
-                                    }
-                                    return null;
+                                    const crestBadge = qualifications?.find(q => q.pNumber === junior.pNumber && q.module.includes("JSC Crest Award"));
+                                    return (
+                                        <>
+                                            {crestBadge && crestBadge.date
+                                                ? <p className="text-xs font-semibold text-purple-900 mt-2 bg-purple-100 py-1 px-2 rounded">CREST Awarded on {formatDate(crestBadge.date)}</p>
+                                                : stemModules >= 8 && !stemBadge
+                                                    ? <p className="text-xs font-bold text-purple-900 mt-2 bg-purple-100 py-1 px-2 rounded">CREST AWARD DUE</p>
+                                                    : null
+                                            }
+                                            {stemBadge && stemBadge.date
+                                                ? <p className="text-xs font-semibold text-purple-900 mt-1 bg-purple-100 py-1 px-2 rounded">STEM Awarded on {formatDate(stemBadge.date)}</p>
+                                                : stemModules >= 15
+                                                    ? <p className="text-xs font-bold text-purple-900 mt-1 bg-purple-100 py-1 px-2 rounded">STEM AWARD DUE</p>
+                                                    : null
+                                            }
+                                        </>
+                                    );
                                 })()}
                             </div>
                         </div>

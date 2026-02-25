@@ -4094,11 +4094,42 @@
                 return map;
             }, [attendanceData, cadets, pNumSection]);
 
-            // Most recent qual date per cadet
+            // Most recent MEANINGFUL qual date per cadet.
+            // Mirrors the same filter used in the Awards view:
+            //   include if Specialisation/Proficiency, DofE, or NOT a CTP/CTS module.
+            // This correctly catches all waterborne (Rowing, Sailing, Offshore, Paddle,
+            // Windsurf, Powerboat), Good Conduct Badges, First Aid, and personal
+            // development quals - anything that earns a badge or represents active
+            // personal investment beyond simply turning up on parade nights.
+            const isMeaningfulQual = (q) => {
+                if (!q.module) return false;
+                // Specialisations and Proficiencies are always in (includes waterborne award records)
+                if (q.syllabus && (q.syllabus.includes('Specialisations') || q.syllabus.includes('Proficiencies'))) return true;
+                // DofE awards
+                if (q.module.includes('DofE') && (q.module.includes('Bronze') || q.module.includes('Silver') || q.module.includes('Gold'))) return true;
+                // JSC Blue Waterborne Activities Badge
+                if (q.module.includes('JSC Blue Waterborne Activities Badge')) return true;
+                // Anything that is NOT a CTP/CTS tick-box module is meaningful.
+                // Waterborne activity quals (Rowing, Sailing, Offshore etc.) pass this
+                // because their module codes/titles don't appear in the SCC or RMC syllabus.
+                const inSCC = Object.values(SCC_SYLLABUS).some(rank =>
+                    Object.values(rank).some(cat =>
+                        cat.some(mod => q.module.includes(mod.code) || q.module === mod.title)
+                    )
+                );
+                if (inSCC) return false;
+                const inRMC = Object.values(RMC_SYLLABUS).some(rank =>
+                    Object.values(rank).some(cat =>
+                        cat.some(mod => q.module.includes(mod.code) || q.module === mod.title)
+                    )
+                );
+                return !inRMC;
+            };
+
             const lastQualMap = useMemo(() => {
                 const map = {};
                 qualsData.forEach(q => {
-                    if (!q.date) return;
+                    if (!q.date || !isMeaningfulQual(q)) return;
                     if (!map[q.pNumber] || q.date > map[q.pNumber]) map[q.pNumber] = q.date;
                 });
                 return map;
@@ -4362,7 +4393,7 @@
                         <th className="px-3 py-3 text-left whitespace-nowrap">Section / Rank</th>
                         <SortTh col="attendance" label="Attendance" />
                         <SortTh col="rank_age"   label="Months at Rank" />
-                        <SortTh col="qual_age"   label="Last Qual" />
+                        <SortTh col="qual_age"   label="Last Spec/Prof/WB" />
                         <SortTh col="risk"       label="Risk" />
                         <th className="px-3 py-3 text-center text-slate-400 whitespace-nowrap">Action</th>
                     </tr>
@@ -4428,8 +4459,8 @@
                                 <p>Over 12 months at the same rank signals slow progression. Over 18 months is high risk. JSC cadets are excluded from this factor.</p>
                             </div>
                             <div>
-                                <p className="font-semibold mb-1">Last qualification</p>
-                                <p>Over 5 months since the last recorded qual adds risk. Over 9 months or no quals adds maximum risk. Cadets who joined within 4 months receive a grace period and are not penalised for having no qualifications yet.</p>
+                                <p className="font-semibold mb-1">Last meaningful qualification</p>
+                                <p>Excludes CTP/CTS tick-box modules, which are earned primarily through attendance. Counts anything else: waterborne activities (rowing, sailing, offshore, paddlesport), specialisations, proficiencies, Good Conduct Badges, First Aid, DofE, and personal development qualifications. Over 5 months adds risk; over 9 months or none recorded adds maximum risk. Cadets who joined within 4 months receive a grace period.</p>
                             </div>
                         </div>
                     </div>

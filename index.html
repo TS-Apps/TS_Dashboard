@@ -3579,6 +3579,9 @@
         const AttendanceView = ({ personnel, attendanceData }) => {
             const THRESHOLD = 60;
 
+            const [filterSection, setFilterSection] = useState('all');
+            const [filterRank, setFilterRank] = useState('all');
+
             const cadets = useMemo(() =>
                 personnel.filter(p => isCadet(p)).sort((a,b) => a.name.localeCompare(b.name))
             , [personnel]);
@@ -3708,6 +3711,23 @@
                 .filter(c => { const t = cadetTotalMap[c.pNumber]; return t?.pct !== null && t.pct < THRESHOLD; })
                 .sort((a, b) => cadetTotalMap[a.pNumber].pct - cadetTotalMap[b.pNumber].pct);
 
+            // Derive sorted list of ranks present in each section for the rank dropdown
+            const ALL_RANKS_ORDERED = [...SCC_RANK_ORDER, ...RMC_RANK_ORDER, ...JUNIOR_RANK_ORDER];
+            const availableRanks = useMemo(() => {
+                const rankSet = new Set();
+                cadets.forEach(c => { if (c.rank) rankSet.add(c.rank); });
+                return ALL_RANKS_ORDERED.filter(r => rankSet.has(r));
+            }, [cadets]);
+
+            const filteredCadets = useMemo(() => {
+                return cadets.filter(c => {
+                    const sec = pNumSection[c.pNumber] || 'scc';
+                    if (filterSection !== 'all' && sec !== filterSection) return false;
+                    if (filterRank !== 'all' && c.rank !== filterRank) return false;
+                    return true;
+                });
+            }, [cadets, filterSection, filterRank, pNumSection]);
+
             if (attendanceData.length === 0) {
                 return (
                     <div className="space-y-6">
@@ -3813,8 +3833,58 @@
 
                     <div className="bg-white rounded-lg shadow overflow-hidden">
                         <div className="px-6 py-4 border-b border-slate-200">
-                            <h2 className="text-lg font-bold text-slate-800">All Cadets</h2>
-                            <p className="text-xs text-slate-400 mt-0.5">Each cadet is measured against their own section's parade nights (SCC / JSC / RMC).</p>
+                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                                <div>
+                                    <h2 className="text-lg font-bold text-slate-800">
+                                        {filterSection === 'all' && filterRank === 'all'
+                                            ? 'All Cadets'
+                                            : `${filterSection !== 'all' ? filterSection.toUpperCase() : 'All Sections'}${filterRank !== 'all' ? ' \u2022 ' + filterRank : ''}`}
+                                        <span className="ml-2 text-sm font-normal text-slate-400">({filteredCadets.length} cadet{filteredCadets.length !== 1 ? 's' : ''})</span>
+                                    </h2>
+                                    <p className="text-xs text-slate-400 mt-0.5">Each cadet is measured against their own section's parade nights (SCC / JSC / RMC).</p>
+                                </div>
+                                <div className="flex flex-wrap items-center gap-3">
+                                    {/* Section filter */}
+                                    <div className="flex items-center gap-1.5">
+                                        {[
+                                            { val: 'all', label: 'All' },
+                                            { val: 'scc', label: 'SCC', cls: 'bg-blue-100 text-blue-700 border-blue-300' },
+                                            { val: 'rmc', label: 'RMC', cls: 'bg-green-100 text-green-700 border-green-300' },
+                                            { val: 'jsc', label: 'JSC', cls: 'bg-purple-100 text-purple-700 border-purple-300' },
+                                        ].map(({ val, label, cls }) => (
+                                            <button
+                                                key={val}
+                                                onClick={() => { setFilterSection(val); setFilterRank('all'); }}
+                                                className={`px-2.5 py-1 rounded border text-xs font-bold transition-all ${
+                                                    filterSection === val
+                                                        ? (cls || 'bg-slate-700 text-white border-slate-700')
+                                                        : 'bg-white text-slate-500 border-slate-200 hover:border-slate-400'
+                                                }`}
+                                            >
+                                                {label}
+                                            </button>
+                                        ))}
+                                    </div>
+                                    {/* Rank filter */}
+                                    <select
+                                        value={filterRank}
+                                        onChange={e => setFilterRank(e.target.value)}
+                                        className="text-xs border border-slate-200 rounded px-2.5 py-1.5 bg-white text-slate-700 font-semibold focus:outline-none focus:ring-2 focus:ring-orange-300"
+                                    >
+                                        <option value="all">All Ranks</option>
+                                        {availableRanks
+                                            .filter(r => {
+                                                if (filterSection === 'all') return true;
+                                                if (filterSection === 'scc') return SCC_RANK_ORDER.includes(r);
+                                                if (filterSection === 'rmc') return RMC_RANK_ORDER.includes(r);
+                                                if (filterSection === 'jsc') return JUNIOR_RANK_ORDER.includes(r);
+                                                return true;
+                                            })
+                                            .map(r => <option key={r} value={r}>{r}</option>)
+                                        }
+                                    </select>
+                                </div>
+                            </div>
                         </div>
                         <div className="overflow-x-auto">
                             <table className="w-full text-sm">
@@ -3829,7 +3899,7 @@
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-100">
-                                    {cadets.map(c => {
+                                    {filteredCadets.map(c => {
                                         const sec = pNumSection[c.pNumber] || 'scc';
                                         const t   = cadetTotalMap[c.pNumber];
                                         return (
@@ -3876,6 +3946,586 @@
             );
         };
 
+
+        // ═══════════════════════════════════════════════════════════════════════════
+        // RETENTION RISK VIEW
+        // ═══════════════════════════════════════════════════════════════════════════
+        const RetentionView = ({ personnel, qualsData, attendanceData }) => {
+            const [filterSection, setFilterSection] = useState('all');
+            const [showGreen, setShowGreen]         = useState(false);
+            const [sortBy, setSortBy]               = useState('risk');
+            const [showLost, setShowLost]           = useState(false);
+
+            const cadets = useMemo(() =>
+                personnel.filter(p => isCadet(p)).sort((a,b) => a.name.localeCompare(b.name))
+            , [personnel]);
+
+            // ── LOST cadets: Supabase cadet_flags table (shared across all staff) ──
+            const [lostPNums, setLostPNums] = useState(new Set());
+            const [lostLoading, setLostLoading] = useState(true);
+
+            useEffect(() => {
+                let cancelled = false;
+                const loadFlags = async () => {
+                    try {
+                        const { data, error } = await supabase
+                            .from('cadet_flags')
+                            .select('p_number')
+                            .eq('flag_type', 'lost');
+                        if (error) throw error;
+                        if (!cancelled) {
+                            setLostPNums(new Set((data || []).map(r => r.p_number)));
+                        }
+                    } catch (err) {
+                        console.error('RetentionView: failed to load cadet flags', err);
+                    } finally {
+                        if (!cancelled) setLostLoading(false);
+                    }
+                };
+                loadFlags();
+                return () => { cancelled = true; };
+            }, []);
+
+            const toggleLost = async (pNumber) => {
+                const isCurrentlyLost = lostPNums.has(pNumber);
+
+                // Optimistic UI update so the button feels instant
+                setLostPNums(prev => {
+                    const next = new Set(prev);
+                    isCurrentlyLost ? next.delete(pNumber) : next.add(pNumber);
+                    return next;
+                });
+
+                try {
+                    if (isCurrentlyLost) {
+                        const { error } = await supabase
+                            .from('cadet_flags')
+                            .delete()
+                            .eq('p_number', pNumber)
+                            .eq('flag_type', 'lost');
+                        if (error) throw error;
+                    } else {
+                        const { data: { user } } = await supabase.auth.getUser();
+                        const { error } = await supabase
+                            .from('cadet_flags')
+                            .insert({
+                                p_number:   pNumber,
+                                flag_type:  'lost',
+                                flagged_by: user?.email || 'unknown',
+                            });
+                        if (error) throw error;
+                    }
+                } catch (err) {
+                    console.error('RetentionView: failed to toggle lost flag', err);
+                    // Roll back optimistic update on failure
+                    setLostPNums(prev => {
+                        const next = new Set(prev);
+                        isCurrentlyLost ? next.add(pNumber) : next.delete(pNumber);
+                        return next;
+                    });
+                }
+            };
+
+            // Section map (mirrors AttendanceView logic)
+            const pNumSection = useMemo(() => {
+                const map = {};
+                attendanceData.forEach(r => {
+                    if (!map[r.p_number] && r.section) map[r.p_number] = r.section;
+                });
+                cadets.forEach(c => {
+                    if (!map[c.pNumber]) {
+                        const r = c.rank || '';
+                        map[c.pNumber] = JUNIOR_RANK_ORDER.includes(r) ? 'jsc'
+                                       : RMC_RANK_ORDER.includes(r) ? 'rmc'
+                                       : 'scc';
+                    }
+                });
+                return map;
+            }, [attendanceData, cadets]);
+
+            // ── Reference date: end of the latest attendance month in the data ──
+            // Attendance uploads are always 1+ months behind. Quals can have any
+            // date (including current month if recorded manually), so we anchor
+            // solely to attendance dates. That way the reference month matches
+            // what the attendance data actually covers.
+            const refDate = useMemo(() => {
+                const months = [];
+                attendanceData.forEach(r => { if (r.attendance_date) months.push(r.attendance_date.slice(0,7)); });
+                if (!months.length) return new Date();
+                const latest = months.sort().pop();
+                const [y, m] = latest.split('-').map(Number);
+                return new Date(y, m, 0); // last day of that month
+            }, [attendanceData]);
+
+            const refLabel = refDate.toLocaleString('default', { month: 'long', year: 'numeric' });
+
+            // Overall attendance % per cadet (section-aware, TOS-aware)
+            const attendancePctMap = useMemo(() => {
+                const cadetPNums = new Set(cadets.map(c => c.pNumber));
+                const sectionDates = { scc: {}, jsc: {}, rmc: {} };
+                const cadetMonthMap = {};
+                attendanceData.forEach(r => {
+                    if (!cadetPNums.has(r.p_number)) return;
+                    const month = r.attendance_date.slice(0, 7);
+                    const sec   = r.section || pNumSection[r.p_number] || 'scc';
+                    if (!sectionDates[sec][month]) sectionDates[sec][month] = new Set();
+                    sectionDates[sec][month].add(r.attendance_date);
+                    if (!cadetMonthMap[r.p_number]) cadetMonthMap[r.p_number] = {};
+                    cadetMonthMap[r.p_number][month] = (cadetMonthMap[r.p_number][month] || 0) + 1;
+                });
+                const months = [...new Set(attendanceData.map(r => r.attendance_date.slice(0,7)))].sort();
+                const secNightCounts = {};
+                ['scc','jsc','rmc'].forEach(sec => {
+                    secNightCounts[sec] = {};
+                    months.forEach(m => { secNightCounts[sec][m] = sectionDates[sec][m]?.size || 0; });
+                });
+                const map = {};
+                cadets.forEach(c => {
+                    const sec    = pNumSection[c.pNumber] || 'scc';
+                    const tosMon = c.tos ? c.tos.slice(0, 7) : null;
+                    let attended = 0, possible = 0;
+                    months.forEach(m => {
+                        if (tosMon && m < tosMon) return;
+                        possible += secNightCounts[sec][m] || 0;
+                        attended += cadetMonthMap[c.pNumber]?.[m] || 0;
+                    });
+                    map[c.pNumber] = possible > 0 ? Math.round(attended / possible * 100) : null;
+                });
+                return map;
+            }, [attendanceData, cadets, pNumSection]);
+
+            // Most recent qual date per cadet
+            const lastQualMap = useMemo(() => {
+                const map = {};
+                qualsData.forEach(q => {
+                    if (!q.date) return;
+                    if (!map[q.pNumber] || q.date > map[q.pNumber]) map[q.pNumber] = q.date;
+                });
+                return map;
+            }, [qualsData]);
+
+            // monthsDiff anchored to refDate, not today
+            const monthsDiff = (raw) => {
+                const d = (raw instanceof Date) ? raw : parseDate(raw);
+                if (!d || isNaN(d.getTime())) return null;
+                return (refDate.getFullYear() - d.getFullYear()) * 12 + (refDate.getMonth() - d.getMonth());
+            };
+
+            // ── Scoring ──────────────────────────────────────────────────────────
+            // Each factor produces a score 0-3 (0 = fine, 3 = high risk).
+            //
+            // Factor 1  Attendance %
+            //   >= 60%  → 0   (good)
+            //   40-59%  → 2   (low)
+            //   < 40%   → 3   (very low)
+            //   no data → 1   (unknown, slight concern)
+            //
+            // Factor 2  Months at current rank  (SCC/RMC only; JSC skipped)
+            //   < 12mo  → 0   (fine)
+            //   12-18mo → 2   (overdue review)
+            //   > 18mo  → 3   (stalled)
+            //   no date → 1   (unknown)
+            //
+            // Factor 3  Months since last recorded qualification
+            //   <= 5mo  → 0   (active)
+            //   6-9mo   → 2   (quiet)
+            //   > 9mo   → 3   (inactive)
+            //   never, BUT TOS within 4mo → 0  (new joiner grace)
+            //   never, no grace → 2   (concerning)
+            //
+            // RAG thresholds (SCC/RMC max=9, JSC max=6):
+            //   SCC/RMC  >= 6 Red, >= 3 Amber, else Green
+            //   JSC      >= 4 Red, >= 2 Amber, else Green
+            const computeRisk = (cadet) => {
+                const sec   = pNumSection[cadet.pNumber] || 'scc';
+                const isJSC = sec === 'jsc';
+
+                // Factor 1: attendance
+                const attPct = attendancePctMap[cadet.pNumber];
+                const attScore = attPct === null ? 1
+                               : attPct <  40    ? 3
+                               : attPct <  60    ? 2
+                               :                   0;
+
+                // Factor 2: months at current rank (anchored to refDate)
+                const rankMonths = monthsDiff(cadet.rankDate);
+                const rankScore  = isJSC               ? 0
+                                 : rankMonths === null  ? 1
+                                 : rankMonths > 18      ? 3
+                                 : rankMonths > 12      ? 2
+                                 :                        0;
+
+                // New-joiner grace: TOS within 4 months of refDate
+                const tosMonths     = monthsDiff(cadet.tos);
+                const isNewJoiner   = tosMonths !== null && tosMonths <= 4;
+
+                // Factor 3: months since last qual (anchored to refDate)
+                const lastQual   = lastQualMap[cadet.pNumber];
+                const qualMonths = monthsDiff(lastQual);
+                const qualScore  = isNewJoiner && qualMonths === null ? 0   // new joiner, no quals yet: grace
+                                 : qualMonths === null                ? 2   // no quals, not new: concerning
+                                 : qualMonths > 9                    ? 3
+                                 : qualMonths > 5                    ? 2
+                                 :                                     0;
+
+                const total    = attScore + rankScore + qualScore;
+                const maxScore = isJSC ? 6 : 9;
+                const rag      = isJSC
+                    ? (total >= 4 ? 'red' : total >= 2 ? 'amber' : 'green')
+                    : (total >= 6 ? 'red' : total >= 3 ? 'amber' : 'green');
+
+                return {
+                    total, maxScore, rag,
+                    factors: {
+                        attendance: { score: attScore, pct: attPct },
+                        rankAge:    { score: rankScore, months: rankMonths, skipped: isJSC },
+                        qualAge:    { score: qualScore, months: qualMonths, date: lastQual, newJoiner: isNewJoiner && qualMonths === null },
+                    }
+                };
+            };
+
+            const cadetRisks = useMemo(() =>
+                cadets.map(c => ({ cadet: c, risk: computeRisk(c), sec: pNumSection[c.pNumber] || 'scc' }))
+            , [cadets, attendancePctMap, lastQualMap, pNumSection, refDate]);
+
+            // Separate active from LOST (LOST excluded from counts and main table)
+            const { activeRisks, lostRisks } = useMemo(() => {
+                const active = [], lost = [];
+                cadetRisks.forEach(cr => {
+                    lostPNums.has(cr.cadet.pNumber) ? lost.push(cr) : active.push(cr);
+                });
+                return { activeRisks: active, lostRisks: lost };
+            }, [cadetRisks, lostPNums]);
+
+            // Counts for summary cards (active only, respect section filter)
+            const counts = useMemo(() => {
+                const c = { red: 0, amber: 0, green: 0 };
+                activeRisks.forEach(cr => {
+                    if (filterSection === 'all' || cr.sec === filterSection) c[cr.risk.rag]++;
+                });
+                return c;
+            }, [activeRisks, filterSection]);
+
+            // Filtered + sorted active list
+            const RAG_ORDER = { red: 0, amber: 1, green: 2 };
+            const displayed = useMemo(() => {
+                let list = activeRisks.filter(cr => {
+                    if (filterSection !== 'all' && cr.sec !== filterSection) return false;
+                    if (!showGreen && cr.risk.rag === 'green') return false;
+                    return true;
+                });
+                list.sort((a, b) => {
+                    if (sortBy === 'risk')       return RAG_ORDER[a.risk.rag] - RAG_ORDER[b.risk.rag] || b.risk.total - a.risk.total;
+                    if (sortBy === 'name')       return a.cadet.name.localeCompare(b.cadet.name);
+                    if (sortBy === 'attendance') return (a.risk.factors.attendance.pct ?? -1) - (b.risk.factors.attendance.pct ?? -1);
+                    if (sortBy === 'rank_age')   return (b.risk.factors.rankAge.months ?? 0)  - (a.risk.factors.rankAge.months ?? 0);
+                    if (sortBy === 'qual_age')   return (b.risk.factors.qualAge.months ?? 999) - (a.risk.factors.qualAge.months ?? 999);
+                    return 0;
+                });
+                return list;
+            }, [activeRisks, filterSection, showGreen, sortBy]);
+
+            // ── Sub-components ───────────────────────────────────────────────────
+            const displayName = c => {
+                const p = c.name.split(',');
+                return p.length > 1 ? `${p[1].trim()} ${p[0].trim()}` : c.name;
+            };
+
+            const RagBadge = ({ rag }) => {
+                const cfg    = { red: 'bg-red-500 text-white', amber: 'bg-amber-400 text-amber-900', green: 'bg-green-500 text-white' };
+                const labels = { red: 'High Risk', amber: 'Monitor', green: 'On Track' };
+                return <span className={`px-2.5 py-1 rounded-full text-xs font-bold whitespace-nowrap ${cfg[rag]}`}>{labels[rag]}</span>;
+            };
+
+            const FactorPip = ({ score, primary, secondary }) => {
+                const cls = score === 0 ? 'bg-green-50  text-green-700  border-green-200'
+                          : score === 1 ? 'bg-slate-50  text-slate-500  border-slate-200'
+                          : score === 2 ? 'bg-amber-50  text-amber-700  border-amber-300'
+                          :               'bg-red-50    text-red-700    border-red-300';
+                return (
+                    <div className={`border rounded px-2 py-1 text-[10px] leading-tight text-center min-w-[70px] ${cls}`}>
+                        <div className="font-bold">{primary}</div>
+                        <div className="opacity-80">{secondary}</div>
+                    </div>
+                );
+            };
+
+            const SortTh = ({ col, label }) => (
+                <th onClick={() => setSortBy(col)}
+                    className={`px-3 py-3 text-center cursor-pointer select-none whitespace-nowrap hover:bg-slate-100 transition-colors ${sortBy === col ? 'text-orange-600 font-bold bg-orange-50' : 'text-slate-500'}`}>
+                    {label}{sortBy === col ? ' ▼' : ''}
+                </th>
+            );
+
+            // Shared row renderer used for both active and lost tables
+            const RiskRow = ({ cadet, risk, sec, isLost }) => {
+                const f = risk.factors;
+
+                const attPrimary   = f.attendance.pct !== null ? `${f.attendance.pct}%` : 'No data';
+                const attSecondary = f.attendance.score === 0 ? 'Good'
+                                   : f.attendance.score === 1 ? 'Unknown'
+                                   : f.attendance.score === 2 ? 'Low'
+                                   : 'Very low';
+
+                const rankPrimary   = f.rankAge.skipped        ? 'N/A'
+                                    : f.rankAge.months !== null ? `${f.rankAge.months}mo`
+                                    : 'No date';
+                const rankSecondary = f.rankAge.skipped     ? 'JSC'
+                                    : f.rankAge.score === 0 ? 'Recent'
+                                    : f.rankAge.score === 1 ? 'Unknown'
+                                    : f.rankAge.score === 2 ? 'Overdue'
+                                    : 'Stalled';
+
+                const qualPrimary   = f.qualAge.newJoiner      ? 'New joiner'
+                                    : f.qualAge.months !== null ? `${f.qualAge.months}mo ago`
+                                    : 'None';
+                const qualSecondary = f.qualAge.newJoiner      ? 'Grace period'
+                                    : f.qualAge.score === 0    ? 'Active'
+                                    : f.qualAge.months === null ? 'No record'
+                                    : f.qualAge.score === 2    ? 'Quiet'
+                                    : 'Inactive';
+
+                const rowBg = isLost ? 'opacity-50 bg-slate-50'
+                            : risk.rag === 'red'   ? 'bg-red-50/30'
+                            : risk.rag === 'amber' ? 'bg-amber-50/20'
+                            : '';
+
+                return (
+                    <tr key={cadet.pNumber} className={`hover:bg-slate-100/60 transition-colors ${rowBg}`}>
+                        <td className="px-4 py-3 font-semibold text-slate-800 sticky left-0 bg-inherit whitespace-nowrap">
+                            <div className="flex items-center gap-2">
+                                {isLost && <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-slate-300 text-slate-600 uppercase">Lost</span>}
+                                <span className={isLost ? 'line-through text-slate-400' : ''}>{displayName(cadet)}</span>
+                            </div>
+                        </td>
+                        <td className="px-3 py-3">
+                            <div className="flex flex-col gap-0.5">
+                                <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold uppercase w-fit ${
+                                    sec === 'jsc' ? 'bg-purple-100 text-purple-700'
+                                  : sec === 'rmc' ? 'bg-green-100 text-green-700'
+                                  :                 'bg-blue-100 text-blue-700'
+                                }`}>{sec}</span>
+                                <span className="text-[10px] text-slate-500 whitespace-nowrap">{cadet.rank || '—'}</span>
+                            </div>
+                        </td>
+                        <td className="px-3 py-3 text-center">
+                            <FactorPip score={isLost ? 0 : f.attendance.score} primary={attPrimary} secondary={attSecondary} />
+                        </td>
+                        <td className="px-3 py-3 text-center">
+                            <FactorPip score={isLost ? 0 : (f.rankAge.skipped ? 0 : f.rankAge.score)} primary={rankPrimary} secondary={rankSecondary} />
+                        </td>
+                        <td className="px-3 py-3 text-center">
+                            <FactorPip score={isLost ? 0 : f.qualAge.score} primary={qualPrimary} secondary={qualSecondary} />
+                        </td>
+                        <td className="px-3 py-3 text-center">
+                            {isLost
+                                ? <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-slate-300 text-slate-600 whitespace-nowrap">Lost</span>
+                                : <RagBadge rag={risk.rag} />
+                            }
+                        </td>
+                        <td className="px-3 py-3 text-center">
+                            <button
+                                onClick={() => toggleLost(cadet.pNumber)}
+                                title={isLost ? 'Restore to active list' : 'Mark as Lost (cadet leaving/awaiting admin)'}
+                                className={`px-2.5 py-1 rounded border text-[10px] font-bold transition-all whitespace-nowrap ${
+                                    isLost
+                                        ? 'bg-slate-100 text-slate-600 border-slate-300 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300'
+                                        : 'bg-white text-slate-400 border-slate-200 hover:bg-red-50 hover:text-red-600 hover:border-red-300'
+                                }`}
+                            >
+                                {isLost ? 'Restore' : 'Mark Lost'}
+                            </button>
+                        </td>
+                    </tr>
+                );
+            };
+
+            // ── No data guard ────────────────────────────────────────────────────
+            if (attendanceData.length === 0 && qualsData.length === 0) {
+                return (
+                    <div className="bg-white rounded-lg shadow p-8 text-center border-l-4 border-rose-500">
+                        <Icon name="AlertOctagon" className="w-16 h-16 mx-auto text-slate-300 mb-4" />
+                        <h2 className="text-2xl font-bold text-slate-700 mb-2">Insufficient Data</h2>
+                        <p className="text-slate-500">Upload attendance and qualification data to generate retention risk scores.</p>
+                    </div>
+                );
+            }
+
+            // ── Table header (shared) ────────────────────────────────────────────
+            const TableHead = () => (
+                <thead className="bg-slate-50 text-xs text-slate-500 uppercase">
+                    <tr>
+                        <th className="px-4 py-3 text-left sticky left-0 bg-slate-50 cursor-pointer hover:bg-slate-100 select-none"
+                            onClick={() => setSortBy('name')}>
+                            Cadet{sortBy === 'name' ? ' ▼' : ''}
+                        </th>
+                        <th className="px-3 py-3 text-left whitespace-nowrap">Section / Rank</th>
+                        <SortTh col="attendance" label="Attendance" />
+                        <SortTh col="rank_age"   label="Months at Rank" />
+                        <SortTh col="qual_age"   label="Last Qual" />
+                        <SortTh col="risk"       label="Risk" />
+                        <th className="px-3 py-3 text-center text-slate-400 whitespace-nowrap">Action</th>
+                    </tr>
+                </thead>
+            );
+
+            // ── Render ───────────────────────────────────────────────────────────
+            return (
+                <div className="space-y-6">
+
+                    {/* Header */}
+                    <div className="bg-white rounded-lg shadow p-6 border-l-4 border-rose-600">
+                        <div className="flex items-center gap-4">
+                            <div className="p-3 bg-rose-100 rounded-full">
+                                <Icon name="UserX" className="w-8 h-8 text-rose-700" />
+                            </div>
+                            <div>
+                                <h1 className="text-3xl font-extrabold text-slate-900">Retention Risk</h1>
+                                <p className="text-slate-500 text-sm mt-0.5">
+                                    {cadets.length} cadets scored across attendance, rank progression, and qualification activity.
+                                    {lostRisks.length > 0 && <span className="ml-1 text-slate-400">({lostRisks.length} marked as Lost.)</span>}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Data reference banner */}
+                    <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-2.5 flex items-center gap-2 text-xs text-amber-800">
+                        <Icon name="Info" className="w-4 h-4 flex-shrink-0 text-amber-500" />
+                        <span>
+                            Scores are calculated relative to <strong>{refLabel}</strong> (the latest month in your uploaded data).
+                            Attendance uploads are always at least one month behind, so age figures reflect data as-at that date rather than today.
+                        </span>
+                    </div>
+
+                    {/* Summary cards (active cadets only) */}
+                    <div className="grid grid-cols-3 gap-4">
+                        {[
+                            { rag: 'red',   label: 'High Risk', icon: 'AlertCircle',  border: 'border-red-300',   bg: 'bg-red-50',   text: 'text-red-700',   num: 'text-red-600'   },
+                            { rag: 'amber', label: 'Monitor',   icon: 'Eye',          border: 'border-amber-300', bg: 'bg-amber-50', text: 'text-amber-700', num: 'text-amber-600' },
+                            { rag: 'green', label: 'On Track',  icon: 'CheckCircle',  border: 'border-green-300', bg: 'bg-green-50', text: 'text-green-700', num: 'text-green-600' },
+                        ].map(({ rag, label, icon, border, bg, text, num }) => (
+                            <div key={rag} className={`rounded-lg shadow border ${border} ${bg} p-5 flex items-center gap-4`}>
+                                <Icon name={icon} className={`w-7 h-7 flex-shrink-0 ${text}`} />
+                                <div>
+                                    <div className={`text-3xl font-extrabold leading-none ${num}`}>{counts[rag]}</div>
+                                    <div className={`text-xs font-semibold mt-0.5 ${text}`}>{label}</div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* Scoring key */}
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                        <p className="text-xs font-bold text-blue-800 mb-2">How the score works</p>
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs text-blue-700">
+                            <div>
+                                <p className="font-semibold mb-1">Attendance</p>
+                                <p>Below 60% adds risk. Below 40% adds maximum risk. Missing data adds a small penalty.</p>
+                            </div>
+                            <div>
+                                <p className="font-semibold mb-1">Months at rank (SCC/RMC)</p>
+                                <p>Over 12 months at the same rank signals slow progression. Over 18 months is high risk. JSC cadets are excluded from this factor.</p>
+                            </div>
+                            <div>
+                                <p className="font-semibold mb-1">Last qualification</p>
+                                <p>Over 5 months since the last recorded qual adds risk. Over 9 months or no quals adds maximum risk. Cadets who joined within 4 months receive a grace period and are not penalised for having no qualifications yet.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Filters row */}
+                    <div className="flex flex-wrap items-center gap-3">
+                        <div className="flex items-center gap-1.5">
+                            {[
+                                { val: 'all', label: 'All Sections' },
+                                { val: 'scc', label: 'SCC', cls: 'bg-blue-100 text-blue-700 border-blue-300' },
+                                { val: 'rmc', label: 'RMC', cls: 'bg-green-100 text-green-700 border-green-300' },
+                                { val: 'jsc', label: 'JSC', cls: 'bg-purple-100 text-purple-700 border-purple-300' },
+                            ].map(({ val, label, cls }) => (
+                                <button key={val} onClick={() => setFilterSection(val)}
+                                    className={`px-3 py-1.5 rounded border text-xs font-bold transition-all ${
+                                        filterSection === val
+                                            ? (cls || 'bg-slate-700 text-white border-slate-700')
+                                            : 'bg-white text-slate-500 border-slate-200 hover:border-slate-400'
+                                    }`}>
+                                    {label}
+                                </button>
+                            ))}
+                        </div>
+                        <button onClick={() => setShowGreen(v => !v)}
+                            className={`ml-auto px-3 py-1.5 rounded border text-xs font-bold transition-all ${
+                                showGreen ? 'bg-green-600 text-white border-green-700' : 'bg-white text-slate-500 border-slate-200 hover:border-slate-400'
+                            }`}>
+                            {showGreen ? '● Hiding On Track' : '○ Show On Track'}
+                        </button>
+                    </div>
+
+                    {/* Main active table */}
+                    <div className="bg-white rounded-lg shadow overflow-hidden">
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-sm">
+                                <TableHead />
+                                <tbody className="divide-y divide-slate-100">
+                                    {displayed.length === 0 && (
+                                        <tr>
+                                            <td colSpan="7" className="text-center py-10 text-slate-400 text-sm">
+                                                {showGreen ? 'No cadets match the current filter.' : 'No cadets are flagged as High Risk or Monitor in this section.'}
+                                            </td>
+                                        </tr>
+                                    )}
+                                    {displayed.map(({ cadet, risk, sec }) => (
+                                        <RiskRow key={cadet.pNumber} cadet={cadet} risk={risk} sec={sec} isLost={false} />
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    {/* Lost cadets section */}
+                    {lostRisks.length > 0 && (
+                        <div className="bg-white rounded-lg shadow overflow-hidden border border-slate-200">
+                            <button
+                                onClick={() => setShowLost(v => !v)}
+                                className="w-full flex items-center justify-between px-6 py-3 text-sm font-semibold text-slate-500 hover:bg-slate-50 transition-colors"
+                            >
+                                <span className="flex items-center gap-2">
+                                    <Icon name="UserX" className="w-4 h-4" />
+                                    {lostRisks.length} cadet{lostRisks.length !== 1 ? 's' : ''} marked as Lost
+                                    <span className="text-xs font-normal text-slate-400">(leaving or awaiting admin, excluded from risk counts above)</span>
+                                </span>
+                                <Icon name={showLost ? 'ChevronUp' : 'ChevronDown'} className="w-4 h-4" />
+                            </button>
+                            {showLost && (
+                                <div className="overflow-x-auto border-t border-slate-100">
+                                    <table className="w-full text-sm">
+                                        <TableHead />
+                                        <tbody className="divide-y divide-slate-100">
+                                            {lostRisks.map(({ cadet, risk, sec }) => (
+                                                <RiskRow key={cadet.pNumber} cadet={cadet} risk={risk} sec={sec} isLost={true} />
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {/* Footer notes */}
+                    <div className="space-y-1 pb-2">
+                        <p className="text-xs text-slate-400 text-center">
+                            Risk scores are indicative only. Always use your knowledge of individual circumstances alongside these figures.
+                        </p>
+                        {lostLoading && (
+                            <p className="text-xs text-slate-300 text-center">Loading flag status...</p>
+                        )}
+                    </div>
+                </div>
+            );
+        };
+        // ═══════════════════════════════════════════════════════════════════════════
+        // END RETENTION RISK VIEW
+        // ═══════════════════════════════════════════════════════════════════════════
 
         const HomeView = ({ personnel, attendanceData }) => {
             const unitName = personnel.length > 0 ? cleanUnitName(personnel[0].unit || "Your Unit") : "Sea Cadets";
@@ -10970,6 +11620,7 @@
                                 <NavItem id="awards" icon="Award" label="Awards" />
                                 <NavItem id="suggestions" icon="ChartGantt" label="Training Plan" />
                                 <NavItem id="attendance" icon="CalendarCheck" label="Attendance" />
+                                <NavItem id="retention" icon="UserX" label="Retention Risk" />
                                 <NavItem id="data_utilities" icon="Database" label="Data / Utilities" />
                             </nav>
                             <div className="p-3 border-t border-blue-800">
@@ -11021,6 +11672,7 @@
                             {(view === 'rmc_planner') && <TrainingPlanner personnel={personnelData} getCadetProgress={getCadetProgress} qualsData={qualsData} title="RMC CTS Progress" rankOrder={RMC_RANK_ORDER} syllabus={RMC_SYLLABUS} colorTheme="green" iconName="Target" onModuleClick={handleModuleDrillDown} moduleUrls={RMC_MODULE_URLS} />}
                             {(view === 'suggestions') && <TrainingSuggestions personnel={personnelData} getCadetProgress={getCadetProgress} qualsData={qualsData} />}
                             {view === 'attendance' && <AttendanceView personnel={personnelData} attendanceData={attendanceData} />}
+                            {view === 'retention'  && <RetentionView  personnel={personnelData} qualsData={qualsData} attendanceData={attendanceData} />}
                             {view === 'data_utilities' && <DataUtilitiesView clearData={clearData} wipeAllData={wipeAllData} setView={setView} personnel={personnelData} isAdmin={isAdmin} onResetComplete={(rP, rQ) => { if (rP) setPersonnelData([]); if (rQ) setQualsData([]); setForceUploadView(true); setView('upload'); }} />}
                         </main>
                     </div>

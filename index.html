@@ -7120,7 +7120,7 @@
         };
 
         // --- JUNIOR PROGRESS VIEW (Grid Chart) ---
-        const JuniorProgressView = ({ personnel }) => {
+        const JuniorProgressView = ({ personnel, qualsData }) => {
             const [selectedSection, setSelectedSection] = useState('red');
             const [recordingMode, setRecordingMode] = useState(false);
             const [selectedModules, setSelectedModules] = useState(new Set());
@@ -8039,8 +8039,51 @@
                                             const moduleCount = juniorData?.moduleCompletions?.filter(m => 
                                                 m.pNumber === junior.pNumber && m.section === selectedSection
                                             ).length || 0;
+
+                                            // Badge award check: map section to Westminster qual name
+                                            const sectionBadgeNames = {
+                                                red:    'JSC Red Unit Activities Badge',
+                                                blue:   'JSC Blue Waterborne Activities Badge',
+                                                green:  'JSC Green Outdoor & Recreation Activities Badge',
+                                                yellow: 'JSC Yellow Community & Citizenship Activities Badge',
+                                                stem:   'JSC STEM Unit Activities Badge'
+                                            };
+                                            const badgeQualName = sectionBadgeNames[selectedSection];
+                                            const hasBadgeAwarded = qualsData?.some(q =>
+                                                q.pNumber === junior.pNumber && q.module && q.module.includes(badgeQualName)
+                                            );
+
+                                            // Section colours when badge is awarded
+                                            const sectionAwardedBg = {
+                                                red:    '#b91c1c',
+                                                blue:   '#1d4ed8',
+                                                green:  '#15803d',
+                                                yellow: '#a16207',
+                                                stem:   '#6d28d9'
+                                            };
+
+                                            // Determine header cell style
+                                            let headerBg, headerTextColor, moduleCountColor;
+                                            if (hasBadgeAwarded) {
+                                                headerBg = sectionAwardedBg[selectedSection] || '#374151';
+                                                headerTextColor = '#ffffff';
+                                                moduleCountColor = 'rgba(255,255,255,0.85)';
+                                            } else if (moduleCount >= 15) {
+                                                headerBg = '#f97316'; // bright orange
+                                                headerTextColor = '#ffffff';
+                                                moduleCountColor = 'rgba(255,255,255,0.9)';
+                                            } else {
+                                                headerBg = null;
+                                                headerTextColor = null;
+                                                moduleCountColor = null;
+                                            }
+
                                             return (
-                                            <th key={junior.pNumber} className="px-1 py-2 text-center font-semibold text-slate-700 border-r last:border-r-0 relative bg-slate-100" style={{width: '30px'}}>
+                                            <th key={junior.pNumber}
+                                                className="px-1 py-2 text-center font-semibold border-r last:border-r-0 relative"
+                                                style={{width: '30px', backgroundColor: headerBg || undefined, color: headerTextColor || undefined}}
+                                                title={hasBadgeAwarded ? `${badgeQualName} awarded on Westminster` : moduleCount >= 15 ? `${moduleCount} modules completed - badge not yet awarded` : undefined}
+                                            >
                                                 <div className="flex items-center justify-center" style={{height: '140px'}}>
                                                     <div style={{
                                                         transform: 'rotate(-90deg)',
@@ -8050,9 +8093,9 @@
                                                         textAlign: 'left',
                                                         position: 'absolute'
                                                     }}>
-                                                        <div className="text-[10px] font-bold leading-tight">{junior.name}</div>
-                                                        <div className="text-[8px] font-normal text-slate-500 leading-tight">{junior.rank}</div>
-                                                        <div className="text-[9px] font-bold text-blue-600 leading-tight mt-0.5">{moduleCount} modules</div>
+                                                        <div className="text-[10px] font-bold leading-tight" style={headerTextColor ? {color: headerTextColor} : {}}>{junior.name}</div>
+                                                        <div className="text-[8px] font-normal leading-tight" style={{color: headerTextColor ? 'rgba(255,255,255,0.75)' : undefined}}>{junior.rank}</div>
+                                                        <div className="text-[9px] font-bold leading-tight mt-0.5" style={{color: moduleCountColor || '#2563eb'}}>{moduleCount} modules</div>
                                                     </div>
                                                 </div>
                                             </th>
@@ -11696,7 +11739,7 @@
                             {view === 'home' && <HomeView personnel={personnelData} attendanceData={attendanceData} />} 
                             {view === 'cadet_focus' && <CadetFocus personnel={personnelData} qualsData={qualsData} setView={setView} attendanceData={attendanceData} />}
                             {view === 'juniors' && <JuniorsView personnel={personnelData} qualifications={qualsData} attendanceData={attendanceData} />}
-                            {view === 'junior_progress' && <JuniorProgressView personnel={personnelData} />}
+                            {view === 'junior_progress' && <JuniorProgressView personnel={personnelData} qualsData={qualsData} />}
                             {view === 'awards' && <AwardsView personnel={personnelData} quals={qualsData} />}
                             {(view === 'waterborne') && <WaterborneView personnel={personnelData} qualsData={qualsData} />}
                             {(view === 'planner') && <TrainingPlanner personnel={personnelData} getCadetProgress={getCadetProgress} qualsData={qualsData} title="SCC CTP Progress" rankOrder={SCC_RANK_ORDER} syllabus={SCC_SYLLABUS} iconName="ShipWheel" onModuleClick={handleModuleDrillDown} moduleUrls={SCC_MODULE_URLS} />}

@@ -2416,6 +2416,88 @@
             }
         }
 
+        // ── Change Password Panel ─────────────────────────────────────────────────
+        const ChangePasswordPanel = () => {
+            const [pwCurrent, setPwCurrent] = useState('');
+            const [pwNew, setPwNew] = useState('');
+            const [pwConfirm, setPwConfirm] = useState('');
+            const [pwStatus, setPwStatus] = useState('');
+            const [pwLoading, setPwLoading] = useState(false);
+
+            const PW_RULES = [
+                { id: 'length',  label: 'At least 10 characters',       test: p => p.length >= 10 },
+                { id: 'upper',   label: 'One uppercase letter (A-Z)',    test: p => /[A-Z]/.test(p) },
+                { id: 'lower',   label: 'One lowercase letter (a-z)',    test: p => /[a-z]/.test(p) },
+                { id: 'number',  label: 'One number (0-9)',              test: p => /[0-9]/.test(p) },
+                { id: 'special', label: 'One special character (!@#$…)', test: p => /[^A-Za-z0-9]/.test(p) },
+            ];
+            const pwValid = PW_RULES.every(r => r.test(pwNew));
+
+            const handleChangePassword = async () => {
+                setPwStatus('');
+                if (!pwValid) { setPwStatus('error:New password does not meet the requirements.'); return; }
+                if (pwNew !== pwConfirm) { setPwStatus('error:New passwords do not match.'); return; }
+                setPwLoading(true);
+                try {
+                    const { data: { user } } = await supabase.auth.getUser();
+                    const { error: signInError } = await supabase.auth.signInWithPassword({ email: user.email, password: pwCurrent });
+                    if (signInError) { setPwStatus('error:Current password is incorrect.'); return; }
+                    const { error } = await supabase.auth.updateUser({ password: pwNew });
+                    if (error) throw error;
+                    setPwStatus('success:Password updated successfully.');
+                    setPwCurrent(''); setPwNew(''); setPwConfirm('');
+                } catch (err) {
+                    setPwStatus('error:' + err.message);
+                } finally {
+                    setPwLoading(false);
+                }
+            };
+
+            return (
+                <div className="bg-white rounded-lg shadow p-6">
+                    <h2 className="text-xl font-bold text-slate-900 mb-4">Change Password</h2>
+                    <div className="max-w-sm space-y-3">
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">Current password</label>
+                            <input type="password" value={pwCurrent} onChange={e => setPwCurrent(e.target.value)}
+                                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">New password</label>
+                            <input type="password" value={pwNew} onChange={e => setPwNew(e.target.value)}
+                                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                            {pwNew.length > 0 && (
+                                <ul className="mt-2 space-y-1">
+                                    {PW_RULES.map(rule => {
+                                        const pass = rule.test(pwNew);
+                                        return (
+                                            <li key={rule.id} className={`flex items-center gap-1.5 text-xs ${pass ? 'text-green-600' : 'text-slate-400'}`}>
+                                                <span>{pass ? '✓' : '○'}</span><span>{rule.label}</span>
+                                            </li>
+                                        );
+                                    })}
+                                </ul>
+                            )}
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">Confirm new password</label>
+                            <input type="password" value={pwConfirm} onChange={e => setPwConfirm(e.target.value)}
+                                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                        </div>
+                        {pwStatus && (
+                            <div className={`text-sm p-3 rounded ${pwStatus.startsWith('success') ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
+                                {pwStatus.replace(/^(success|error):/, '')}
+                            </div>
+                        )}
+                        <button onClick={handleChangePassword} disabled={pwLoading || !pwCurrent || !pwNew || !pwConfirm}
+                            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition-colors disabled:opacity-50">
+                            {pwLoading ? 'Updating…' : 'Update Password'}
+                        </button>
+                    </div>
+                </div>
+            );
+        };
+
         // File Uploader Component
         const FileUploader = ({ onDataLoaded, hasData, clearData, wipeAllData, isAdmin }) => {
             const [personnelFile, setPersonnelFile] = useState(null);
@@ -3210,7 +3292,7 @@
         // ========================================================================
         
         const NLQ_COOLDOWN_MS = 8000; // minimum ms between queries
-        const nlqLastQuery = React.useRef(0);
+        const nlqLastQuery = { current: 0 }; // plain mutable ref - must not use React.useRef outside a component
 
         const NaturalLanguageQuery = () => {
             const [query, setQuery] = useState('');
@@ -9432,87 +9514,7 @@
                     </div>
                     
                     {/* Change Password */}
-                    {(() => {
-                        const [pwCurrent, setPwCurrent] = React.useState('');
-                        const [pwNew, setPwNew] = React.useState('');
-                        const [pwConfirm, setPwConfirm] = React.useState('');
-                        const [pwStatus, setPwStatus] = React.useState('');
-                        const [pwLoading, setPwLoading] = React.useState(false);
-
-                        const PW_RULES = [
-                            { id: 'length',  label: 'At least 10 characters',       test: p => p.length >= 10 },
-                            { id: 'upper',   label: 'One uppercase letter (A-Z)',    test: p => /[A-Z]/.test(p) },
-                            { id: 'lower',   label: 'One lowercase letter (a-z)',    test: p => /[a-z]/.test(p) },
-                            { id: 'number',  label: 'One number (0-9)',              test: p => /[0-9]/.test(p) },
-                            { id: 'special', label: 'One special character (!@#$…)', test: p => /[^A-Za-z0-9]/.test(p) },
-                        ];
-                        const pwValid = PW_RULES.every(r => r.test(pwNew));
-
-                        const handleChangePassword = async () => {
-                            setPwStatus('');
-                            if (!pwValid) { setPwStatus('error:New password does not meet the requirements.'); return; }
-                            if (pwNew !== pwConfirm) { setPwStatus('error:New passwords do not match.'); return; }
-                            setPwLoading(true);
-                            try {
-                                // Re-authenticate with current password first
-                                const { data: { user } } = await supabase.auth.getUser();
-                                const { error: signInError } = await supabase.auth.signInWithPassword({ email: user.email, password: pwCurrent });
-                                if (signInError) { setPwStatus('error:Current password is incorrect.'); return; }
-                                const { error } = await supabase.auth.updateUser({ password: pwNew });
-                                if (error) throw error;
-                                setPwStatus('success:Password updated successfully.');
-                                setPwCurrent(''); setPwNew(''); setPwConfirm('');
-                            } catch (err) {
-                                setPwStatus('error:' + err.message);
-                            } finally {
-                                setPwLoading(false);
-                            }
-                        };
-
-                        return (
-                            <div className="bg-white rounded-lg shadow p-6">
-                                <h2 className="text-xl font-bold text-slate-900 mb-4">Change Password</h2>
-                                <div className="max-w-sm space-y-3">
-                                    <div>
-                                        <label className="block text-sm font-medium text-slate-700 mb-1">Current password</label>
-                                        <input type="password" value={pwCurrent} onChange={e => setPwCurrent(e.target.value)}
-                                            className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-slate-700 mb-1">New password</label>
-                                        <input type="password" value={pwNew} onChange={e => setPwNew(e.target.value)}
-                                            className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                                        {pwNew.length > 0 && (
-                                            <ul className="mt-2 space-y-1">
-                                                {PW_RULES.map(rule => {
-                                                    const pass = rule.test(pwNew);
-                                                    return (
-                                                        <li key={rule.id} className={`flex items-center gap-1.5 text-xs ${pass ? 'text-green-600' : 'text-slate-400'}`}>
-                                                            <span>{pass ? '✓' : '○'}</span><span>{rule.label}</span>
-                                                        </li>
-                                                    );
-                                                })}
-                                            </ul>
-                                        )}
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-slate-700 mb-1">Confirm new password</label>
-                                        <input type="password" value={pwConfirm} onChange={e => setPwConfirm(e.target.value)}
-                                            className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                                    </div>
-                                    {pwStatus && (
-                                        <div className={`text-sm p-3 rounded ${pwStatus.startsWith('success') ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
-                                            {pwStatus.replace(/^(success|error):/, '')}
-                                        </div>
-                                    )}
-                                    <button onClick={handleChangePassword} disabled={pwLoading || !pwCurrent || !pwNew || !pwConfirm}
-                                        className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition-colors disabled:opacity-50">
-                                        {pwLoading ? 'Updating…' : 'Update Password'}
-                                    </button>
-                                </div>
-                            </div>
-                        );
-                    })()}
+                    <ChangePasswordPanel />
 
                     {/* System Information */}
                     <div className="bg-slate-50 rounded-lg shadow p-6 border border-slate-200">

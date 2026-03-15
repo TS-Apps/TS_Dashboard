@@ -2190,7 +2190,7 @@
                     console.log(`📋 Processing ${data.moduleCompletions.length} records from import...`);
                     
                     const records = data.moduleCompletions.map(mc => ({
-                        
+                        user_id: userId,
                         p_number: mc.pNumber,
                         section: mc.section,
                         module_code: mc.moduleCode,
@@ -2287,10 +2287,11 @@
         // NEW: Add junior modules incrementally without deleting existing data
         const addJuniorModules = async (newModules) => {
             try {
-                console.log(`➕ Adding ${newModules.length} new junior module(s)...`);
-                
+                const { data: { user } } = await supabase.auth.getUser();
+                if (!user) throw new Error('Not authenticated');
+
                 const records = newModules.map(mc => ({
-                    
+                    user_id: user.id,
                     p_number: mc.pNumber,
                     section: mc.section,
                     module_code: mc.moduleCode,
@@ -8339,6 +8340,7 @@
             
             const [resetPersonnel, setResetPersonnel] = useState(false);
             const [resetQuals, setResetQuals] = useState(false);
+            const [resetting, setResetting] = useState(false);
 
             // ---- Full Backup ----
             const exportFullBackup = async () => {
@@ -8450,7 +8452,7 @@
                                 rankHistory: backup.juniorRankHistory || [],
                                 sectionBadges: backup.juniorSectionBadges || []
                             });
-                            if (!result.success) throw new Error('Failed to restore junior data');
+                            if (!result) throw new Error('Failed to restore junior data');
                         }
 
                         await recordUpload('full_backup_import');
@@ -8458,8 +8460,8 @@
                         window.location.reload();
                     } catch (err) {
                         console.error('Restore error:', err);
-                        setUploadStatus('Restore failed. Check console for details.');
-                        setTimeout(() => setUploadStatus(''), 4000);
+                        setUploadStatus(`error:Restore failed: ${err.message}`);
+                        setTimeout(() => setUploadStatus(''), 6000);
                     }
                 };
                 reader.readAsText(file);
@@ -8475,6 +8477,7 @@
                 if (resetQuals) parts.push('qualifications');
                 if (!confirm(`Reset ${parts.join(' and ')}? This cannot be undone. Logos are preserved.`)) return;
 
+                setResetting(true);
                 setUploadStatus('Resetting, please wait...');
                 let hadError = false;
 
@@ -8501,6 +8504,7 @@
                 setUploadStatus(msg);
                 setResetPersonnel(false);
                 setResetQuals(false);
+                setResetting(false);
 
                 // After a short pause, clear in-memory state in the parent and navigate to upload.
                 // No page reload needed - this is reliable regardless of DB errors.
@@ -9129,15 +9133,15 @@
                                 </div>
                                 <button
                                     onClick={handleSelectiveReset}
-                                    disabled={!resetPersonnel && !resetQuals}
+                                    disabled={resetting || (!resetPersonnel && !resetQuals)}
                                     className={`px-4 py-2 rounded-lg font-semibold w-full flex items-center justify-center gap-2 transition-colors ${
-                                        (resetPersonnel || resetQuals)
+                                        (!resetting && (resetPersonnel || resetQuals))
                                             ? 'bg-blue-600 text-white hover:bg-blue-700'
                                             : 'bg-slate-200 text-slate-400 cursor-not-allowed'
                                     }`}
                                 >
-                                    <Icon name="RefreshCw" className="w-4 h-4" />
-                                    Reset Selected Data
+                                    <Icon name="RefreshCw" className={`w-4 h-4 ${resetting ? 'animate-spin' : ''}`} />
+                                    {resetting ? 'Resetting…' : 'Reset Selected Data'}
                                 </button>
                             </div>
                             

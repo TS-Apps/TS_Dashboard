@@ -60,9 +60,13 @@ try {
     process.exit(1);
 }
 
-// ── 3. Write compiled JS to dashboard.js ─────────────────────────────────────
-fs.writeFileSync(OUT, compiled, 'utf8');
-console.log('dashboard.js written');
+// ── 3. Write compiled JS to dashboard.js (IIFE-wrapped) ──────────────────────
+// Wrapping in an IIFE isolates all declarations (e.g. `const supabase`) from
+// the global scope, preventing conflicts with UMD CDN globals like
+// `var supabase` exported by @supabase/supabase-js.
+const output = `(function () {\n"use strict";\n${compiled}\n})();\n`;
+fs.writeFileSync(OUT, output, 'utf8');
+console.log('dashboard.js written (IIFE-wrapped)');
 
 // ── 4. Patch index.html to reference dashboard.js (external) ─────────────────
 // Replace:  <script type="text/babel"> ... </script>

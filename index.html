@@ -8,30 +8,20 @@
     <!-- Favicon -->
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚓</text></svg>" />
     
-    <!-- SRI hashes computed from pinned npm package versions (same bytes as unpkg/cdnjs/jsdelivr).
-         Regenerate with: npm run build  (or ./generate-sri.sh when CDN access is available) -->
-    <script crossorigin="anonymous"
-            integrity="sha384-tMH8h3BGESGckSAVGZ82T9n90ztNXxvdwvdM6UoR56cYcf+0iGXBliJ29D+wZ/x8"
-            src="https://unpkg.com/react@18.2.0/umd/react.production.min.js"></script>
-    <script crossorigin="anonymous"
-            integrity="sha384-bm7MnzvK++ykSwVJ2tynSE5TRdN+xL418osEVF2DE/L/gfWHj91J2Sphe582B1Bh"
-            src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
+    <!-- CDN dependencies (pinned to exact versions).
+         SRI hashes should be added once verifiable from a network-connected environment
+         by running: ./generate-sri.sh -->
+    <script crossorigin="anonymous" src="https://unpkg.com/react@18.2.0/umd/react.production.min.js"></script>
+    <script crossorigin="anonymous" src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
 
     <!-- Tailwind CSS: pre-generated static file (see build.js / package.json) -->
     <link rel="stylesheet" href="tailwind.css" />
 
-    <script crossorigin="anonymous"
-            integrity="sha384-YldTVv/UDdC82gqy4Ghka4eb1xaltbN1mDXPw++0FD/4cBAqpU0Ja4xlznrCA5P1"
-            src="https://unpkg.com/lucide@0.358.0/dist/umd/lucide.min.js"></script>
+    <script crossorigin="anonymous" src="https://unpkg.com/lucide@0.358.0/dist/umd/lucide.min.js"></script>
+    <script crossorigin="anonymous" src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
-    <script crossorigin="anonymous"
-            integrity="sha384-JcnsjUPPylna1s1fvi1u12X5qjY5OL56iySh75FdtrwhO/SWXgMjoVqcKyIIWOLk"
-            src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-
-    <!-- Supabase Client (non-minified UMD; jsdelivr serves same bytes as npm package) -->
-    <script crossorigin="anonymous"
-            integrity="sha384-8XssUxtqPx0hPSfYMU/HY5Heb2jR2yhWxwJGP67o6UoJUfeQNiEVxgQ63sSq6w/k"
-            src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.99.1/dist/umd/supabase.js"></script>
+    <!-- Supabase Client -->
+    <script crossorigin="anonymous" src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.99.1/dist/umd/supabase.js"></script>
 
     <style>
         body { background-color: #f1f5f9; }

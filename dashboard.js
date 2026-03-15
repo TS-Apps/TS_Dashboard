@@ -1,5 +1,5 @@
 // Market Harborough Sea Cadets Training Dashboard
-// Version 2.8.8 - Cloud Edition with Supabase
+// Version 2.8.9 - Cloud Edition with Supabase
 
 const {
   useState,
@@ -50,7 +50,7 @@ const checkIsAdmin = async () => {
 // CONSTANTS & DATA
 // ═══════════════════════════════════════════════════════════════════════════
 
-const DATA_VERSION = "2.8.8-Cloud-AI"; // Attendance: full names, cards in CadetFocus+JuniorDetail above stats
+const DATA_VERSION = "2.8.9-Cloud-AI"; // Attendance: full names, cards in CadetFocus+JuniorDetail above stats
 
 // Badge & Rank Image Maps
 const RANK_IMG_MAP = {

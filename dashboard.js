@@ -1,3 +1,5 @@
+(function () {
+"use strict";
 // Market Harborough Sea Cadets Training Dashboard
 // Version 2.8.9 - Cloud Edition with Supabase
 
@@ -14075,3 +14077,4 @@ const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(/*#__PURE__*/React.createElement(AuthWrapper, null, user => /*#__PURE__*/React.createElement(App, {
   user: user
 })));
+})();

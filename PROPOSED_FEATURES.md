@@ -101,21 +101,7 @@ Analysed against the existing feature set (v2.8.9-Cloud-AI) to identify the high
 
 ---
 
-## 8. Bulk Qualification Entry UI
-
-**Gap:** Qualifications are only imported via CSV. There is no in-app UI to record a batch of cadets completing the same module on the same date (e.g. after a training night).
-
-**Proposed additions:**
-- Select a module and a date, then tick-box select multiple cadets
-- Validate against rank eligibility before saving
-- Show a confirmation diff before committing to Supabase
-- Audit entry is auto-created in `upload_history`
-
-**Implementation notes:** Extends the existing admin/upload patterns; no new tables required.
-
----
-
-## 9. Offline / Progressive Web App Mode
+## 8. Offline / Progressive Web App Mode
 
 **Gap:** The app has a `site.webmanifest` but no service worker, so it is unusable without a network connection.
 
@@ -129,7 +115,7 @@ Analysed against the existing feature set (v2.8.9-Cloud-AI) to identify the high
 
 ---
 
-## 10. Advanced Search & Cross-Module Filtering
+## 9. Advanced Search & Cross-Module Filtering
 
 **Gap:** Each view (Cadet Focus, CTP Progress, Waterborne, etc.) has its own independent search. There is no global search.
 
@@ -146,7 +132,6 @@ Analysed against the existing feature set (v2.8.9-Cloud-AI) to identify the high
 | Feature | Effort | Impact | Priority |
 |---|---|---|---|
 | Promotion Readiness Report | Low | High | **P1** |
-| Bulk Qualification Entry UI | Low | High | **P1** |
 | Interactive Progress Charts | Medium | High | **P1** |
 | Retention Risk Enhancements | Low | Medium | **P2** |
 | Advanced Search | Medium | Medium | **P2** |

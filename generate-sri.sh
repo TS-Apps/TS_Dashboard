@@ -12,7 +12,7 @@ URLS=(
   "https://unpkg.com/@babel/standalone@7.23.10/babel.min.js"
   "https://unpkg.com/lucide@0.358.0/dist/umd/lucide.min.js"
   "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"
-  "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7/dist/umd/supabase.min.js"
+  "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.99.1/dist/umd/supabase.min.js"
 )
 
 echo "Generating SRI hashes..."

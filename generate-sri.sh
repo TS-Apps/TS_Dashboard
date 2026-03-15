@@ -26,5 +26,6 @@ for url in "${URLS[@]}"; do
   echo "integrity=\"sha384-${hash}\""
   echo ""
 done
-echo "Done. Verify these match the hashes already in index.html."
-echo "If they differ, update index.html and re-test in a browser."
+echo "Done. Add each integrity=\"sha384-...\" attribute to the matching <script> tag in index.html."
+echo "IMPORTANT: hashes must be computed by fetching from the live CDN URL (this script),"
+echo "           NOT from local npm package files, as CDN content may differ from npm."

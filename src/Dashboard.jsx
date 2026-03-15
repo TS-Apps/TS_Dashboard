@@ -1036,9 +1036,9 @@ const Icon = ({ name, className }) => {
             
             const parts = dateStr.split(/[\/\-\s]/);
             if (parts.length === 3) {
-                const day = parseInt(parts[0]);
-                const year = parseInt(parts[2]);
-                let month = parseInt(parts[1]) - 1; 
+                const day = parseInt(parts[0], 10);
+                const year = parseInt(parts[2], 10);
+                let month = parseInt(parts[1], 10) - 1;
 
                 if (isNaN(month)) {
                     const months = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
@@ -1325,7 +1325,7 @@ const Icon = ({ name, className }) => {
                 const reader = new FileReader();
                 reader.onload = (e) => {
                     const base64 = e.target.result;
-                    
+
                     // Store in localStorage
                     if (type === 'crest') {
                         localStorage.setItem('unit_crest', base64);
@@ -1338,6 +1338,7 @@ const Icon = ({ name, className }) => {
                         setRmcLogoPreview(base64);
                     }
                 };
+                reader.onerror = () => setError('Failed to read image file. Please try again.');
                 reader.readAsDataURL(file);
             };
 
@@ -1354,9 +1355,10 @@ const Icon = ({ name, className }) => {
                 }
             };
 
-            const readFile = (file) => new Promise((resolve) => {
+            const readFile = (file) => new Promise((resolve, reject) => {
                 const reader = new FileReader();
                 reader.onload = (e) => resolve(e.target.result);
+                reader.onerror = () => reject(new Error(`Failed to read file: ${file.name}`));
                 reader.readAsText(file);
             });
 
@@ -4763,6 +4765,7 @@ const Icon = ({ name, className }) => {
                 const file = e.target.files[0];
                 if (!file) return;
                 const reader = new FileReader();
+                reader.onerror = () => { alert('Failed to read junior data file. Please try again.'); };
                 reader.onload = (event) => {
                     try {
                         const imported = JSON.parse(event.target.result);
@@ -4972,6 +4975,7 @@ const Icon = ({ name, className }) => {
                                         if (!file) return;
                                         
                                         const reader = new FileReader();
+                                        reader.onerror = () => { alert('Failed to read CSV file. Please try again.'); };
                                         reader.onload = (event) => {
                                             try {
                                                 const text = event.target.result;

@@ -951,7 +951,6 @@ const Icon = ({ name, className }) => {
             }
         };
         
-        console.log("Junior Sea Cadets data loaded - Stage 2 active");
 
         // ============================================================================
         // SECTION 2: HELPER FUNCTIONS
@@ -6549,34 +6548,5 @@ const Icon = ({ name, className }) => {
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<App />);
         
-        console.log(`RC2.68e loaded successfully! Version: ${DATA_VERSION}`);
-        console.log("RC2.68e FEATURE: JSC STEM Award displayed in Junior Proficiencies box 🔬");
-        console.log("RC2.68d IMPROVED: Junior Proficiencies and Commodore's Pennant side-by-side (saves vertical space)");
-        console.log("RC2.68c IMPROVED: Alert boxes match section colours, Pennant moved below Section Progress");
-        console.log("RC2.68b IMPROVED: Pennant box moved below age section, shows only remaining requirements");
-        console.log("RC2.68a CORRECTED: Commodore's Broad Pennant requirements - 4 coloured badges + 8 extra modules each");
-        console.log("RC2.68 NEW FEATURE: Commodore's Pennant requirements display on Junior Focus view");
-        console.log("RC2.67d FEATURE: Template now pre-filled with existing completions (X marks) ✓");
-        console.log("RC2.67c BUGFIX: Fixed CSV header format - names properly formatted ✓");
-        console.log("RC2.67b BUGFIX: Fixed template download with all 335 official junior modules ✓");
-        console.log("RC2.67a BUGFIX: Fixed template download button (corrected constant name)");
-        console.log("RC2.67 BUG FIXES:");
-        console.log("  - Waterborne page now shows cadets only (adults excluded)");
-        console.log("  - Text updated: 'Bulk Upload Junior Modules from Legacy System'");
-        console.log("  - Template format: Grid with X marks (modules down, cadets across)");
-        console.log("RC2.66 FIXED: Recognize numeric-only P-Number format (7-8 digits like 11806919)");
-        console.log("RC2.65 FIXED: Recognize adult volunteer P-Number formats (CV##### and L######L) - no more false warnings!");
-        console.log("RC2.65 FIXED: Missing rank now treated as 'Unit Assistant (UA)' for adult volunteers");
-        console.log("RC2.64 NEW: Persistent warnings banner - Validation warnings now stay visible after import and can be dismissed");
-        console.log("RC2.63 NEW: Download validation warnings as CSV + More lenient validation for Westminster data");
-        console.log("RC2.62a BUGFIX: Fixed duplicate function declaration error");
-        console.log("RC2.62 NEW FEATURE: Enhanced Bulk Upload - Row-by-row validation, error reporting, and import summary ✓");
-        console.log("RC2.62 ADJUSTMENT: PDF Export button moved to header next to junior selector");
-        console.log("RC2.61 NEW FEATURE: Individual PDF Reports - Export professional progress reports with 'Export PDF Report' button 📄");
-        console.log("RC2.60 NEW FEATURE: Progress Alerts - Shows when juniors are 1-2 modules away from earning badges 🎯⭐");
-        console.log("RC2.59a BUGFIX: Fixed ReferenceError in isJunior function");
-        console.log("RC2.59 HIGH PRIORITY FIXES: Module deletion, validation, 12-year-old boundary, checkmarks, ARIA labels");
-        console.log("RC2.58: CRITICAL FIX - Corrected 341 official Junior modules from MSSC syllabus");
-        console.log("Features: Home → Cadet Focus → Juniors → Junior Progress (GRID) → CTP → CTS → Waterborne → Awards → Training Plan");
 
 export default App;

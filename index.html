@@ -1874,9 +1874,9 @@
             
             const parts = dateStr.split(/[\/\-\s]/);
             if (parts.length === 3) {
-                const day = parseInt(parts[0]);
-                const year = parseInt(parts[2]);
-                let month = parseInt(parts[1]) - 1; 
+                const day = parseInt(parts[0], 10);
+                const year = parseInt(parts[2], 10);
+                let month = parseInt(parts[1], 10) - 1;
 
                 if (isNaN(month)) {
                     const months = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
@@ -2494,7 +2494,7 @@
                 const reader = new FileReader();
                 reader.onload = (e) => {
                     const base64 = e.target.result;
-                    
+
                     // Store in localStorage
                     if (type === 'crest') {
                         localStorage.setItem('unit_crest', base64);
@@ -2507,6 +2507,7 @@
                         setRmcLogoPreview(base64);
                     }
                 };
+                reader.onerror = () => setError('Failed to read image file. Please try again.');
                 reader.readAsDataURL(file);
             };
 
@@ -2523,9 +2524,10 @@
                 }
             };
 
-            const readFile = (file) => new Promise((resolve) => {
+            const readFile = (file) => new Promise((resolve, reject) => {
                 const reader = new FileReader();
                 reader.onload = (e) => resolve(e.target.result);
+                reader.onerror = () => reject(new Error(`Failed to read file: ${file.name}`));
                 reader.readAsText(file);
             });
 
@@ -3206,6 +3208,9 @@
         // NATURAL LANGUAGE QUERY COMPONENT - ENHANCED WITH CLAUDE AI
         // ========================================================================
         
+        const NLQ_COOLDOWN_MS = 8000; // minimum ms between queries
+        const nlqLastQuery = React.useRef(0);
+
         const NaturalLanguageQuery = () => {
             const [query, setQuery] = useState('');
             const [results, setResults] = useState(null);
@@ -3406,7 +3411,16 @@
 
             const handleQuery = async () => {
                 if (!query.trim()) return;
-                
+
+                const now = Date.now();
+                const elapsed = now - nlqLastQuery.current;
+                if (elapsed < NLQ_COOLDOWN_MS) {
+                    const wait = Math.ceil((NLQ_COOLDOWN_MS - elapsed) / 1000);
+                    setError(`Please wait ${wait} second${wait !== 1 ? 's' : ''} before sending another query.`);
+                    return;
+                }
+                nlqLastQuery.current = now;
+
                 setLoading(true);
                 setError(null);
                 setResults(null);
@@ -8283,7 +8297,7 @@
             
             const handleLogoUpload = (file, type) => {
                 if (!file) return;
-                
+
                 const reader = new FileReader();
                 reader.onload = (e) => {
                     const base64 = e.target.result;
@@ -8302,6 +8316,7 @@
                     }
                     setTimeout(() => setUploadStatus(''), 3000);
                 };
+                reader.onerror = () => setUploadStatus('error:Failed to read image file. Please try again.');
                 reader.readAsDataURL(file);
             };
             
@@ -8386,6 +8401,7 @@
                 if (!file) return;
                 e.target.value = '';
                 const reader = new FileReader();
+                reader.onerror = () => { setUploadStatus('error:Failed to read backup file. Please try again.'); };
                 reader.onload = async (event) => {
                     try {
                         const backup = JSON.parse(event.target.result);
@@ -8529,10 +8545,10 @@
                 const file = e.target.files[0];
                 if (!file) return;
                 const reader = new FileReader();
+                reader.onerror = () => { alert('Failed to read junior data file. Please try again.'); };
                 reader.onload = async (event) => {
                     try {
                         const imported = JSON.parse(event.target.result);
-                        console.log(`📦 Junior import: ${imported.moduleCompletions?.length || 0} completions found`);
                         
                         if (confirm(`Import ${imported.moduleCompletions?.length || 0} junior module completions? This will replace all junior data in Supabase.`)) {
                             // Get current user from Supabase session
@@ -8928,11 +8944,12 @@
                                         if (!file) return;
                                         
                                         const reader = new FileReader();
+                                        reader.onerror = () => { alert('Failed to read CSV file. Please try again.'); };
                                         reader.onload = (event) => {
                                             try {
                                                 const text = event.target.result;
                                                 const lines = text.split('\n').filter(line => line.trim());
-                                                
+
                                                 if (lines.length < 2) {
                                                     alert('Template appears empty. Add X marks for completed modules and try again.');
                                                     return;

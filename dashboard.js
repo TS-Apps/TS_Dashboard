@@ -11872,7 +11872,9 @@ const JuniorsView = ({
   }, /*#__PURE__*/React.createElement(Icon, {
     name: "FileDown",
     className: "w-4 h-4"
-  }), "Export PDF")))), (() => {
+  }), "Export PDF")))), /*#__PURE__*/React.createElement("div", {
+    className: "grid grid-cols-1 md:grid-cols-3 gap-4"
+  }, (() => {
     // Check ALL personnel (not just juniors) for promotion readiness
     const cadetsReadyForPromotion = personnel.filter(cadet => {
       if (!isCadet(cadet)) return false; // Exclude adults/staff
@@ -11991,6 +11993,34 @@ const JuniorsView = ({
       className: "text-sm text-green-800"
     }, juniorsWithAlerts.map(j => j.name).join(', '), " ", juniorsWithAlerts.length === 1 ? 'needs' : 'need', " just 1-2 more modules"))));
   })(), (() => {
+    // Check ALL juniors for Commodore's Broad Pennant eligibility
+    const pennantDue = juniors.filter(junior => {
+      const juniorMods = juniorData?.moduleCompletions?.filter(m => m.pNumber === junior.pNumber) || [];
+      const redCount = juniorMods.filter(m => m.section === 'red').length;
+      const blueCount = juniorMods.filter(m => m.section === 'blue').length;
+      const greenCount = juniorMods.filter(m => m.section === 'green').length;
+      const yellowCount = juniorMods.filter(m => m.section === 'yellow').length;
+      const hasRedBadge = qualifications?.some(q => q.pNumber === junior.pNumber && q.module.includes("JSC Red Unit Activities Badge"));
+      const hasBlueBadge = qualifications?.some(q => q.pNumber === junior.pNumber && q.module.includes("JSC Blue Waterborne Activities Badge"));
+      const hasGreenBadge = qualifications?.some(q => q.pNumber === junior.pNumber && q.module.includes("JSC Green Outdoor & Recreation Activities Badge"));
+      const hasYellowBadge = qualifications?.some(q => q.pNumber === junior.pNumber && q.module.includes("JSC Yellow Community & Citizenship Activities Badge"));
+      const hasPennant = qualifications?.some(q => q.pNumber === junior.pNumber && q.module.includes("JSC Commodores Broad Pennant"));
+      return hasRedBadge && hasBlueBadge && hasGreenBadge && hasYellowBadge && redCount >= 23 && blueCount >= 23 && greenCount >= 23 && yellowCount >= 23 && !hasPennant;
+    });
+    if (pennantDue.length === 0) return null;
+    return /*#__PURE__*/React.createElement("div", {
+      className: "bg-gradient-to-r from-amber-50 to-yellow-50 border-2 border-amber-300 rounded-lg p-4 shadow"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "flex items-center gap-3"
+    }, /*#__PURE__*/React.createElement(Icon, {
+      name: "Award",
+      className: "w-6 h-6 text-amber-600"
+    }), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("p", {
+      className: "font-bold text-amber-900"
+    }, pennantDue.length, " junior", pennantDue.length !== 1 ? 's have' : ' has', " the Commodore's Broad Pennant due!"), /*#__PURE__*/React.createElement("p", {
+      className: "text-sm text-amber-800"
+    }, pennantDue.map(j => j.name).join(', '), " - all four core badges awarded + 8 extra modules from each section completed"))));
+  })()) /* end status boxes grid */, (() => {
     const crestNeeded = [];
     const stemNeeded = [];
     juniors.forEach(junior => {
@@ -12716,28 +12746,6 @@ const JuniorDetail = ({
     }, alert.name, ": ", alert.count, "/15 modules completed"), /*#__PURE__*/React.createElement("p", {
       className: `text-xs ${alert.textColor}`
     }, alert.message, " ", alert.urgency === 'high' ? '🎯' : '⭐'))))));
-  })(), (() => {
-    const hasRedBadge = qualifications?.some(q => q.pNumber === junior.pNumber && q.module.includes("JSC Red Unit Activities Badge"));
-    const hasBlueBadge = qualifications?.some(q => q.pNumber === junior.pNumber && q.module.includes("JSC Blue Waterborne Activities Badge"));
-    const hasGreenBadge = qualifications?.some(q => q.pNumber === junior.pNumber && q.module.includes("JSC Green Outdoor & Recreation Activities Badge"));
-    const hasYellowBadge = qualifications?.some(q => q.pNumber === junior.pNumber && q.module.includes("JSC Yellow Community & Citizenship Activities Badge"));
-    const hasPennant = qualifications?.some(q => q.pNumber === junior.pNumber && q.module.includes("JSC Commodores Broad Pennant"));
-    const meetsRequirements = hasRedBadge && hasBlueBadge && hasGreenBadge && hasYellowBadge && redModules >= 23 && blueModules >= 23 && greenModules >= 23 && yellowModules >= 23;
-    if (meetsRequirements && !hasPennant) {
-      return /*#__PURE__*/React.createElement("div", {
-        className: "mt-4 p-4 bg-gradient-to-r from-amber-50 to-yellow-50 border-2 border-amber-300 rounded-lg"
-      }, /*#__PURE__*/React.createElement("div", {
-        className: "flex items-center gap-3"
-      }, /*#__PURE__*/React.createElement(Icon, {
-        name: "Award",
-        className: "w-8 h-8 text-amber-600"
-      }), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("p", {
-        className: "font-bold text-amber-900 text-lg"
-      }, "COMMODORE'S BROAD PENNANT DUE!"), /*#__PURE__*/React.createElement("p", {
-        className: "text-sm text-amber-800"
-      }, "All four core badges awarded + 8 extra modules from each section completed"))));
-    }
-    return null;
   })()), /*#__PURE__*/React.createElement("div", {
     className: "grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6"
   }, /*#__PURE__*/React.createElement("div", {

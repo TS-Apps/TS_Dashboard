@@ -7516,6 +7516,172 @@ const CadetFocus = ({
     };
   }, [qualsData, selectedCadetPNum, selectedCadet]);
 
+  const exportCadetPDF = () => {
+    if (!selectedCadet) return;
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    const pageW = 210;
+    const margin = 14;
+    const contentW = pageW - margin * 2;
+    let y = 14;
+
+    const checkPage = (needed = 8) => {
+      if (y + needed > 282) { doc.addPage(); y = 14; }
+    };
+    const rule = () => {
+      doc.setDrawColor(200, 200, 200);
+      doc.line(margin, y, pageW - margin, y);
+    };
+
+    // ── PAGE 1: HEADER ────────────────────────────────────────────────────────
+    const unitName = cleanUnitName(selectedCadet.unit || '');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(12);
+    doc.text(unitName, margin, y);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.text(`Generated: ${new Date().toLocaleDateString('en-GB')}`, pageW - margin, y, { align: 'right' });
+    y += 5; rule(); y += 5;
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(15);
+    doc.text(selectedCadet.name, margin, y);
+    doc.setFontSize(10);
+    doc.text(selectedCadet.rank, pageW - margin, y, { align: 'right' });
+    y += 5;
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    const details = [
+      selectedCadet.pNumber ? `P/No: ${selectedCadet.pNumber}` : null,
+      cadetAge !== 'Unknown' ? `Age: ${cadetAge}` : null,
+      selectedCadet.tos ? `In service: ${formatDate(parseDate(selectedCadet.tos))}` : null,
+      selectedCadet.rankDate ? `Current rank since: ${formatDate(parseDate(selectedCadet.rankDate))}` : null,
+    ].filter(Boolean).join('   |   ');
+    doc.text(details, margin, y);
+    y += 4; rule(); y += 6;
+
+    // ── SECTION HELPER ────────────────────────────────────────────────────────
+    const drawSection = (title, items) => {
+      if (!items || items.length === 0) return;
+      checkPage(12);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8);
+      doc.setTextColor(80, 80, 80);
+      doc.setFillColor(240, 240, 245);
+      doc.rect(margin, y - 3.5, contentW, 5.5, 'F');
+      doc.text(title.toUpperCase(), margin + 2, y);
+      y += 5.5;
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
+      doc.setTextColor(0, 0, 0);
+      items.forEach(item => {
+        checkPage(5);
+        const label = item.name || item.module || '';
+        const dateStr = item.date ? formatDate(item.date) : '';
+        doc.text(`\u2022 ${label}`, margin + 2, y);
+        if (dateStr) doc.text(dateStr, pageW - margin, y, { align: 'right' });
+        y += 4.5;
+      });
+      y += 2;
+    };
+
+    // ── ACHIEVEMENTS ──────────────────────────────────────────────────────────
+    drawSection('Specialisations', cadetSpecs);
+    drawSection('Proficiencies', cadetProfs);
+    drawSection('Waterborne Qualifications', cadetWaterborne);
+
+    const allAwards = [];
+    if (gcbInfo && gcbInfo.text && gcbInfo.text !== 'None') allAwards.push({ name: gcbInfo.text });
+    if (appointmentInfo) allAwards.push({ name: appointmentInfo.text });
+    cadetSpecificAwards.forEach(a => allAwards.push({ name: a.name, date: a.date }));
+    cadetJuniorAwards.forEach(a => allAwards.push({ name: a.name, date: a.date }));
+    drawSection('Awards & Other Qualifications', allAwards);
+
+    // ── PAGE 2: NEXT RANK REQUIREMENTS ───────────────────────────────────────
+    const isRMC = RMC_RANK_ORDER.includes(selectedCadet.rank);
+    const rankOrder = isRMC ? RMC_RANK_ORDER : SCC_RANK_ORDER;
+    const syllabus = isRMC ? RMC_SYLLABUS : SCC_SYLLABUS;
+    const nextRank = rankOrder[rankOrder.indexOf(selectedCadet.rank) + 1];
+    const nextSyllabus = nextRank ? syllabus[nextRank] : null;
+
+    doc.addPage();
+    y = 14;
+    doc.setTextColor(0, 0, 0);
+
+    if (!nextSyllabus) {
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(12);
+      doc.text('HIGHEST RANK ACHIEVED', margin, y);
+      y += 7;
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(10);
+      doc.text(`${selectedCadet.name} holds the highest rank: ${selectedCadet.rank}.`, margin, y);
+    } else {
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(12);
+      doc.text(`REQUIREMENTS FOR PROMOTION TO: ${nextRank.toUpperCase()}`, margin, y);
+      y += 5; rule(); y += 6;
+
+      // Progress bar
+      let total = 0, passed = 0;
+      Object.values(nextSyllabus).forEach(cat => cat.forEach(m => {
+        total++;
+        if (qualsData.some(q => q.pNumber === selectedCadet.pNumber && q.module.includes(m.code))) passed++;
+      }));
+      const pct = total === 0 ? 100 : Math.round(passed / total * 100);
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9);
+      doc.setTextColor(60, 60, 60);
+      doc.text(`Progress: ${passed} of ${total} modules completed (${pct}%)`, margin, y);
+      y += 4;
+      doc.setFillColor(220, 220, 220);
+      doc.roundedRect(margin, y, contentW, 4, 1, 1, 'F');
+      if (pct > 0) {
+        const [r, g, b] = pct === 100 ? [34, 197, 94] : [99, 102, 241];
+        doc.setFillColor(r, g, b);
+        doc.roundedRect(margin, y, contentW * pct / 100, 4, 1, 1, 'F');
+      }
+      y += 10;
+
+      // Module checklist by category
+      doc.setTextColor(0, 0, 0);
+      Object.entries(nextSyllabus).forEach(([category, modules]) => {
+        checkPage(12);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(8);
+        doc.setTextColor(80, 80, 80);
+        doc.setFillColor(240, 240, 245);
+        doc.rect(margin, y - 3.5, contentW, 5.5, 'F');
+        doc.text(category.toUpperCase(), margin + 2, y);
+        y += 5.5;
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8);
+        modules.forEach(mod => {
+          checkPage(5);
+          const done = qualsData.some(q => q.pNumber === selectedCadet.pNumber && q.module.includes(mod.code));
+          const rec = done ? qualsData.find(q => q.pNumber === selectedCadet.pNumber && q.module.includes(mod.code)) : null;
+          doc.setTextColor(done ? 22 : 160, done ? 163 : 50, done ? 74 : 50);
+          doc.text(done ? '\u2713' : '\u25A1', margin + 2, y);
+          doc.setTextColor(0, 0, 0);
+          const label = `${mod.code}  ${mod.title}`;
+          doc.text(label.length > 65 ? label.slice(0, 63) + '\u2026' : label, margin + 8, y);
+          if (done && rec?.date) {
+            doc.setTextColor(120, 120, 120);
+            doc.text(formatDate(rec.date), pageW - margin, y, { align: 'right' });
+            doc.setTextColor(0, 0, 0);
+          }
+          y += 4.5;
+        });
+        y += 2;
+      });
+    }
+
+    const surname = selectedCadet.name.split(',')[0].trim().replace(/\s+/g, '_');
+    doc.save(`CadetFocus_${surname}_${new Date().toISOString().split('T')[0]}.pdf`);
+  };
+
   // Check if there are no cadets aged 12-17
   if (cadets.length === 0) {
     return /*#__PURE__*/React.createElement("div", {
@@ -7616,6 +7782,8 @@ const CadetFocus = ({
   }, "Cadet Focus"), /*#__PURE__*/React.createElement("p", {
     className: "text-slate-600"
   }, "Detailed view of achievements and awards"))), /*#__PURE__*/React.createElement("div", {
+    className: "flex gap-2 items-end"
+  }, /*#__PURE__*/React.createElement("div", {
     className: "w-full md:w-64"
   }, /*#__PURE__*/React.createElement("label", {
     className: "block text-xs font-semibold text-slate-700 uppercase mb-1"
@@ -7626,7 +7794,14 @@ const CadetFocus = ({
   }, sortedPersonnel.map(p => /*#__PURE__*/React.createElement("option", {
     key: p.pNumber,
     value: p.pNumber
-  }, p.name)))))), attendanceData && attendanceData.length > 0 && selectedCadet && (() => {
+  }, p.name)))), /*#__PURE__*/React.createElement("button", {
+    onClick: exportCadetPDF,
+    disabled: !selectedCadet,
+    className: "px-3 py-2 bg-green-600 hover:bg-green-700 disabled:bg-slate-300 text-white rounded-lg font-semibold text-xs transition-all flex items-center gap-1 whitespace-nowrap"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "FileDown",
+    className: "w-3 h-3"
+  }), "Export PDF"))), attendanceData && attendanceData.length > 0 && selectedCadet && (() => {
     const cadetAtt = attendanceData.filter(r => r.p_number === selectedCadet.pNumber);
     if (cadetAtt.length === 0) return null;
     const allMonths = [...new Set(attendanceData.map(r => r.attendance_date.slice(0, 7)))].sort();

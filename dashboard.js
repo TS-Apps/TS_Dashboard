@@ -7998,6 +7998,14 @@ const TrainingPlanner = ({
       category
     }, selectedRank, cadetsNeeding);
   };
+  // Detect if the loaded qualifications appear to contain no CTP/CTS modules at all
+  const hasAnySyllabusData = useMemo(() => {
+    const allCodes = Object.values(syllabus).flatMap(rank =>
+      Object.values(rank).flatMap(cat => cat.map(m => m.code.toLowerCase()))
+    );
+    return qualsData.some(q => q.module && allCodes.some(code => q.module.toLowerCase().includes(code)));
+  }, [qualsData, syllabus]);
+
   if (!currentSyllabus) {
     return /*#__PURE__*/React.createElement("div", {
       className: "space-y-6"
@@ -8197,7 +8205,16 @@ const TrainingPlanner = ({
   }, /*#__PURE__*/React.createElement(Icon, {
     name: "FileDown",
     className: "w-3 h-3"
-  }), "Export PDF")))), /*#__PURE__*/React.createElement("div", {
+  }), "Export PDF")))), !hasAnySyllabusData && /*#__PURE__*/React.createElement("div", {
+    className: "mb-4 p-3 bg-amber-50 border border-amber-300 rounded-lg flex items-start gap-3"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "TriangleAlert",
+    className: "w-5 h-5 text-amber-600 mt-0.5 shrink-0"
+  }), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("p", {
+    className: "text-sm font-semibold text-amber-900"
+  }, "No ", title.includes("CTS") ? "CTS" : "CTP", " module data found in the loaded qualifications"), /*#__PURE__*/React.createElement("p", {
+    className: "text-xs text-amber-800 mt-0.5"
+  }, "The uploaded qualifications file may be a partial or filtered export. Re-upload the full Westminster qualifications CSV to restore this view."))), /*#__PURE__*/React.createElement("div", {
     className: "bg-white rounded-lg shadow overflow-hidden border border-slate-200"
   }, /*#__PURE__*/React.createElement("div", {
     className: "planner-container"

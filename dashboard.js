@@ -6118,12 +6118,12 @@ const AwardsView = ({
       setSelectedAwardKeys(new Set(pastAwards.map(a => a.uniqueId)));
     }
   };
-  const generateCertificates = () => {
+  const generateCertificates = async () => {
     if (selectedAwardKeys.size === 0) {
       // Use a custom message box instead of alert()
       const message = "Please select at least one award to print.";
       console.log(message); // Console log fallback
-      // A custom modal/message box implementation is normally needed here. 
+      // A custom modal/message box implementation is normally needed here.
       // For brevity and compliance with single file constraint, using console.log/simple approach.
       return;
     }
@@ -6143,10 +6143,28 @@ const AwardsView = ({
     // Convert to proper case (e.g., "MARKET HARBOROUGH" -> "Market Harborough")
     unitName = unitName.toLowerCase().split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
 
-    // Load logos from localStorage
-    const unitCrest = localStorage.getItem('unit_crest');
-    const sccLogo = localStorage.getItem('scc_logo');
-    const rmcLogo = localStorage.getItem('rmc_logo');
+    // Load logo: try localStorage first, then fetch from Supabase Storage
+    const fetchLogo = async key => {
+      const cached = localStorage.getItem(key);
+      if (cached) return cached;
+      try {
+        const { data } = supabase.storage.from('logos').getPublicUrl(key);
+        const res = await fetch(data.publicUrl + '?t=' + Date.now());
+        if (!res.ok) return null;
+        const blob = await res.blob();
+        return await new Promise(resolve => {
+          const reader = new FileReader();
+          reader.onload = e => { localStorage.setItem(key, e.target.result); resolve(e.target.result); };
+          reader.onerror = () => resolve(null);
+          reader.readAsDataURL(blob);
+        });
+      } catch (_) { return null; }
+    };
+    const [unitCrest, sccLogo, rmcLogo] = await Promise.all([
+      fetchLogo('unit_crest'),
+      fetchLogo('scc_logo'),
+      fetchLogo('rmc_logo'),
+    ]);
 
     // Helper function to add image with preserved aspect ratio
     const itemsToPrint = pastAwards.filter(a => selectedAwardKeys.has(a.uniqueId));

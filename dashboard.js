@@ -3546,6 +3546,31 @@ const FileUploader = ({
   const [sccLogoPreview, setSccLogoPreview] = useState(localStorage.getItem('scc_logo') || null);
   const [rmcLogoPreview, setRmcLogoPreview] = useState(localStorage.getItem('rmc_logo') || null);
 
+  // Sync logos from Supabase Storage on mount (so any browser gets the latest logos)
+  useEffect(() => {
+    const logoEntries = [
+      { storageKey: 'unit_crest', localKey: 'unit_crest', setter: setUnitCrestPreview },
+      { storageKey: 'scc_logo',   localKey: 'scc_logo',   setter: setSccLogoPreview  },
+      { storageKey: 'rmc_logo',   localKey: 'rmc_logo',   setter: setRmcLogoPreview  },
+    ];
+    logoEntries.forEach(async ({ storageKey, localKey, setter }) => {
+      try {
+        const { data } = supabase.storage.from('logos').getPublicUrl(storageKey);
+        const url = data.publicUrl + '?t=' + Date.now();
+        const res = await fetch(url);
+        if (!res.ok) return;
+        const blob = await res.blob();
+        const reader = new FileReader();
+        reader.onload = e => {
+          const base64 = e.target.result;
+          localStorage.setItem(localKey, base64);
+          setter(base64);
+        };
+        reader.readAsDataURL(blob);
+      } catch (_) { /* no logo stored yet */ }
+    });
+  }, []);
+
   // Show admin-only message for non-admins (all hooks must be above this return)
   if (isAdmin === false) {
     return /*#__PURE__*/React.createElement("div", {
@@ -3600,37 +3625,37 @@ const FileUploader = ({
       return;
     }
 
-    // Convert to base64 and store
+    const storageKey = type === 'crest' ? 'unit_crest' : type === 'scc' ? 'scc_logo' : 'rmc_logo';
+
+    // Convert to base64, store locally, and upload to Supabase Storage
     const reader = new FileReader();
-    reader.onload = e => {
+    reader.onload = async e => {
       const base64 = e.target.result;
 
-      // Store in localStorage
-      if (type === 'crest') {
-        localStorage.setItem('unit_crest', base64);
-        setUnitCrestPreview(base64);
-      } else if (type === 'scc') {
-        localStorage.setItem('scc_logo', base64);
-        setSccLogoPreview(base64);
-      } else if (type === 'rmc') {
-        localStorage.setItem('rmc_logo', base64);
-        setRmcLogoPreview(base64);
-      }
+      // Store in localStorage and update preview
+      localStorage.setItem(storageKey, base64);
+      if (type === 'crest') setUnitCrestPreview(base64);
+      else if (type === 'scc') setSccLogoPreview(base64);
+      else if (type === 'rmc') setRmcLogoPreview(base64);
+
+      // Upload to Supabase Storage so all browsers can access it
+      const { error: uploadError } = await supabase.storage
+        .from('logos')
+        .upload(storageKey, file, { upsert: true, contentType: file.type });
+      if (uploadError) setError(`Logo saved locally but failed to sync to server: ${uploadError.message}`);
     };
     reader.onerror = () => setError('Failed to read image file. Please try again.');
     reader.readAsDataURL(file);
   };
-  const removeLogo = type => {
-    if (type === 'crest') {
-      localStorage.removeItem('unit_crest');
-      setUnitCrestPreview(null);
-    } else if (type === 'scc') {
-      localStorage.removeItem('scc_logo');
-      setSccLogoPreview(null);
-    } else if (type === 'rmc') {
-      localStorage.removeItem('rmc_logo');
-      setRmcLogoPreview(null);
-    }
+  const removeLogo = async type => {
+    const storageKey = type === 'crest' ? 'unit_crest' : type === 'scc' ? 'scc_logo' : 'rmc_logo';
+    localStorage.removeItem(storageKey);
+    if (type === 'crest') setUnitCrestPreview(null);
+    else if (type === 'scc') setSccLogoPreview(null);
+    else if (type === 'rmc') setRmcLogoPreview(null);
+
+    // Remove from Supabase Storage
+    await supabase.storage.from('logos').remove([storageKey]);
   };
   const readFile = file => new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -10490,7 +10515,7 @@ const DataUtilitiesView = ({
     fetchUploadHistory();
   };
 
-  // Load junior data from Supabase on mount
+  // Load junior data and sync logos from Supabase on mount
   useEffect(() => {
     fetchUploadHistory();
     fetchPendingRequests();
@@ -10516,45 +10541,65 @@ const DataUtilitiesView = ({
       }
     };
     loadData();
+
+    // Sync logos from Supabase Storage so any browser gets the latest
+    const logoEntries = [
+      { storageKey: 'unit_crest', localKey: 'unit_crest', setter: setUnitCrestPreview },
+      { storageKey: 'scc_logo',   localKey: 'scc_logo',   setter: setSccLogoPreview  },
+      { storageKey: 'rmc_logo',   localKey: 'rmc_logo',   setter: setRmcLogoPreview  },
+    ];
+    logoEntries.forEach(async ({ storageKey, localKey, setter }) => {
+      try {
+        const { data } = supabase.storage.from('logos').getPublicUrl(storageKey);
+        const url = data.publicUrl + '?t=' + Date.now();
+        const res = await fetch(url);
+        if (!res.ok) return;
+        const blob = await res.blob();
+        const reader = new FileReader();
+        reader.onload = e => {
+          const base64 = e.target.result;
+          localStorage.setItem(localKey, base64);
+          setter(base64);
+        };
+        reader.readAsDataURL(blob);
+      } catch (_) { /* no logo stored yet */ }
+    });
   }, []);
   const handleLogoUpload = (file, type) => {
     if (!file) return;
+    const storageKey = type === 'crest' ? 'unit_crest' : type === 'scc' ? 'scc_logo' : 'rmc_logo';
+    const label = type === 'crest' ? "Ship's Crest" : type === 'scc' ? 'SCC logo' : 'RMC logo';
     const reader = new FileReader();
-    reader.onload = e => {
+    reader.onload = async e => {
       const base64 = e.target.result;
-      if (type === 'scc') {
-        localStorage.setItem('scc_logo', base64);
-        setSccLogoPreview(base64);
-        setUploadStatus('SCC logo updated successfully!');
-      } else if (type === 'rmc') {
-        localStorage.setItem('rmc_logo', base64);
-        setRmcLogoPreview(base64);
-        setUploadStatus('RMC logo updated successfully!');
-      } else if (type === 'crest') {
-        localStorage.setItem('unit_crest', base64);
-        setUnitCrestPreview(base64);
-        setUploadStatus('Ship\'s Crest updated successfully!');
-      }
+      localStorage.setItem(storageKey, base64);
+      if (type === 'scc') setSccLogoPreview(base64);
+      else if (type === 'rmc') setRmcLogoPreview(base64);
+      else if (type === 'crest') setUnitCrestPreview(base64);
+      setUploadStatus(`${label} updated successfully!`);
       setTimeout(() => setUploadStatus(''), 3000);
+
+      // Upload to Supabase Storage so all browsers can access it
+      const { error: uploadError } = await supabase.storage
+        .from('logos')
+        .upload(storageKey, file, { upsert: true, contentType: file.type });
+      if (uploadError) setUploadStatus(`error:${label} saved locally but failed to sync to server: ${uploadError.message}`);
     };
     reader.onerror = () => setUploadStatus('error:Failed to read image file. Please try again.');
     reader.readAsDataURL(file);
   };
-  const removeLogo = type => {
-    if (type === 'scc') {
-      localStorage.removeItem('scc_logo');
-      setSccLogoPreview(null);
-      setUploadStatus('SCC logo removed');
-    } else if (type === 'rmc') {
-      localStorage.removeItem('rmc_logo');
-      setRmcLogoPreview(null);
-      setUploadStatus('RMC logo removed');
-    } else if (type === 'crest') {
-      localStorage.removeItem('unit_crest');
-      setUnitCrestPreview(null);
-      setUploadStatus('Ship\'s Crest removed');
-    }
+  const removeLogo = async type => {
+    const storageKey = type === 'crest' ? 'unit_crest' : type === 'scc' ? 'scc_logo' : 'rmc_logo';
+    const label = type === 'crest' ? "Ship's Crest" : type === 'scc' ? 'SCC logo' : 'RMC logo';
+    localStorage.removeItem(storageKey);
+    if (type === 'scc') setSccLogoPreview(null);
+    else if (type === 'rmc') setRmcLogoPreview(null);
+    else if (type === 'crest') setUnitCrestPreview(null);
+    setUploadStatus(`${label} removed`);
     setTimeout(() => setUploadStatus(''), 3000);
+
+    // Remove from Supabase Storage
+    await supabase.storage.from('logos').remove([storageKey]);
   };
   const [resetPersonnel, setResetPersonnel] = useState(false);
   const [resetQuals, setResetQuals] = useState(false);

@@ -7794,7 +7794,7 @@ const CadetFocus = ({
   }, sortedPersonnel.map(p => /*#__PURE__*/React.createElement("option", {
     key: p.pNumber,
     value: p.pNumber
-  }, p.name)))), /*#__PURE__*/React.createElement("button", {
+  }, p.name))))), /*#__PURE__*/React.createElement("button", {
     onClick: exportCadetPDF,
     disabled: !selectedCadet,
     className: "px-3 py-2 bg-green-600 hover:bg-green-700 disabled:bg-slate-300 text-white rounded-lg font-semibold text-xs transition-all flex items-center gap-1 whitespace-nowrap"

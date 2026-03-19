@@ -3546,8 +3546,16 @@ const FileUploader = ({
   const [sccLogoPreview, setSccLogoPreview] = useState(localStorage.getItem('scc_logo') || null);
   const [rmcLogoPreview, setRmcLogoPreview] = useState(localStorage.getItem('rmc_logo') || null);
 
-  // Sync logos from Supabase Storage on mount (so any browser gets the latest logos)
+  // Sync logos between Supabase Storage and localStorage on mount
   useEffect(() => {
+    const base64ToBlob = dataUrl => {
+      const [header, b64] = dataUrl.split(',');
+      const mime = header.match(/:(.*?);/)[1];
+      const binary = atob(b64);
+      const arr = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) arr[i] = binary.charCodeAt(i);
+      return new Blob([arr], { type: mime });
+    };
     const logoEntries = [
       { storageKey: 'unit_crest', localKey: 'unit_crest', setter: setUnitCrestPreview },
       { storageKey: 'scc_logo',   localKey: 'scc_logo',   setter: setSccLogoPreview  },
@@ -3556,18 +3564,21 @@ const FileUploader = ({
     logoEntries.forEach(async ({ storageKey, localKey, setter }) => {
       try {
         const { data } = supabase.storage.from('logos').getPublicUrl(storageKey);
-        const url = data.publicUrl + '?t=' + Date.now();
-        const res = await fetch(url);
-        if (!res.ok) return;
-        const blob = await res.blob();
-        const reader = new FileReader();
-        reader.onload = e => {
-          const base64 = e.target.result;
-          localStorage.setItem(localKey, base64);
-          setter(base64);
-        };
-        reader.readAsDataURL(blob);
-      } catch (_) { /* no logo stored yet */ }
+        const res = await fetch(data.publicUrl + '?t=' + Date.now());
+        if (res.ok) {
+          // Supabase has the logo — pull it down and cache locally
+          const blob = await res.blob();
+          const reader = new FileReader();
+          reader.onload = e => { localStorage.setItem(localKey, e.target.result); setter(e.target.result); };
+          reader.readAsDataURL(blob);
+        } else {
+          // Supabase doesn't have it — if localStorage does, push it up so other browsers benefit
+          const local = localStorage.getItem(localKey);
+          if (local) {
+            supabase.storage.from('logos').upload(storageKey, base64ToBlob(local), { upsert: true });
+          }
+        }
+      } catch (_) { /* network unavailable */ }
     });
   }, []);
 
@@ -10560,7 +10571,15 @@ const DataUtilitiesView = ({
     };
     loadData();
 
-    // Sync logos from Supabase Storage so any browser gets the latest
+    // Sync logos between Supabase Storage and localStorage
+    const base64ToBlob = dataUrl => {
+      const [header, b64] = dataUrl.split(',');
+      const mime = header.match(/:(.*?);/)[1];
+      const binary = atob(b64);
+      const arr = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) arr[i] = binary.charCodeAt(i);
+      return new Blob([arr], { type: mime });
+    };
     const logoEntries = [
       { storageKey: 'unit_crest', localKey: 'unit_crest', setter: setUnitCrestPreview },
       { storageKey: 'scc_logo',   localKey: 'scc_logo',   setter: setSccLogoPreview  },
@@ -10569,18 +10588,21 @@ const DataUtilitiesView = ({
     logoEntries.forEach(async ({ storageKey, localKey, setter }) => {
       try {
         const { data } = supabase.storage.from('logos').getPublicUrl(storageKey);
-        const url = data.publicUrl + '?t=' + Date.now();
-        const res = await fetch(url);
-        if (!res.ok) return;
-        const blob = await res.blob();
-        const reader = new FileReader();
-        reader.onload = e => {
-          const base64 = e.target.result;
-          localStorage.setItem(localKey, base64);
-          setter(base64);
-        };
-        reader.readAsDataURL(blob);
-      } catch (_) { /* no logo stored yet */ }
+        const res = await fetch(data.publicUrl + '?t=' + Date.now());
+        if (res.ok) {
+          // Supabase has the logo — pull it down and cache locally
+          const blob = await res.blob();
+          const reader = new FileReader();
+          reader.onload = e => { localStorage.setItem(localKey, e.target.result); setter(e.target.result); };
+          reader.readAsDataURL(blob);
+        } else {
+          // Supabase doesn't have it — if localStorage does, push it up so other browsers benefit
+          const local = localStorage.getItem(localKey);
+          if (local) {
+            supabase.storage.from('logos').upload(storageKey, base64ToBlob(local), { upsert: true });
+          }
+        }
+      } catch (_) { /* network unavailable */ }
     });
   }, []);
   const handleLogoUpload = (file, type) => {

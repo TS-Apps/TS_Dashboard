@@ -14285,7 +14285,15 @@ const App = ({
     id: "data_utilities",
     icon: "Database",
     label: "Data / Utilities"
-  })), /*#__PURE__*/React.createElement("div", {
+  }), /*#__PURE__*/React.createElement("a", {
+    href: "./staff/",
+    className: `flex items-center gap-2 w-full p-2 rounded-lg transition-all text-sm text-blue-100 hover:bg-blue-800/50`
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "Shield",
+    className: "w-4 h-4"
+  }), !sidebarCollapsed && /*#__PURE__*/React.createElement("span", {
+    className: "text-sm"
+  }, "Staff Quals"))), /*#__PURE__*/React.createElement("div", {
     className: "p-3 border-t border-blue-800"
   }, !sidebarCollapsed && /*#__PURE__*/React.createElement("div", {
     className: "space-y-2"

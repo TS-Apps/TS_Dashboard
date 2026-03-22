@@ -69,6 +69,26 @@
         ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
         
         .bg-passed { background-color: #0DAC50 !important; }
+
+        /* Cadet Column Selection Highlighting */
+        .col-selected-header {
+            background-color: #dbeafe !important; /* blue-100 */
+            outline: 2px solid #3b82f6;
+            outline-offset: -2px;
+            cursor: pointer;
+        }
+        .col-unselected-header {
+            cursor: pointer;
+        }
+        .col-unselected-header:hover {
+            background-color: #e0f2fe !important; /* sky-100 */
+        }
+        .col-selected-incomplete {
+            background-color: #fef9c3 !important; /* yellow-100 — highlights gaps */
+        }
+        .col-selected-complete {
+            background-color: #0DAC50 !important; /* keep standard green */
+        }
         
         /* Spec Level Colors */
         .spec-basic { background-color: #fdba74 !important; color: #7c2d12; font-weight: 700; font-size: 12px; }

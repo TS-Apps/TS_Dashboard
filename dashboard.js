@@ -8139,8 +8139,21 @@ const TrainingPlanner = ({
   moduleUrls = {}
 }) => {
   const [selectedRank, setSelectedRank] = useState(rankOrder[0]);
+  const [selectedCadets, setSelectedCadets] = useState(new Set());
   const cadetsAtRank = useMemo(() => personnel.filter(p => p.rank === selectedRank), [personnel, selectedRank]);
   const currentSyllabus = syllabus[selectedRank];
+
+  // Reset cadet column highlights when rank changes
+  useEffect(() => { setSelectedCadets(new Set()); }, [selectedRank]);
+
+  const toggleCadetHighlight = (pNumber) => {
+    setSelectedCadets(prev => {
+      const next = new Set(prev);
+      if (next.has(pNumber)) next.delete(pNumber);
+      else next.add(pNumber);
+      return next;
+    });
+  };
 
   // Fix for displaying modules even if no cadets are at this rank
   const hasCadets = cadetsAtRank.length > 0;
@@ -8389,7 +8402,16 @@ const TrainingPlanner = ({
     className: "text-sm font-semibold text-amber-900"
   }, "No ", title.includes("CTS") ? "CTS" : "CTP", " module data found in the loaded qualifications"), /*#__PURE__*/React.createElement("p", {
     className: "text-xs text-amber-800 mt-0.5"
-  }, "The uploaded qualifications file may be a partial or filtered export. Re-upload the full Westminster qualifications CSV to restore this view."))), /*#__PURE__*/React.createElement("div", {
+  }, "The uploaded qualifications file may be a partial or filtered export. Re-upload the full Westminster qualifications CSV to restore this view."))), selectedCadets.size > 0 && /*#__PURE__*/React.createElement("div", {
+    className: "mb-2 px-3 py-2 bg-blue-50 border border-blue-200 rounded-lg flex items-center justify-between gap-3"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-xs text-blue-800 font-medium"
+  }, selectedCadets.size === 1 ? "1 cadet highlighted — yellow cells show modules still needed." : `${selectedCadets.size} cadets highlighted — yellow cells show modules still needed.`), /*#__PURE__*/React.createElement("button", {
+    onClick: () => setSelectedCadets(new Set()),
+    className: "text-xs text-blue-600 hover:text-blue-800 font-semibold underline whitespace-nowrap"
+  }, "Clear")), hasCadets && selectedCadets.size === 0 && /*#__PURE__*/React.createElement("p", {
+    className: "mb-2 text-xs text-slate-400 italic"
+  }, "Tip: click a cadet\u2019s name to highlight their column and see gaps at a glance."), /*#__PURE__*/React.createElement("div", {
     className: "bg-white rounded-lg shadow overflow-hidden border border-slate-200"
   }, /*#__PURE__*/React.createElement("div", {
     className: "planner-container"
@@ -8411,9 +8433,12 @@ const TrainingPlanner = ({
     }
     // Existing logic for real cadets
     const progress = getCadetProgress(c);
+    const isHighlighted = selectedCadets.has(c.pNumber);
     return /*#__PURE__*/React.createElement("th", {
       key: c.pNumber,
-      className: `px-1 py-2 bg-slate-50 border-b border-slate-200 text-center font-semibold text-slate-600 min-w-[100px] ${ageClass}`
+      className: `px-1 py-2 border-b border-slate-200 text-center font-semibold text-slate-600 min-w-[100px] ${ageClass} ${isHighlighted ? 'col-selected-header' : 'col-unselected-header bg-slate-50'}`,
+      onClick: () => toggleCadetHighlight(c.pNumber),
+      title: isHighlighted ? `Click to deselect ${c.name.split(',')[0]}` : `Click to highlight ${c.name.split(',')[0]}'s column`
     }, /*#__PURE__*/React.createElement("div", {
       className: "flex flex-col items-center"
     }, /*#__PURE__*/React.createElement("span", {
@@ -8467,12 +8492,23 @@ const TrainingPlanner = ({
     // Existing logic for real cadets
     const record = getModuleRecord(c, mod);
     const passed = !!record;
+    const isCadetHighlighted = selectedCadets.has(c.pNumber);
+    let cellClass = `px-1 py-1 text-center border-r border-slate-50 last:border-0`;
+    if (isCadetHighlighted) {
+      cellClass += passed ? ' col-selected-complete' : ' col-selected-incomplete';
+    } else {
+      cellClass += passed ? ' bg-passed' : '';
+    }
     return /*#__PURE__*/React.createElement("td", {
       key: `${c.pNumber}-${mod.code}`,
-      className: `px-1 py-1 text-center border-r border-slate-50 last:border-0 ${passed ? 'bg-passed' : ''}`
+      className: cellClass
     }, passed ? /*#__PURE__*/React.createElement("span", {
       className: "text-[10px] text-white font-bold block leading-tight"
-    }, record.date ? formatDate(record.date) : 'Done') : /*#__PURE__*/React.createElement("div", {
+    }, record.date ? formatDate(record.date) : 'Done') : isCadetHighlighted ? /*#__PURE__*/React.createElement("div", {
+      className: "flex justify-center"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "w-1.5 h-1.5 rounded-full bg-amber-400"
+    })) : /*#__PURE__*/React.createElement("div", {
       className: "flex justify-center opacity-10"
     }, /*#__PURE__*/React.createElement("div", {
       className: "w-1 h-1 rounded-full bg-slate-400"

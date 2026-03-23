@@ -78,6 +78,11 @@ const isCadet = person => {
   }
   return true;
 };
+const normalizeUnit = u => {
+  if (!u) return u;
+  if (/\(rmcd\)/i.test(u)) return 'RMCD';
+  return u;
+};
 const getQualStatus = validTill => {
   if (!validTill) return 'no_expiry';
   const days = (new Date(validTill) - new Date()) / 86400000;
@@ -689,7 +694,7 @@ const StaffApp = ({
           pNumber: r.p_number,
           name: r.name,
           rank: r.rank,
-          unit: r.unit,
+          unit: normalizeUnit(r.unit),
           section: r.section,
           dob: r.dob
         })));

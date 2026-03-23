@@ -78,11 +78,6 @@ const isCadet = person => {
   }
   return true;
 };
-const normalizeUnit = u => {
-  if (!u) return u;
-  if (/\(rmcd\)/i.test(u)) return 'RMCD';
-  return u;
-};
 const getQualStatus = validTill => {
   if (!validTill) return 'no_expiry';
   const days = (new Date(validTill) - new Date()) / 86400000;
@@ -690,11 +685,19 @@ const StaffApp = ({
             hasMore = batch.length === pageSize;
           } else hasMore = false;
         }
-        setPersonnel((pRows || []).map(r => ({
+        // Deduplicate by p_number — prefer RMCD record when both exist
+        const seen = new Map();
+        for (const r of (pRows || [])) {
+          const key = (r.p_number || '').toUpperCase();
+          if (!seen.has(key) || /\(rmcd\)/i.test(r.unit || '')) {
+            seen.set(key, r);
+          }
+        }
+        setPersonnel([...seen.values()].map(r => ({
           pNumber: r.p_number,
           name: r.name,
           rank: r.rank,
-          unit: normalizeUnit(r.unit),
+          unit: r.unit,
           section: r.section,
           dob: r.dob
         })));

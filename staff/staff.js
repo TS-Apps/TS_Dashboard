@@ -664,15 +664,27 @@ const StaffApp = ({
     const load = async () => {
       setLoading(true);
       try {
-        const [{
+        const {
           data: pRows,
           error: pErr
-        }, {
-          data: qRows,
-          error: qErr
-        }] = await Promise.all([supabase.from('personnel').select('*'), supabase.from('staff_qualifications').select('*')]);
+        } = await supabase.from('personnel').select('*');
         if (pErr) throw pErr;
-        if (qErr) throw qErr;
+        let sqRows = [];
+        const pageSize = 1000;
+        let page = 0,
+          hasMore = true;
+        while (hasMore) {
+          const {
+            data: batch,
+            error: sqErr
+          } = await supabase.from('staff_qualifications').select('*').range(page * pageSize, (page + 1) * pageSize - 1);
+          if (sqErr) throw sqErr;
+          if (batch && batch.length > 0) {
+            sqRows = [...sqRows, ...batch];
+            page++;
+            hasMore = batch.length === pageSize;
+          } else hasMore = false;
+        }
         setPersonnel((pRows || []).map(r => ({
           pNumber: r.p_number,
           name: r.name,
@@ -681,7 +693,7 @@ const StaffApp = ({
           section: r.section,
           dob: r.dob
         })));
-        setStaffQuals(qRows || []);
+        setStaffQuals(sqRows);
       } catch (err) {
         setError(err.message);
       } finally {

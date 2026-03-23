@@ -460,7 +460,39 @@ const MatrixView = ({
       className: "text-slate-200"
     }, "\u2014");
   };
-  return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+  const downloadCSV = () => {
+    const headers = ['Name', 'Rank', 'Unit', 'P Number', ...modules];
+    const rows = staff.map(p => {
+      const cells = modules.map(m => {
+        const q = lookup[p.pNumber]?.[m];
+        if (!q) return '';
+        const st = getQualStatus(q.valid_till);
+        if (st === 'no_expiry') return 'Current (no expiry)';
+        const d = q.valid_till ? new Date(q.valid_till).toLocaleDateString('en-GB') : '';
+        if (st === 'current') return `Current (${d})`;
+        if (st === 'expiring') return `Expiring (${d})`;
+        if (st === 'expired') return `Expired (${d})`;
+        return '';
+      });
+      return [p.name, p.rank || '', p.unit || '', p.pNumber, ...cells];
+    });
+    const csv = [headers, ...rows].map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
+    const a = document.createElement('a');
+    a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent('\uFEFF' + csv);
+    a.download = 'staff-qualifications-matrix.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
+  return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+    className: "flex justify-end mb-3"
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: downloadCSV,
+    className: "flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition-colors"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "Download",
+    className: "w-4 h-4"
+  }), "Export CSV")), /*#__PURE__*/React.createElement("div", {
     className: "overflow-x-auto rounded-lg shadow"
   }, /*#__PURE__*/React.createElement("table", {
     className: "text-xs border-collapse bg-white",

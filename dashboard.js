@@ -13984,6 +13984,29 @@ const App = ({
         }
       }
 
+      // Detect junior rank changes: Westminster only updates 'rank' for juniors,
+      // not 'Date Current Rank', so rankDate is null. Compare against existing DB
+      // records to detect promotions and stamp today as the promotion date.
+      const { data: existingPersonnel } = await supabase.from('personnel').select('p_number, rank, rank_date');
+      const existingRankMap = {};
+      if (existingPersonnel) {
+        existingPersonnel.forEach(r => { existingRankMap[r.p_number] = { rank: r.rank, rankDate: r.rank_date }; });
+      }
+      const todayStr = new Date().toISOString().split('T')[0];
+      pData.forEach(p => {
+        const existing = existingRankMap[p.pNumber];
+        if (!existing) return; // New cadet — no previous rank to compare
+        if (JUNIOR_RANK_ORDER.includes(p.rank) && !p.rankDate) {
+          if (existing.rank !== p.rank) {
+            // Junior rank has changed — stamp today as the promotion date
+            p.rankDate = todayStr;
+          } else if (existing.rankDate) {
+            // Rank unchanged — preserve existing rank_date so it isn't lost on re-import
+            p.rankDate = existing.rankDate;
+          }
+        }
+      });
+
       // Transform personnel data for Supabase
       const personnelRecords = pData.map(p => ({
         p_number: p.pNumber,

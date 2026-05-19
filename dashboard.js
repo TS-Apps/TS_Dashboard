@@ -7794,7 +7794,7 @@ const CadetFocus = ({
   }, sortedPersonnel.map(p => /*#__PURE__*/React.createElement("option", {
     key: p.pNumber,
     value: p.pNumber
-  }, p.name)))), /*#__PURE__*/React.createElement("button", {
+  }, p.name))))), /*#__PURE__*/React.createElement("button", {
     onClick: exportCadetPDF,
     disabled: !selectedCadet,
     className: "px-3 py-2 bg-green-600 hover:bg-green-700 disabled:bg-slate-300 text-white rounded-lg font-semibold text-xs transition-all flex items-center gap-1 whitespace-nowrap"
@@ -8139,8 +8139,21 @@ const TrainingPlanner = ({
   moduleUrls = {}
 }) => {
   const [selectedRank, setSelectedRank] = useState(rankOrder[0]);
+  const [selectedCadets, setSelectedCadets] = useState(new Set());
   const cadetsAtRank = useMemo(() => personnel.filter(p => p.rank === selectedRank), [personnel, selectedRank]);
   const currentSyllabus = syllabus[selectedRank];
+
+  // Reset cadet column highlights when rank changes
+  useEffect(() => { setSelectedCadets(new Set()); }, [selectedRank]);
+
+  const toggleCadetHighlight = (pNumber) => {
+    setSelectedCadets(prev => {
+      const next = new Set(prev);
+      if (next.has(pNumber)) next.delete(pNumber);
+      else next.add(pNumber);
+      return next;
+    });
+  };
 
   // Fix for displaying modules even if no cadets are at this rank
   const hasCadets = cadetsAtRank.length > 0;
@@ -8389,7 +8402,16 @@ const TrainingPlanner = ({
     className: "text-sm font-semibold text-amber-900"
   }, "No ", title.includes("CTS") ? "CTS" : "CTP", " module data found in the loaded qualifications"), /*#__PURE__*/React.createElement("p", {
     className: "text-xs text-amber-800 mt-0.5"
-  }, "The uploaded qualifications file may be a partial or filtered export. Re-upload the full Westminster qualifications CSV to restore this view."))), /*#__PURE__*/React.createElement("div", {
+  }, "The uploaded qualifications file may be a partial or filtered export. Re-upload the full Westminster qualifications CSV to restore this view."))), selectedCadets.size > 0 && /*#__PURE__*/React.createElement("div", {
+    className: "mb-2 px-3 py-2 bg-blue-50 border border-blue-200 rounded-lg flex items-center justify-between gap-3"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-xs text-blue-800 font-medium"
+  }, selectedCadets.size === 1 ? "1 cadet highlighted — yellow cells show modules still needed." : `${selectedCadets.size} cadets highlighted — yellow cells show modules still needed.`), /*#__PURE__*/React.createElement("button", {
+    onClick: () => setSelectedCadets(new Set()),
+    className: "text-xs text-blue-600 hover:text-blue-800 font-semibold underline whitespace-nowrap"
+  }, "Clear")), hasCadets && selectedCadets.size === 0 && /*#__PURE__*/React.createElement("p", {
+    className: "mb-2 text-xs text-slate-400 italic"
+  }, "Tip: click a cadet\u2019s name to highlight their column and see gaps at a glance."), /*#__PURE__*/React.createElement("div", {
     className: "bg-white rounded-lg shadow overflow-hidden border border-slate-200"
   }, /*#__PURE__*/React.createElement("div", {
     className: "planner-container"
@@ -8411,9 +8433,12 @@ const TrainingPlanner = ({
     }
     // Existing logic for real cadets
     const progress = getCadetProgress(c);
+    const isHighlighted = selectedCadets.has(c.pNumber);
     return /*#__PURE__*/React.createElement("th", {
       key: c.pNumber,
-      className: `px-1 py-2 bg-slate-50 border-b border-slate-200 text-center font-semibold text-slate-600 min-w-[100px] ${ageClass}`
+      className: `px-1 py-2 border-b border-slate-200 text-center font-semibold text-slate-600 min-w-[100px] ${ageClass} ${isHighlighted ? 'col-selected-header' : 'col-unselected-header bg-slate-50'}`,
+      onClick: () => toggleCadetHighlight(c.pNumber),
+      title: isHighlighted ? `Click to deselect ${c.name.split(',')[0]}` : `Click to highlight ${c.name.split(',')[0]}'s column`
     }, /*#__PURE__*/React.createElement("div", {
       className: "flex flex-col items-center"
     }, /*#__PURE__*/React.createElement("span", {
@@ -8467,12 +8492,23 @@ const TrainingPlanner = ({
     // Existing logic for real cadets
     const record = getModuleRecord(c, mod);
     const passed = !!record;
+    const isCadetHighlighted = selectedCadets.has(c.pNumber);
+    let cellClass = `px-1 py-1 text-center border-r border-slate-50 last:border-0`;
+    if (isCadetHighlighted) {
+      cellClass += passed ? ' col-selected-complete' : ' col-selected-incomplete';
+    } else {
+      cellClass += passed ? ' bg-passed' : '';
+    }
     return /*#__PURE__*/React.createElement("td", {
       key: `${c.pNumber}-${mod.code}`,
-      className: `px-1 py-1 text-center border-r border-slate-50 last:border-0 ${passed ? 'bg-passed' : ''}`
+      className: cellClass
     }, passed ? /*#__PURE__*/React.createElement("span", {
       className: "text-[10px] text-white font-bold block leading-tight"
-    }, record.date ? formatDate(record.date) : 'Done') : /*#__PURE__*/React.createElement("div", {
+    }, record.date ? formatDate(record.date) : 'Done') : isCadetHighlighted ? /*#__PURE__*/React.createElement("div", {
+      className: "flex justify-center"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "w-1.5 h-1.5 rounded-full bg-amber-400"
+    })) : /*#__PURE__*/React.createElement("div", {
       className: "flex justify-center opacity-10"
     }, /*#__PURE__*/React.createElement("div", {
       className: "w-1 h-1 rounded-full bg-slate-400"
@@ -13948,6 +13984,29 @@ const App = ({
         }
       }
 
+      // Detect junior rank changes: Westminster only updates 'rank' for juniors,
+      // not 'Date Current Rank', so rankDate is null. Compare against existing DB
+      // records to detect promotions and stamp today as the promotion date.
+      const { data: existingPersonnel } = await supabase.from('personnel').select('p_number, rank, rank_date');
+      const existingRankMap = {};
+      if (existingPersonnel) {
+        existingPersonnel.forEach(r => { existingRankMap[r.p_number] = { rank: r.rank, rankDate: r.rank_date }; });
+      }
+      const todayStr = new Date().toISOString().split('T')[0];
+      pData.forEach(p => {
+        const existing = existingRankMap[p.pNumber];
+        if (!existing) return; // New cadet — no previous rank to compare
+        if (JUNIOR_RANK_ORDER.includes(p.rank) && !p.rankDate) {
+          if (existing.rank !== p.rank) {
+            // Junior rank has changed — stamp today as the promotion date
+            p.rankDate = todayStr;
+          } else if (existing.rankDate) {
+            // Rank unchanged — preserve existing rank_date so it isn't lost on re-import
+            p.rankDate = existing.rankDate;
+          }
+        }
+      });
+
       // Transform personnel data for Supabase
       const personnelRecords = pData.map(p => ({
         p_number: p.pNumber,
@@ -14249,7 +14308,15 @@ const App = ({
     id: "data_utilities",
     icon: "Database",
     label: "Data / Utilities"
-  })), /*#__PURE__*/React.createElement("div", {
+  }), /*#__PURE__*/React.createElement("a", {
+    href: "./staff/",
+    className: `flex items-center gap-2 w-full p-2 rounded-lg transition-all text-sm text-blue-100 hover:bg-blue-800/50`
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "Shield",
+    className: "w-4 h-4"
+  }), !sidebarCollapsed && /*#__PURE__*/React.createElement("span", {
+    className: "text-sm"
+  }, "Staff Quals"))), /*#__PURE__*/React.createElement("div", {
     className: "p-3 border-t border-blue-800"
   }, !sidebarCollapsed && /*#__PURE__*/React.createElement("div", {
     className: "space-y-2"

@@ -333,6 +333,9 @@ const SCC_SYLLABUS = {
   },
   "Cadet": {
     "Core CTP": [{
+      code: "CA01",
+      title: "Community Activity 1"
+    }, {
       code: "CAV01",
       title: "Intro to Cadet Voice"
     }, {

@@ -6883,12 +6883,14 @@ const WaterborneView = ({
       { name: "Windsurfing Stage 2+", met: hq("Windsurfing") && (hq("Windsurfing Stage 2") || hq("Windsurfing Stage 3") || hq("Windsurfing Stage 4") || hq("YouthWS - Stage 2") || hq("YouthWS - Stage 3") || hq("YouthWS - Stage 4")) }
     ];
     const profsMet = profs.filter(p => p.met).length;
+    const profsAchieved = profs.filter(p => p.met).map(p => p.name);
     const profsMissing = profs.filter(p => !p.met).map(p => p.name);
     const meetsCox = profsMet >= 2;
 
     const coxGap = hasCoxswainAward ? null : {
       proficienciesMet: profsMet,
       needed: Math.max(0, 2 - profsMet),
+      achieved: profsAchieved,
       missing: profsMissing,
       awarded: hasCoxswainAward
     };
@@ -6900,6 +6902,7 @@ const WaterborneView = ({
     const hasENS = hq("Essential Navigation");
     const hasDaySkipper = hq("Day Skipper") || hq("Watch Leader");
     const hasNav = hasENS || hasDaySkipper;
+    const navLabel = hasENS ? "RYA Essential Navigation & Seamanship" : hasDaySkipper ? "RYA Day Skipper Theory" : null;
 
     // Pathway 1 pieces
     const p1Options = [
@@ -6908,7 +6911,8 @@ const WaterborneView = ({
       { name: "RYA Assistant Dinghy Instructor", met: hq("Assistant Dinghy Instructor") },
       { name: "RYA Assistant Windsurfing Instructor", met: hq("Assistant Windsurfing Instructor") }
     ];
-    const hasP1Option = p1Options.some(o => o.met);
+    const p1OptionMet = p1Options.find(o => o.met);
+    const hasP1Option = !!p1OptionMet;
     const meetsP1 = hasPB2 && hasNav && hasP1Option;
 
     // Pathway 2 pieces
@@ -6918,25 +6922,36 @@ const WaterborneView = ({
       { name: "RYA Windsurfing Instructor", met: hq("Windsurfing Instructor") && !hq("Assistant Windsurfing") },
       { name: "RYA Powerboat Instructor", met: hq("Powerboat Instructor") && !hq("Assistant Powerboat") }
     ];
-    const hasP2Option = p2Options.some(o => o.met);
+    const p2OptionMet = p2Options.find(o => o.met);
+    const hasP2Option = !!p2OptionMet;
     const meetsP2 = hasP2Option;
 
     const meetsMaster = meetsP1 || meetsP2;
     if (meetsMaster) return { coxswain: coxGap, master: null };
 
-    // Build master gap detail
+    // Build master gap detail - include what they have
     const p1MissingBase = [];
     if (!hasPB2) p1MissingBase.push("RYA Powerboat Level 2");
     if (!hasNav) p1MissingBase.push("RYA Essential Navigation & Seamanship (or Day Skipper Theory)");
     const p1MissingOption = hasP1Option ? [] : p1Options.filter(o => !o.met).map(o => o.name);
+    const p1HaveBase = [
+      ...(hasPB2 ? ["RYA Powerboat Level 2"] : []),
+      ...(navLabel ? [navLabel] : [])
+    ];
+    const p1HaveOption = p1OptionMet ? [p1OptionMet.name] : [];
 
     const p2Missing = p2Options.filter(o => !o.met).map(o => o.name);
+    const p2Have = p2Options.filter(o => o.met).map(o => o.name);
+
+    // Also include cox proficiencies in master "have" section
+    const masterHave = [...profsAchieved];
 
     return {
       coxswain: coxGap,
       master: {
-        pathway1: { hasPB2, hasNav, missingBase: p1MissingBase, missingOption: p1MissingOption },
-        pathway2: { missing: p2Missing }
+        coxProficienciesAchieved: profsAchieved,
+        pathway1: { hasPB2, hasNav, haveBase: p1HaveBase, haveOption: p1HaveOption, missingBase: p1MissingBase, missingOption: p1MissingOption },
+        pathway2: { have: p2Have, missing: p2Missing }
       }
     };
   };
@@ -7004,42 +7019,100 @@ const WaterborneView = ({
 
               // Coxswain section
               gaps.coxswain && !gaps.coxswain.awarded && /*#__PURE__*/React.createElement("div", null,
-                /*#__PURE__*/React.createElement("p", { className: "font-semibold text-slate-700 mb-1" }, "Coxswain Badge"),
-                gaps.coxswain.proficienciesMet >= 2
-                  ? /*#__PURE__*/React.createElement("p", { className: "text-green-700 text-xs" }, "✓ Proficiency criteria met — award can be claimed on Westminster")
-                  : /*#__PURE__*/React.createElement("div", null,
-                      /*#__PURE__*/React.createElement("p", { className: "text-xs text-slate-600 mb-1" },
-                        gaps.coxswain.proficienciesMet, " of 2 proficiencies met. Needs ", gaps.coxswain.needed, " more from different disciplines:"
-                      ),
-                      /*#__PURE__*/React.createElement("ul", { className: "list-disc list-inside space-y-0.5" },
-                        gaps.coxswain.missing.map(m => /*#__PURE__*/React.createElement("li", { key: m, className: "text-xs text-slate-500" }, m))
-                      )
-                    )
+                /*#__PURE__*/React.createElement("p", { className: "font-semibold text-slate-700 mb-2" }, "Coxswain Badge"),
+                /*#__PURE__*/React.createElement("div", { className: "grid grid-cols-2 gap-3" },
+                  // Have column
+                  /*#__PURE__*/React.createElement("div", null,
+                    /*#__PURE__*/React.createElement("p", { className: "text-xs font-semibold text-green-700 uppercase tracking-wide mb-1" }, "Have"),
+                    gaps.coxswain.achieved.length > 0
+                      ? /*#__PURE__*/React.createElement("ul", { className: "space-y-0.5" },
+                          gaps.coxswain.achieved.map(m => /*#__PURE__*/React.createElement("li", { key: m, className: "text-xs text-green-700 flex items-start gap-1" },
+                            /*#__PURE__*/React.createElement("span", null, "✓"), m
+                          ))
+                        )
+                      : /*#__PURE__*/React.createElement("p", { className: "text-xs text-slate-400 italic" }, "None yet")
+                  ),
+                  // Still need column
+                  /*#__PURE__*/React.createElement("div", null,
+                    gaps.coxswain.proficienciesMet >= 2
+                      ? /*#__PURE__*/React.createElement("p", { className: "text-xs font-semibold text-green-700 uppercase tracking-wide mb-1" }, "Ready to claim")
+                      : /*#__PURE__*/React.createElement(React.Fragment, null,
+                          /*#__PURE__*/React.createElement("p", { className: "text-xs font-semibold text-red-600 uppercase tracking-wide mb-1" }, "Needs ", gaps.coxswain.needed, " more from:"),
+                          /*#__PURE__*/React.createElement("ul", { className: "space-y-0.5" },
+                            gaps.coxswain.missing.map(m => /*#__PURE__*/React.createElement("li", { key: m, className: "text-xs text-slate-500 flex items-start gap-1" },
+                              /*#__PURE__*/React.createElement("span", { className: "text-slate-300" }, "○"), m
+                            ))
+                          )
+                        )
+                  )
+                )
               ),
 
               // Master section
               gaps.master && /*#__PURE__*/React.createElement("div", null,
                 /*#__PURE__*/React.createElement("p", { className: "font-semibold text-slate-700 mb-1" }, "Master Coxswain Badge"),
-                /*#__PURE__*/React.createElement("p", { className: "text-xs text-slate-500 italic mb-2" }, "Coxswain criteria met. Choose a pathway:"),
+                /*#__PURE__*/React.createElement("p", { className: "text-xs text-slate-500 italic mb-2" }, "Coxswain criteria met. Choose a pathway to complete:"),
 
                 // Pathway 1
-                /*#__PURE__*/React.createElement("div", { className: "mb-2" },
-                  /*#__PURE__*/React.createElement("p", { className: "text-xs font-medium text-slate-700" }, "Pathway 1 — Powerboat Level 2 + Navigation + one rescue/assistant qual:"),
-                  gaps.master.pathway1.missingBase.length === 0 && gaps.master.pathway1.missingOption.length === 0
-                    ? /*#__PURE__*/React.createElement("p", { className: "text-green-700 text-xs" }, "✓ Complete")
-                    : /*#__PURE__*/React.createElement("ul", { className: "list-disc list-inside space-y-0.5 mt-1" },
-                        gaps.master.pathway1.missingBase.map(m => /*#__PURE__*/React.createElement("li", { key: m, className: "text-xs text-red-600" }, "Missing: ", m)),
-                        gaps.master.pathway1.missingOption.length > 0 && /*#__PURE__*/React.createElement("li", { className: "text-xs text-slate-500" },
-                          "Also needs one of: ", gaps.master.pathway1.missingOption.join(", ")
-                        )
-                      )
+                /*#__PURE__*/React.createElement("div", { className: "mb-3" },
+                  /*#__PURE__*/React.createElement("p", { className: "text-xs font-semibold text-slate-700 mb-1" }, "Pathway 1 — PB Level 2 + Navigation + assistant/rescue qual"),
+                  /*#__PURE__*/React.createElement("div", { className: "grid grid-cols-2 gap-3" },
+                    /*#__PURE__*/React.createElement("div", null,
+                      /*#__PURE__*/React.createElement("p", { className: "text-xs font-semibold text-green-700 uppercase tracking-wide mb-1" }, "Have"),
+                      [...gaps.master.coxProficienciesAchieved, ...gaps.master.pathway1.haveBase, ...gaps.master.pathway1.haveOption].length > 0
+                        ? /*#__PURE__*/React.createElement("ul", { className: "space-y-0.5" },
+                            [...gaps.master.coxProficienciesAchieved, ...gaps.master.pathway1.haveBase, ...gaps.master.pathway1.haveOption].map(m => /*#__PURE__*/React.createElement("li", { key: m, className: "text-xs text-green-700 flex items-start gap-1" },
+                              /*#__PURE__*/React.createElement("span", null, "✓"), m
+                            ))
+                          )
+                        : /*#__PURE__*/React.createElement("p", { className: "text-xs text-slate-400 italic" }, "None yet")
+                    ),
+                    /*#__PURE__*/React.createElement("div", null,
+                      /*#__PURE__*/React.createElement("p", { className: "text-xs font-semibold text-red-600 uppercase tracking-wide mb-1" }, "Still needs"),
+                      gaps.master.pathway1.missingBase.length === 0 && gaps.master.pathway1.missingOption.length === 0
+                        ? /*#__PURE__*/React.createElement("p", { className: "text-xs text-green-700" }, "✓ Complete")
+                        : /*#__PURE__*/React.createElement("ul", { className: "space-y-0.5" },
+                            gaps.master.pathway1.missingBase.map(m => /*#__PURE__*/React.createElement("li", { key: m, className: "text-xs text-red-600 flex items-start gap-1" },
+                              /*#__PURE__*/React.createElement("span", { className: "text-red-400" }, "✗"), m
+                            )),
+                            gaps.master.pathway1.missingOption.length > 0 && /*#__PURE__*/React.createElement("li", { className: "text-xs text-slate-500 flex items-start gap-1" },
+                              /*#__PURE__*/React.createElement("span", { className: "text-slate-300" }, "○"),
+                              "One of: ", gaps.master.pathway1.missingOption.join(", ")
+                            )
+                          )
+                    )
+                  )
+                ),
+
+                // Divider
+                /*#__PURE__*/React.createElement("div", { className: "flex items-center gap-2 my-2" },
+                  /*#__PURE__*/React.createElement("div", { className: "flex-1 border-t border-slate-200" }),
+                  /*#__PURE__*/React.createElement("span", { className: "text-xs text-slate-400 font-medium" }, "or"),
+                  /*#__PURE__*/React.createElement("div", { className: "flex-1 border-t border-slate-200" })
                 ),
 
                 // Pathway 2
                 /*#__PURE__*/React.createElement("div", null,
-                  /*#__PURE__*/React.createElement("p", { className: "text-xs font-medium text-slate-700" }, "Pathway 2 — any one full instructor qualification:"),
-                  /*#__PURE__*/React.createElement("ul", { className: "list-disc list-inside space-y-0.5 mt-1" },
-                    gaps.master.pathway2.missing.map(m => /*#__PURE__*/React.createElement("li", { key: m, className: "text-xs text-slate-500" }, m))
+                  /*#__PURE__*/React.createElement("p", { className: "text-xs font-semibold text-slate-700 mb-1" }, "Pathway 2 — any one full instructor qualification"),
+                  /*#__PURE__*/React.createElement("div", { className: "grid grid-cols-2 gap-3" },
+                    /*#__PURE__*/React.createElement("div", null,
+                      /*#__PURE__*/React.createElement("p", { className: "text-xs font-semibold text-green-700 uppercase tracking-wide mb-1" }, "Have"),
+                      [...gaps.master.coxProficienciesAchieved, ...gaps.master.pathway2.have].length > 0
+                        ? /*#__PURE__*/React.createElement("ul", { className: "space-y-0.5" },
+                            [...gaps.master.coxProficienciesAchieved, ...gaps.master.pathway2.have].map(m => /*#__PURE__*/React.createElement("li", { key: m, className: "text-xs text-green-700 flex items-start gap-1" },
+                              /*#__PURE__*/React.createElement("span", null, "✓"), m
+                            ))
+                          )
+                        : /*#__PURE__*/React.createElement("p", { className: "text-xs text-slate-400 italic" }, "Coxswain criteria only")
+                    ),
+                    /*#__PURE__*/React.createElement("div", null,
+                      /*#__PURE__*/React.createElement("p", { className: "text-xs font-semibold text-red-600 uppercase tracking-wide mb-1" }, "Still needs one of"),
+                      /*#__PURE__*/React.createElement("ul", { className: "space-y-0.5" },
+                        gaps.master.pathway2.missing.map(m => /*#__PURE__*/React.createElement("li", { key: m, className: "text-xs text-slate-500 flex items-start gap-1" },
+                          /*#__PURE__*/React.createElement("span", { className: "text-slate-300" }, "○"), m
+                        ))
+                      )
+                    )
                   )
                 )
               ),

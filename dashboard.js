@@ -1,7 +1,7 @@
 (function () {
 "use strict";
 // Market Harborough Sea Cadets Training Dashboard
-// Version 2.8.9 - Cloud Edition with Supabase
+// Version 2.9 - Cloud Edition with Supabase
 
 const {
   useState,
@@ -52,7 +52,7 @@ const checkIsAdmin = async () => {
 // CONSTANTS & DATA
 // ═══════════════════════════════════════════════════════════════════════════
 
-const DATA_VERSION = "2.8.9-Cloud-AI"; // Attendance: full names, cards in CadetFocus+JuniorDetail above stats
+const DATA_VERSION = "2.9-Cloud"; // Attendance: full names, cards in CadetFocus+JuniorDetail above stats
 
 // Badge & Rank Image Maps
 const RANK_IMG_MAP = {
@@ -263,7 +263,7 @@ const Icons = {
   Star: lucide.icons.Star,
   Command: lucide.icons.Command,
   ShipWheel: lucide.icons.ShipWheel,
-  ChartGantt: lucide.icons.ChartGantt,
+  ClipboardList: lucide.icons.ClipboardList,
   Database: lucide.icons.Database,
   Download: lucide.icons.Download,
   Settings: lucide.icons.Settings,
@@ -14278,7 +14278,7 @@ const App = ({
     label: "Awards"
   }), /*#__PURE__*/React.createElement(NavItem, {
     id: "suggestions",
-    icon: "ChartGantt",
+    icon: "ClipboardList",
     label: "Training Plan"
   }), /*#__PURE__*/React.createElement(NavItem, {
     id: "attendance",

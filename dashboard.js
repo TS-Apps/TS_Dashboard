@@ -2914,7 +2914,7 @@ const normalizeRank = rawRank => {
   if (r === "mc" || r === "marine cadet" || r === "marine" || r === "royal marine" || r === "mc1" || r === "marine cadet 1st class" || r === "marine cadet 1") return "Marine Cadet";
 
   // Recruit (previously called "Marine Recruit")
-  if (r === "rct" || r === "recruit" || r === "marine recruit" || r.includes("recruit")) return "Recruit";
+  if (r === "rct" || r === "recruit" || r === "mcr" || r === "marine cadet recruit" || r === "marine recruit" || r.includes("recruit")) return "Recruit";
 
   // RMC NCO Ranks
   if (r === "cdt sgt" || r === "cdt sergeant" || r.includes("cadet sergeant")) return "Cadet Sergeant";

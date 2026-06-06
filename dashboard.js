@@ -13871,7 +13871,7 @@ const App = ({
           const pData = personnelRows.map(row => ({
             pNumber: row.p_number,
             name: row.name,
-            rank: row.rank,
+            rank: normalizeRank(row.rank || ""),
             unit: row.unit,
             section: row.section,
             dob: row.dob || null,

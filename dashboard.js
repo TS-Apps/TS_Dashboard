@@ -5752,30 +5752,25 @@ const UpcomingAwardsPanel = ({ personnel, qualsData }) => {
     },
 
     // ── Drill ──────────────────────────────────────────────────────────────
-    {
-      id: 'dr_basic', category: 'Drill', label: 'Basic Drill',
-      colour: 'border-slate-400',
-      check: c => {
-        if (hasQ(c.pNumber, 'Drill - Basic') || hasQ(c.pNumber, 'Drill Basic')) return null;
-        const codes = ['DR01','DR02','DR03','DR04'];
-        const done = countCodes(c.pNumber, codes);
-        if (done < 3) return null; // threshold: 75% of 4 modules
-        const achieved = codes.filter(code => qualsData.some(q => q.pNumber === c.pNumber && q.module && q.module.includes(code)));
-        const missing = codes.filter(code => !qualsData.some(q => q.pNumber === c.pNumber && q.module && q.module.includes(code)));
-        return { achieved: achieved.map(c => c + ' ✓'), missing, readyToClaim: done === codes.length };
-      }
-    },
+    // Basic Drill is no longer a standalone award (removed from T&A).
+    // Intermediate Drill: requires completion of DR01-DR12 then attendance on course.
+    // Advanced Drill: requires Intermediate Drill held + DR13-DR15 complete.
     {
       id: 'dr_intermediate', category: 'Drill', label: 'Intermediate Drill',
       colour: 'border-slate-400',
       check: c => {
         if (hasQ(c.pNumber, 'Drill - Intermediate') || hasQ(c.pNumber, 'Drill Intermediate')) return null;
-        const codes = ['DR05','DR06','DR07','DR08','DR09','DR10','DR11','DR12'];
+        const codes = ['DR01','DR02','DR03','DR04','DR05','DR06','DR07','DR08','DR09','DR10','DR11','DR12'];
         const done = countCodes(c.pNumber, codes);
-        if (done < 6) return null; // threshold: 75% of 8 modules
+        if (done < 9) return null; // threshold: 75% of 12 modules
         const achieved = codes.filter(code => qualsData.some(q => q.pNumber === c.pNumber && q.module && q.module.includes(code)));
         const missing = codes.filter(code => !qualsData.some(q => q.pNumber === c.pNumber && q.module && q.module.includes(code)));
-        return { achieved: achieved.map(c => c + ' ✓'), missing, readyToClaim: done === codes.length };
+        return {
+          achieved: achieved.map(c => c + ' ✓'),
+          missing,
+          readyToClaim: done === codes.length,
+          note: 'All DR01-DR12 required before attending Intermediate Drill course'
+        };
       }
     },
     {
@@ -5784,12 +5779,17 @@ const UpcomingAwardsPanel = ({ personnel, qualsData }) => {
       check: c => {
         if (hasQ(c.pNumber, 'Drill - Advanced') || hasQ(c.pNumber, 'Drill Advanced')) return null;
         if (!hasQ(c.pNumber, 'Drill - Intermediate') && !hasQ(c.pNumber, 'Drill Intermediate')) return null;
-        const codes = ['DR13','DR14','DR15','DR16','DR17','DR18','DR19','DR20'];
+        const codes = ['DR13','DR14','DR15'];
         const done = countCodes(c.pNumber, codes);
-        if (done < 6) return null; // threshold: 75% of 8 modules
+        if (done < 2) return null; // threshold: 75% of 3 modules (rounds to 3, surface at 2 approaching)
         const achieved = codes.filter(code => qualsData.some(q => q.pNumber === c.pNumber && q.module && q.module.includes(code)));
         const missing = codes.filter(code => !qualsData.some(q => q.pNumber === c.pNumber && q.module && q.module.includes(code)));
-        return { achieved: achieved.map(c => c + ' ✓'), missing, readyToClaim: done === codes.length };
+        return {
+          achieved: ['Intermediate Drill ✓', ...achieved.map(c => c + ' ✓')],
+          missing,
+          readyToClaim: done === codes.length,
+          note: 'Intermediate Drill held. Requires DR13-DR15 then Advanced Drill course'
+        };
       }
     },
 

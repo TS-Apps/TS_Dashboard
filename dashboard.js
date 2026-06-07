@@ -5713,6 +5713,8 @@ const UpcomingAwardsPanel = ({ personnel, qualsData }) => {
       colour: 'border-red-400',
       check: c => {
         if (hasQ(c.pNumber, 'Cadet First Aid Basic') || hasQ(c.pNumber, 'First Aid Basic')) return null;
+        if (hasQ(c.pNumber, 'Cadet First Aid Intermediate') || hasQ(c.pNumber, 'First Aid Intermediate')) return null;
+        if (hasQ(c.pNumber, 'Cadet First Aid Advanced') || hasQ(c.pNumber, 'First Aid Advanced') || hasQ(c.pNumber, 'FAA Level 3')) return null;
         const codes = ['FA01','FA02','FA03','FA04','FA05','FA06','FA07','FA08','FA09','FA10','FA11','FA12'];
         const done = countCodes(c.pNumber, codes);
         if (done < 9) return null; // threshold: 75% of 12 modules
@@ -5726,6 +5728,7 @@ const UpcomingAwardsPanel = ({ personnel, qualsData }) => {
       colour: 'border-red-400',
       check: c => {
         if (hasQ(c.pNumber, 'Cadet First Aid Intermediate') || hasQ(c.pNumber, 'First Aid Intermediate')) return null;
+        if (hasQ(c.pNumber, 'Cadet First Aid Advanced') || hasQ(c.pNumber, 'First Aid Advanced') || hasQ(c.pNumber, 'FAA Level 3')) return null;
         if (!hasQ(c.pNumber, 'Cadet First Aid Basic') && !hasQ(c.pNumber, 'First Aid Basic') && countCodes(c.pNumber, ['FA01','FA02','FA03','FA04','FA05','FA06','FA07','FA08','FA09','FA10','FA11','FA12']) < 12) return null;
         const codes = ['FA13','FA14','FA15','FA16','FA17','FA18','FA19','FA20','FA21','FA22','FA23','FA24','FA25','FA26'];
         const done = countCodes(c.pNumber, codes);
@@ -5768,8 +5771,11 @@ const UpcomingAwardsPanel = ({ personnel, qualsData }) => {
         return {
           achieved: achieved.map(c => c + ' ✓'),
           missing,
-          readyToClaim: done === codes.length,
-          note: 'All DR01-DR12 required before attending Intermediate Drill course'
+          readyToClaim: false,
+          readyForCourse: done === codes.length,
+          note: done === codes.length
+            ? 'DR01-DR12 complete — eligible to attend Intermediate Drill course'
+            : 'DR01-DR12 are prerequisites for the Intermediate Drill course'
         };
       }
     },
@@ -5787,8 +5793,11 @@ const UpcomingAwardsPanel = ({ personnel, qualsData }) => {
         return {
           achieved: ['Intermediate Drill ✓', ...achieved.map(c => c + ' ✓')],
           missing,
-          readyToClaim: done === codes.length,
-          note: 'Intermediate Drill held. Requires DR13-DR15 then Advanced Drill course'
+          readyToClaim: false,
+          readyForCourse: done === codes.length,
+          note: done === codes.length
+            ? 'DR13-DR15 complete — eligible to attend Advanced Drill course'
+            : 'DR13-DR15 are prerequisites for the Advanced Drill course'
         };
       }
     },
@@ -5912,6 +5921,9 @@ const UpcomingAwardsPanel = ({ personnel, qualsData }) => {
           approaching.length, " cadet", approaching.length !== 1 ? "s" : "", " approaching an award",
           readyCount > 0 && /*#__PURE__*/React.createElement("span", { className: "ml-2 px-2 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-700" },
             readyCount, " ready to claim"
+          ),
+          approaching.filter(r => r.gap.readyForCourse && !r.gap.readyToClaim).length > 0 && /*#__PURE__*/React.createElement("span", { className: "ml-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-700" },
+            approaching.filter(r => r.gap.readyForCourse && !r.gap.readyToClaim).length, " course ready"
           )
         )
       ),
@@ -5946,13 +5958,14 @@ const UpcomingAwardsPanel = ({ personnel, qualsData }) => {
                 className: "w-full flex items-center justify-between px-4 py-2.5 text-left hover:bg-slate-50 transition-colors"
               },
                 /*#__PURE__*/React.createElement("div", { className: "flex items-center gap-2 min-w-0 flex-1" },
-                  /*#__PURE__*/React.createElement("span", { className: `w-2 h-2 rounded-full flex-shrink-0 ${gap.readyToClaim ? 'bg-green-500' : 'bg-amber-400'}` }),
+                  /*#__PURE__*/React.createElement("span", { className: `w-2 h-2 rounded-full flex-shrink-0 ${gap.readyToClaim ? 'bg-green-500' : gap.readyForCourse ? 'bg-amber-500' : 'bg-amber-400'}` }),
                   /*#__PURE__*/React.createElement("span", { className: "font-medium text-sm text-slate-800 truncate" }, cadet.name),
                   /*#__PURE__*/React.createElement("span", { className: "text-xs text-slate-400 flex-shrink-0" }, "(", cadet.rank, ")")
                 ),
                 /*#__PURE__*/React.createElement("div", { className: "flex items-center gap-2 flex-shrink-0 ml-2" },
                   /*#__PURE__*/React.createElement("span", { className: `px-2 py-0.5 rounded-full text-xs font-semibold ${catColour}` }, award.label),
-                  gap.readyToClaim && /*#__PURE__*/React.createElement("span", { className: "px-2 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-700" }, "Ready"),
+                  gap.readyForCourse && !gap.readyToClaim && /*#__PURE__*/React.createElement("span", { className: "px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-700" }, "Course Ready"),
+                  gap.readyToClaim && /*#__PURE__*/React.createElement("span", { className: "px-2 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-700" }, "Ready to Claim"),
                   /*#__PURE__*/React.createElement(Icon, { name: isOpen ? "ChevronUp" : "ChevronDown", className: "w-4 h-4 text-slate-400" })
                 )
               ),
@@ -5973,7 +5986,9 @@ const UpcomingAwardsPanel = ({ personnel, qualsData }) => {
                   ),
                   // Still needs
                   /*#__PURE__*/React.createElement("div", null,
-                    gap.readyToClaim
+                    gap.readyForCourse && !gap.readyToClaim
+                      ? /*#__PURE__*/React.createElement("p", { className: "text-xs font-semibold text-amber-700 uppercase tracking-wide" }, "Ready to attend course")
+                      : gap.readyToClaim
                       ? /*#__PURE__*/React.createElement("p", { className: "text-xs font-semibold text-green-700 uppercase tracking-wide" }, "Ready to claim on Westminster")
                       : /*#__PURE__*/React.createElement(React.Fragment, null,
                           /*#__PURE__*/React.createElement("p", { className: "text-xs font-semibold text-red-600 uppercase tracking-wide mb-1" }, "Still needs"),

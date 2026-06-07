@@ -6864,6 +6864,268 @@ const WaterborneView = ({
     if (meetsCoxswainCriteria) return "status-cox-pending";
     return "";
   };
+
+  // ── Coxswain gap analysis ─────────────────────────────────────────────
+  // Returns an object describing what a cadet still needs for each award.
+  // gap.coxswain: null (awarded/not applicable) | { proficienciesMet, needed, missing[] }
+  // gap.master:   null | { pathway1: {hasPB2,hasNav,missingP1[]}, pathway2: {missingP2[]}, notes }
+  const getCoxswainGaps = cadet => {
+    const hq = str => qualsData.some(q => q.pNumber === cadet.pNumber && q.module && q.module.toLowerCase().includes(str.toLowerCase()));
+    const hasMasterAward = hq("Master Coxswain");
+    const hasCoxswainAward = hq("Coxswain Award") || hq("SCC Coxswain");
+    if (hasMasterAward) return { coxswain: null, master: null };
+
+    // Coxswain proficiencies
+    const profs = [
+      { name: "Rowing Coxswain", met: hq("Rowing Coxswain") || hq("SCC Coxswain") || hq("Row 3") },
+      { name: "BC Paddle Explore Award", met: hq("Paddle Explore") },
+      { name: "YSS Stage 4 (Dinghy Sailing)", met: hq("YSS Stage 4") || hq("Sailing Stage 4") },
+      { name: "Windsurfing Stage 2+", met: hq("Windsurfing") && (hq("Windsurfing Stage 2") || hq("Windsurfing Stage 3") || hq("Windsurfing Stage 4") || hq("YouthWS - Stage 2") || hq("YouthWS - Stage 3") || hq("YouthWS - Stage 4")) }
+    ];
+    const profsMet = profs.filter(p => p.met).length;
+    const profsAchieved = profs.filter(p => p.met).map(p => p.name);
+    const profsMissing = profs.filter(p => !p.met).map(p => p.name);
+    const meetsCox = profsMet >= 2;
+
+    const coxGap = hasCoxswainAward ? null : {
+      proficienciesMet: profsMet,
+      needed: Math.max(0, 2 - profsMet),
+      achieved: profsAchieved,
+      missing: profsMissing,
+      awarded: hasCoxswainAward
+    };
+
+    // Master Coxswain gaps
+    if (!meetsCox) return { coxswain: coxGap, master: null };
+
+    const hasPB2 = hq("Powerboat Level 2") || hq("Powerboat L2") || hq("Level 2 Planing") || hq("Level 2 Disp");
+    const hasENS = hq("Essential Navigation");
+    const hasDaySkipper = hq("Day Skipper") || hq("Watch Leader");
+    const hasNav = hasENS || hasDaySkipper;
+    const navLabel = hasENS ? "RYA Essential Navigation & Seamanship" : hasDaySkipper ? "RYA Day Skipper Theory" : null;
+
+    // Pathway 1 pieces
+    const p1Options = [
+      { name: "Assistant Rowing Instructor", met: hq("Assistant Rowing Instructor") },
+      { name: "CST / FSRT / PSRC (rescue test)", met: hq("CST") || hq("FSRT") || hq("PSRC") },
+      { name: "RYA Assistant Dinghy Instructor", met: hq("Assistant Dinghy Instructor") },
+      { name: "RYA Assistant Windsurfing Instructor", met: hq("Assistant Windsurfing Instructor") }
+    ];
+    const p1OptionMet = p1Options.find(o => o.met);
+    const hasP1Option = !!p1OptionMet;
+    const meetsP1 = hasPB2 && hasNav && hasP1Option;
+
+    // Pathway 2 pieces
+    const p2Options = [
+      { name: "BC Paddlesport Instructor", met: hq("Paddlesport Instructor") },
+      { name: "RYA Dinghy Instructor", met: hq("Dinghy Instructor") && !hq("Assistant Dinghy") },
+      { name: "RYA Windsurfing Instructor", met: hq("Windsurfing Instructor") && !hq("Assistant Windsurfing") },
+      { name: "RYA Powerboat Instructor", met: hq("Powerboat Instructor") && !hq("Assistant Powerboat") }
+    ];
+    const p2OptionMet = p2Options.find(o => o.met);
+    const hasP2Option = !!p2OptionMet;
+    const meetsP2 = hasP2Option;
+
+    const meetsMaster = meetsP1 || meetsP2;
+    if (meetsMaster) return { coxswain: coxGap, master: null };
+
+    // Build master gap detail - include what they have
+    const p1MissingBase = [];
+    if (!hasPB2) p1MissingBase.push("RYA Powerboat Level 2");
+    if (!hasNav) p1MissingBase.push("RYA Essential Navigation & Seamanship (or Day Skipper Theory)");
+    const p1MissingOption = hasP1Option ? [] : p1Options.filter(o => !o.met).map(o => o.name);
+    const p1HaveBase = [
+      ...(hasPB2 ? ["RYA Powerboat Level 2"] : []),
+      ...(navLabel ? [navLabel] : [])
+    ];
+    const p1HaveOption = p1OptionMet ? [p1OptionMet.name] : [];
+
+    const p2Missing = p2Options.filter(o => !o.met).map(o => o.name);
+    const p2Have = p2Options.filter(o => o.met).map(o => o.name);
+
+    // Also include cox proficiencies in master "have" section
+    const masterHave = [...profsAchieved];
+
+    return {
+      coxswain: coxGap,
+      master: {
+        coxProficienciesAchieved: profsAchieved,
+        pathway1: { hasPB2, hasNav, haveBase: p1HaveBase, haveOption: p1HaveOption, missingBase: p1MissingBase, missingOption: p1MissingOption },
+        pathway2: { have: p2Have, missing: p2Missing }
+      }
+    };
+  };
+
+  // Build the approaching list for the panel
+  const approachingCadets = useMemo(() => {
+    return sortedCadets.map(cadet => {
+      const gaps = getCoxswainGaps(cadet);
+      const status = getCadetStatusColor(cadet);
+      return { cadet, gaps, status };
+    }).filter(({ gaps, status }) => {
+      // Include: has 1 proficiency (one away from Cox), or has Cox award and master gaps, or pending
+      if (status === "status-cox-pending" || status === "status-master-pending") return true;
+      if (gaps.coxswain && gaps.coxswain.proficienciesMet === 1) return true;
+      if (gaps.master) return true;
+      return false;
+    }).sort((a, b) => {
+      // Sort: master pending first, then cox pending, then approaching cox
+      const order = { "status-master-pending": 0, "status-cox-pending": 1, "": 2 };
+      return (order[a.status] ?? 2) - (order[b.status] ?? 2);
+    });
+  }, [sortedCadets, qualsData]);
+
+  // ── Award gap panel renderer ──────────────────────────────────────────
+  const CoxswainGapPanel = () => {
+    const [expanded, setExpanded] = React.useState(null);
+    if (approachingCadets.length === 0) return null;
+
+    const statusLabel = status => {
+      if (status === "status-master-pending") return { text: "Master Ready", bg: "bg-yellow-100", text_color: "text-yellow-800", dot: "bg-[#ffd700]" };
+      if (status === "status-cox-pending") return { text: "Cox Ready", bg: "bg-blue-100", text_color: "text-blue-800", dot: "bg-[#add8e6]" };
+      return { text: "Approaching", bg: "bg-slate-100", text_color: "text-slate-600", dot: "bg-slate-300" };
+    };
+
+    return /*#__PURE__*/React.createElement("div", { className: "bg-white rounded-lg shadow-xl p-6 border-l-4 border-amber-400" },
+      /*#__PURE__*/React.createElement("div", { className: "flex items-center gap-3 mb-4" },
+        /*#__PURE__*/React.createElement("div", { className: "p-2 bg-amber-100 rounded-full" },
+          /*#__PURE__*/React.createElement(Icon, { name: "Target", className: "w-6 h-6 text-amber-700" })
+        ),
+        /*#__PURE__*/React.createElement("div", null,
+          /*#__PURE__*/React.createElement("h3", { className: "text-lg font-bold text-slate-800" }, "Coxswain Award Progress"),
+          /*#__PURE__*/React.createElement("p", { className: "text-xs text-slate-500" }, approachingCadets.length, " cadet", approachingCadets.length !== 1 ? "s" : "", " approaching or ready for an award")
+        )
+      ),
+      /*#__PURE__*/React.createElement("div", { className: "space-y-2" },
+        approachingCadets.map(({ cadet, gaps, status }) => {
+          const lbl = statusLabel(status);
+          const isOpen = expanded === cadet.pNumber;
+          return /*#__PURE__*/React.createElement("div", { key: cadet.pNumber, className: "border border-slate-200 rounded-lg overflow-hidden" },
+            /*#__PURE__*/React.createElement("button", {
+              onClick: () => setExpanded(isOpen ? null : cadet.pNumber),
+              className: "w-full flex items-center justify-between px-4 py-3 text-left hover:bg-slate-50 transition-colors"
+            },
+              /*#__PURE__*/React.createElement("div", { className: "flex items-center gap-3" },
+                /*#__PURE__*/React.createElement("span", { className: `w-2.5 h-2.5 rounded-full flex-shrink-0 ${lbl.dot}` }),
+                /*#__PURE__*/React.createElement("span", { className: "font-medium text-sm text-slate-800" }, cadet.name),
+                /*#__PURE__*/React.createElement("span", { className: "text-xs text-slate-400" }, "(", cadet.rank, ")")
+              ),
+              /*#__PURE__*/React.createElement("div", { className: "flex items-center gap-2" },
+                /*#__PURE__*/React.createElement("span", { className: `px-2 py-0.5 rounded-full text-xs font-semibold ${lbl.bg} ${lbl.text_color}` }, lbl.text),
+                /*#__PURE__*/React.createElement(Icon, { name: isOpen ? "ChevronUp" : "ChevronDown", className: "w-4 h-4 text-slate-400" })
+              )
+            ),
+            isOpen && /*#__PURE__*/React.createElement("div", { className: "px-4 pb-4 pt-1 bg-slate-50 border-t border-slate-200 text-sm space-y-3" },
+
+              // Coxswain section
+              gaps.coxswain && !gaps.coxswain.awarded && /*#__PURE__*/React.createElement("div", null,
+                /*#__PURE__*/React.createElement("p", { className: "font-semibold text-slate-700 mb-2" }, "Coxswain Badge"),
+                /*#__PURE__*/React.createElement("div", { className: "grid grid-cols-2 gap-3" },
+                  // Have column
+                  /*#__PURE__*/React.createElement("div", null,
+                    /*#__PURE__*/React.createElement("p", { className: "text-xs font-semibold text-green-700 uppercase tracking-wide mb-1" }, "Have"),
+                    gaps.coxswain.achieved.length > 0
+                      ? /*#__PURE__*/React.createElement("ul", { className: "space-y-0.5" },
+                          gaps.coxswain.achieved.map(m => /*#__PURE__*/React.createElement("li", { key: m, className: "text-xs text-green-700 flex items-start gap-1" },
+                            /*#__PURE__*/React.createElement("span", null, "✓"), m
+                          ))
+                        )
+                      : /*#__PURE__*/React.createElement("p", { className: "text-xs text-slate-400 italic" }, "None yet")
+                  ),
+                  // Still need column
+                  /*#__PURE__*/React.createElement("div", null,
+                    gaps.coxswain.proficienciesMet >= 2
+                      ? /*#__PURE__*/React.createElement("p", { className: "text-xs font-semibold text-green-700 uppercase tracking-wide mb-1" }, "Ready to claim")
+                      : /*#__PURE__*/React.createElement(React.Fragment, null,
+                          /*#__PURE__*/React.createElement("p", { className: "text-xs font-semibold text-red-600 uppercase tracking-wide mb-1" }, "Needs ", gaps.coxswain.needed, " more from:"),
+                          /*#__PURE__*/React.createElement("ul", { className: "space-y-0.5" },
+                            gaps.coxswain.missing.map(m => /*#__PURE__*/React.createElement("li", { key: m, className: "text-xs text-slate-500 flex items-start gap-1" },
+                              /*#__PURE__*/React.createElement("span", { className: "text-slate-300" }, "○"), m
+                            ))
+                          )
+                        )
+                  )
+                )
+              ),
+
+              // Master section
+              gaps.master && /*#__PURE__*/React.createElement("div", null,
+                /*#__PURE__*/React.createElement("p", { className: "font-semibold text-slate-700 mb-1" }, "Master Coxswain Badge"),
+                /*#__PURE__*/React.createElement("p", { className: "text-xs text-slate-500 italic mb-2" }, "Coxswain criteria met. Choose a pathway to complete:"),
+
+                // Pathway 1
+                /*#__PURE__*/React.createElement("div", { className: "mb-3" },
+                  /*#__PURE__*/React.createElement("p", { className: "text-xs font-semibold text-slate-700 mb-1" }, "Pathway 1 — PB Level 2 + Navigation + assistant/rescue qual"),
+                  /*#__PURE__*/React.createElement("div", { className: "grid grid-cols-2 gap-3" },
+                    /*#__PURE__*/React.createElement("div", null,
+                      /*#__PURE__*/React.createElement("p", { className: "text-xs font-semibold text-green-700 uppercase tracking-wide mb-1" }, "Have"),
+                      [...gaps.master.coxProficienciesAchieved, ...gaps.master.pathway1.haveBase, ...gaps.master.pathway1.haveOption].length > 0
+                        ? /*#__PURE__*/React.createElement("ul", { className: "space-y-0.5" },
+                            [...gaps.master.coxProficienciesAchieved, ...gaps.master.pathway1.haveBase, ...gaps.master.pathway1.haveOption].map(m => /*#__PURE__*/React.createElement("li", { key: m, className: "text-xs text-green-700 flex items-start gap-1" },
+                              /*#__PURE__*/React.createElement("span", null, "✓"), m
+                            ))
+                          )
+                        : /*#__PURE__*/React.createElement("p", { className: "text-xs text-slate-400 italic" }, "None yet")
+                    ),
+                    /*#__PURE__*/React.createElement("div", null,
+                      /*#__PURE__*/React.createElement("p", { className: "text-xs font-semibold text-red-600 uppercase tracking-wide mb-1" }, "Still needs"),
+                      gaps.master.pathway1.missingBase.length === 0 && gaps.master.pathway1.missingOption.length === 0
+                        ? /*#__PURE__*/React.createElement("p", { className: "text-xs text-green-700" }, "✓ Complete")
+                        : /*#__PURE__*/React.createElement("ul", { className: "space-y-0.5" },
+                            gaps.master.pathway1.missingBase.map(m => /*#__PURE__*/React.createElement("li", { key: m, className: "text-xs text-red-600 flex items-start gap-1" },
+                              /*#__PURE__*/React.createElement("span", { className: "text-red-400" }, "✗"), m
+                            )),
+                            gaps.master.pathway1.missingOption.length > 0 && /*#__PURE__*/React.createElement("li", { className: "text-xs text-slate-500 flex items-start gap-1" },
+                              /*#__PURE__*/React.createElement("span", { className: "text-slate-300" }, "○"),
+                              "One of: ", gaps.master.pathway1.missingOption.join(", ")
+                            )
+                          )
+                    )
+                  )
+                ),
+
+                // Divider
+                /*#__PURE__*/React.createElement("div", { className: "flex items-center gap-2 my-2" },
+                  /*#__PURE__*/React.createElement("div", { className: "flex-1 border-t border-slate-200" }),
+                  /*#__PURE__*/React.createElement("span", { className: "text-xs text-slate-400 font-medium" }, "or"),
+                  /*#__PURE__*/React.createElement("div", { className: "flex-1 border-t border-slate-200" })
+                ),
+
+                // Pathway 2
+                /*#__PURE__*/React.createElement("div", null,
+                  /*#__PURE__*/React.createElement("p", { className: "text-xs font-semibold text-slate-700 mb-1" }, "Pathway 2 — any one full instructor qualification"),
+                  /*#__PURE__*/React.createElement("div", { className: "grid grid-cols-2 gap-3" },
+                    /*#__PURE__*/React.createElement("div", null,
+                      /*#__PURE__*/React.createElement("p", { className: "text-xs font-semibold text-green-700 uppercase tracking-wide mb-1" }, "Have"),
+                      [...gaps.master.coxProficienciesAchieved, ...gaps.master.pathway2.have].length > 0
+                        ? /*#__PURE__*/React.createElement("ul", { className: "space-y-0.5" },
+                            [...gaps.master.coxProficienciesAchieved, ...gaps.master.pathway2.have].map(m => /*#__PURE__*/React.createElement("li", { key: m, className: "text-xs text-green-700 flex items-start gap-1" },
+                              /*#__PURE__*/React.createElement("span", null, "✓"), m
+                            ))
+                          )
+                        : /*#__PURE__*/React.createElement("p", { className: "text-xs text-slate-400 italic" }, "Coxswain criteria only")
+                    ),
+                    /*#__PURE__*/React.createElement("div", null,
+                      /*#__PURE__*/React.createElement("p", { className: "text-xs font-semibold text-red-600 uppercase tracking-wide mb-1" }, "Still needs one of"),
+                      /*#__PURE__*/React.createElement("ul", { className: "space-y-0.5" },
+                        gaps.master.pathway2.missing.map(m => /*#__PURE__*/React.createElement("li", { key: m, className: "text-xs text-slate-500 flex items-start gap-1" },
+                          /*#__PURE__*/React.createElement("span", { className: "text-slate-300" }, "○"), m
+                        ))
+                      )
+                    )
+                  )
+                )
+              ),
+
+              // Already awarded note
+              !gaps.coxswain && !gaps.master && /*#__PURE__*/React.createElement("p", { className: "text-xs text-green-700" }, "✓ All criteria met — claim on Westminster")
+            )
+          );
+        })
+      )
+    );
+  };
+
   return /*#__PURE__*/React.createElement("div", {
     className: "space-y-6"
   }, /*#__PURE__*/React.createElement("div", {
@@ -6910,7 +7172,7 @@ const WaterborneView = ({
     className: "flex items-center gap-1"
   }, /*#__PURE__*/React.createElement("span", {
     className: "w-3 h-3 rounded-full bg-[#ffd700] border border-black"
-  }), " Master (Awarded)"))), /*#__PURE__*/React.createElement("div", {
+  }), " Master (Awarded)"))), /*#__PURE__*/React.createElement(CoxswainGapPanel, null), /*#__PURE__*/React.createElement("div", {
     className: "bg-white rounded-lg shadow overflow-hidden border border-slate-200"
   }, /*#__PURE__*/React.createElement("div", {
     className: "planner-container"

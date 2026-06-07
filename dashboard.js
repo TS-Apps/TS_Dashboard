@@ -5680,9 +5680,322 @@ const RetentionView = ({
 // END RETENTION RISK VIEW
 // ═══════════════════════════════════════════════════════════════════════════
 
+
+// ── Upcoming Awards Panel ─────────────────────────────────────────────────
+// Surfaces cadets approaching specialisations and proficiencies derived from
+// CTP module completion, plus Coxswain/Master Coxswain waterborne awards.
+const UpcomingAwardsPanel = ({ personnel, qualsData }) => {
+  const [expanded, setExpanded] = React.useState(null);
+  const [filter, setFilter] = React.useState('all');
+
+  const cadets = React.useMemo(() => personnel.filter(p => isCadet(p)), [personnel]);
+
+  // Helper: check if a cadet holds a named qual (case-insensitive substring)
+  const hasQ = (pNum, str) => qualsData.some(q =>
+    q.pNumber === pNum && q.module && q.module.toLowerCase().includes(str.toLowerCase())
+  );
+
+  // Helper: count how many codes from an array the cadet has completed
+  const countCodes = (pNum, codes) => {
+    const cadetQuals = qualsData.filter(q => q.pNumber === pNum && q.module);
+    return codes.filter(code =>
+      cadetQuals.some(q => q.module.includes(code))
+    ).length;
+  };
+
+  // ── Award definitions ────────────────────────────────────────────────────
+  // Each entry: { id, category, label, colour, check(cadet) → null | { achieved[], missing[], readyToClaim } }
+  const AWARD_CHECKS = [
+
+    // ── First Aid ──────────────────────────────────────────────────────────
+    {
+      id: 'fa_basic', category: 'First Aid', label: 'Basic First Aid',
+      colour: 'border-red-400',
+      check: c => {
+        if (hasQ(c.pNumber, 'Cadet First Aid Basic') || hasQ(c.pNumber, 'First Aid Basic')) return null;
+        const codes = ['FA01','FA02','FA03','FA04','FA05','FA06','FA07','FA08','FA09','FA10','FA11','FA12'];
+        const done = countCodes(c.pNumber, codes);
+        if (done < 9) return null; // threshold: 75% of 12 modules
+        const achieved = codes.filter(code => qualsData.some(q => q.pNumber === c.pNumber && q.module && q.module.includes(code)));
+        const missing = codes.filter(code => !qualsData.some(q => q.pNumber === c.pNumber && q.module && q.module.includes(code)));
+        return { achieved: achieved.map(c => c + ' ✓'), missing, readyToClaim: done === codes.length };
+      }
+    },
+    {
+      id: 'fa_intermediate', category: 'First Aid', label: 'Intermediate First Aid',
+      colour: 'border-red-400',
+      check: c => {
+        if (hasQ(c.pNumber, 'Cadet First Aid Intermediate') || hasQ(c.pNumber, 'First Aid Intermediate')) return null;
+        if (!hasQ(c.pNumber, 'Cadet First Aid Basic') && !hasQ(c.pNumber, 'First Aid Basic') && countCodes(c.pNumber, ['FA01','FA02','FA03','FA04','FA05','FA06','FA07','FA08','FA09','FA10','FA11','FA12']) < 12) return null;
+        const codes = ['FA13','FA14','FA15','FA16','FA17','FA18','FA19','FA20','FA21','FA22','FA23','FA24','FA25','FA26'];
+        const done = countCodes(c.pNumber, codes);
+        if (done < 11) return null; // threshold: 75% of 14 modules
+        const achieved = codes.filter(code => qualsData.some(q => q.pNumber === c.pNumber && q.module && q.module.includes(code)));
+        const missing = codes.filter(code => !qualsData.some(q => q.pNumber === c.pNumber && q.module && q.module.includes(code)));
+        return { achieved: achieved.map(c => c + ' ✓'), missing, readyToClaim: done === codes.length };
+      }
+    },
+
+    // ── Seamanship ─────────────────────────────────────────────────────────
+    {
+      id: 'sm_basic', category: 'Seamanship', label: 'Basic Seamanship',
+      colour: 'border-sky-400',
+      check: c => {
+        if (hasQ(c.pNumber, 'Seamanship - Basic') || hasQ(c.pNumber, 'Seamanship Basic')) return null;
+        const codes = ['SM01','SM02','SM03','SM04','SM05','SM06','SM07','SM08','SM09','SM10','SM11','SM12'];
+        const done = countCodes(c.pNumber, codes);
+        if (done < 9) return null; // threshold: 75% of 12 modules
+        const achieved = codes.filter(code => qualsData.some(q => q.pNumber === c.pNumber && q.module && q.module.includes(code)));
+        const missing = codes.filter(code => !qualsData.some(q => q.pNumber === c.pNumber && q.module && q.module.includes(code)));
+        return { achieved: achieved.map(c => c + ' ✓'), missing, readyToClaim: done === codes.length };
+      }
+    },
+
+    // ── Drill ──────────────────────────────────────────────────────────────
+    {
+      id: 'dr_basic', category: 'Drill', label: 'Basic Drill',
+      colour: 'border-slate-400',
+      check: c => {
+        if (hasQ(c.pNumber, 'Drill - Basic') || hasQ(c.pNumber, 'Drill Basic')) return null;
+        const codes = ['DR01','DR02','DR03','DR04'];
+        const done = countCodes(c.pNumber, codes);
+        if (done < 3) return null; // threshold: 75% of 4 modules
+        const achieved = codes.filter(code => qualsData.some(q => q.pNumber === c.pNumber && q.module && q.module.includes(code)));
+        const missing = codes.filter(code => !qualsData.some(q => q.pNumber === c.pNumber && q.module && q.module.includes(code)));
+        return { achieved: achieved.map(c => c + ' ✓'), missing, readyToClaim: done === codes.length };
+      }
+    },
+    {
+      id: 'dr_intermediate', category: 'Drill', label: 'Intermediate Drill',
+      colour: 'border-slate-400',
+      check: c => {
+        if (hasQ(c.pNumber, 'Drill - Intermediate') || hasQ(c.pNumber, 'Drill Intermediate')) return null;
+        const codes = ['DR05','DR06','DR07','DR08','DR09','DR10','DR11','DR12'];
+        const done = countCodes(c.pNumber, codes);
+        if (done < 6) return null; // threshold: 75% of 8 modules
+        const achieved = codes.filter(code => qualsData.some(q => q.pNumber === c.pNumber && q.module && q.module.includes(code)));
+        const missing = codes.filter(code => !qualsData.some(q => q.pNumber === c.pNumber && q.module && q.module.includes(code)));
+        return { achieved: achieved.map(c => c + ' ✓'), missing, readyToClaim: done === codes.length };
+      }
+    },
+    {
+      id: 'dr_advanced', category: 'Drill', label: 'Advanced Drill',
+      colour: 'border-slate-400',
+      check: c => {
+        if (hasQ(c.pNumber, 'Drill - Advanced') || hasQ(c.pNumber, 'Drill Advanced')) return null;
+        if (!hasQ(c.pNumber, 'Drill - Intermediate') && !hasQ(c.pNumber, 'Drill Intermediate')) return null;
+        const codes = ['DR13','DR14','DR15','DR16','DR17','DR18','DR19','DR20'];
+        const done = countCodes(c.pNumber, codes);
+        if (done < 6) return null; // threshold: 75% of 8 modules
+        const achieved = codes.filter(code => qualsData.some(q => q.pNumber === c.pNumber && q.module && q.module.includes(code)));
+        const missing = codes.filter(code => !qualsData.some(q => q.pNumber === c.pNumber && q.module && q.module.includes(code)));
+        return { achieved: achieved.map(c => c + ' ✓'), missing, readyToClaim: done === codes.length };
+      }
+    },
+
+    // ── Meteorology ────────────────────────────────────────────────────────
+    {
+      id: 'met', category: 'Meteorology', label: 'Meteorology Proficiency',
+      colour: 'border-blue-400',
+      check: c => {
+        if (hasQ(c.pNumber, 'Meteorology') || hasQ(c.pNumber, 'Met - Proficiency')) return null;
+        const codes = ['MT01','MT02','MT03','MT04','MT05','MT06','MT07','MT08','MT09','MT10'];
+        const done = countCodes(c.pNumber, codes);
+        if (done < 8) return null; // threshold: 75% of 10 modules
+        const achieved = codes.filter(code => qualsData.some(q => q.pNumber === c.pNumber && q.module && q.module.includes(code)));
+        const missing = codes.filter(code => !qualsData.some(q => q.pNumber === c.pNumber && q.module && q.module.includes(code)));
+        return { achieved: achieved.map(c => c + ' ✓'), missing, readyToClaim: done === codes.length };
+      }
+    },
+
+    // ── Coxswain / Master Coxswain ─────────────────────────────────────────
+    {
+      id: 'coxswain', category: 'Waterborne', label: 'Coxswain Award',
+      colour: 'border-teal-400',
+      check: c => {
+        if (hasQ(c.pNumber, 'Coxswain Award') || hasQ(c.pNumber, 'SCC Coxswain')) return null;
+        const hq = str => hasQ(c.pNumber, str);
+        const profs = [
+          { name: 'Rowing Coxswain', met: hq('Rowing Coxswain') || hq('Row 3') },
+          { name: 'BC Paddle Explore Award', met: hq('Paddle Explore') },
+          { name: 'YSS Stage 4 (Dinghy Sailing)', met: hq('YSS Stage 4') || hq('Sailing Stage 4') },
+          { name: 'Windsurfing Stage 2+', met: hq('Windsurfing') && (hq('Windsurfing Stage 2') || hq('Windsurfing Stage 3') || hq('Windsurfing Stage 4') || hq('YouthWS - Stage 2') || hq('YouthWS - Stage 3') || hq('YouthWS - Stage 4')) }
+        ];
+        const met = profs.filter(p => p.met).length;
+        if (met < 1) return null;
+        const achieved = profs.filter(p => p.met).map(p => p.name + ' ✓');
+        const missing = profs.filter(p => !p.met).map(p => p.name);
+        return { achieved, missing, readyToClaim: met >= 2, note: 'Requires any 2 from different disciplines' };
+      }
+    },
+    {
+      id: 'master_coxswain', category: 'Waterborne', label: 'Master Coxswain Award',
+      colour: 'border-teal-400',
+      check: c => {
+        if (hasQ(c.pNumber, 'Master Coxswain')) return null;
+        const hq = str => hasQ(c.pNumber, str);
+        const hasCox = hq('Coxswain Award') || hq('SCC Coxswain');
+        const profs = [
+          { name: 'Rowing Coxswain', met: hq('Rowing Coxswain') || hq('Row 3') },
+          { name: 'BC Paddle Explore Award', met: hq('Paddle Explore') },
+          { name: 'YSS Stage 4 (Dinghy Sailing)', met: hq('YSS Stage 4') || hq('Sailing Stage 4') },
+          { name: 'Windsurfing Stage 2+', met: hq('Windsurfing') && (hq('Windsurfing Stage 2') || hq('Windsurfing Stage 3') || hq('Windsurfing Stage 4') || hq('YouthWS - Stage 2') || hq('YouthWS - Stage 3') || hq('YouthWS - Stage 4')) }
+        ];
+        const profsMet = profs.filter(p => p.met).length;
+        const meetsCox = hasCox || profsMet >= 2;
+        if (!meetsCox) return null;
+        const hasPB2 = hq('Powerboat Level 2') || hq('Powerboat L2') || hq('Level 2 Planing') || hq('Level 2 Disp');
+        const hasNav = hq('Essential Navigation') || hq('Day Skipper') || hq('Watch Leader');
+        const p1Option = hq('Assistant Rowing Instructor') || hq('CST') || hq('FSRT') || hq('PSRC') || hq('Assistant Dinghy Instructor') || hq('Assistant Windsurfing Instructor');
+        const p2Option = hq('Paddlesport Instructor') || (hq('Dinghy Instructor') && !hq('Assistant Dinghy')) || (hq('Windsurfing Instructor') && !hq('Assistant Windsurfing')) || (hq('Powerboat Instructor') && !hq('Assistant Powerboat'));
+        if (hasPB2 && hasNav && p1Option) return null;
+        if (p2Option) return null;
+        const achieved = [
+          ...(hasCox ? ['Coxswain Award ✓'] : profs.filter(p => p.met).map(p => p.name + ' ✓')),
+          ...(hasPB2 ? ['Powerboat Level 2 ✓'] : []),
+          ...(hasNav ? ['Navigation qualification ✓'] : []),
+          ...(p1Option ? ['Assistant/rescue qual ✓'] : [])
+        ];
+        const missing = [
+          ...(!hasPB2 ? ['RYA Powerboat Level 2 (Pathway 1)'] : []),
+          ...(!hasNav ? ['RYA Essential Navigation & Seamanship or Day Skipper Theory (Pathway 1)'] : []),
+          ...(!p1Option && hasPB2 && hasNav ? ['One of: Assistant Rowing Instructor, CST/FSRT/PSRC, Assistant Dinghy or Windsurfing Instructor (Pathway 1)'] : []),
+          'Or: BC Paddlesport / RYA Dinghy / Windsurfing / Powerboat Instructor (Pathway 2)'
+        ];
+        const readyToClaim = false;
+        return { achieved, missing, readyToClaim, note: 'Coxswain criteria met' };
+      }
+    }
+  ];
+
+  // Build the approaching list
+  const approaching = React.useMemo(() => {
+    if (!qualsData || qualsData.length === 0) return [];
+    const results = [];
+    cadets.forEach(cadet => {
+      AWARD_CHECKS.forEach(award => {
+        const gap = award.check(cadet);
+        if (!gap) return;
+        results.push({ cadet, award, gap });
+      });
+    });
+    // Sort: ready to claim first, then by cadet name
+    return results.sort((a, b) => {
+      if (a.gap.readyToClaim && !b.gap.readyToClaim) return -1;
+      if (!a.gap.readyToClaim && b.gap.readyToClaim) return 1;
+      return a.cadet.name.localeCompare(b.cadet.name);
+    });
+  }, [cadets, qualsData]);
+
+  const categories = ['all', ...new Set(AWARD_CHECKS.map(a => a.category))];
+  const filtered = filter === 'all' ? approaching : approaching.filter(r => r.award.category === filter);
+  const readyCount = approaching.filter(r => r.gap.readyToClaim).length;
+
+  if (approaching.length === 0 && qualsData && qualsData.length > 0) return null;
+  if (!qualsData || qualsData.length === 0) return null;
+
+  const categoryColours = {
+    'First Aid': 'bg-red-100 text-red-700',
+    'Seamanship': 'bg-sky-100 text-sky-700',
+    'Drill': 'bg-slate-100 text-slate-600',
+    'Meteorology': 'bg-blue-100 text-blue-700',
+    'Waterborne': 'bg-teal-100 text-teal-700'
+  };
+
+  return /*#__PURE__*/React.createElement("div", { className: "bg-white p-6 rounded-lg shadow border-l-4 border-violet-500" },
+    // Header
+    /*#__PURE__*/React.createElement("div", { className: "flex flex-wrap items-center gap-3 mb-4" },
+      /*#__PURE__*/React.createElement(Icon, { name: "Target", className: "w-6 h-6 text-violet-600 flex-shrink-0" }),
+      /*#__PURE__*/React.createElement("div", { className: "flex-1 min-w-0" },
+        /*#__PURE__*/React.createElement("h3", { className: "text-lg font-bold text-slate-800" }, "Upcoming Awards"),
+        /*#__PURE__*/React.createElement("p", { className: "text-xs text-slate-500" },
+          approaching.length, " cadet", approaching.length !== 1 ? "s" : "", " approaching an award",
+          readyCount > 0 && /*#__PURE__*/React.createElement("span", { className: "ml-2 px-2 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-700" },
+            readyCount, " ready to claim"
+          )
+        )
+      ),
+      // Category filter
+      /*#__PURE__*/React.createElement("div", { className: "flex flex-wrap gap-1" },
+        categories.map(cat =>
+          /*#__PURE__*/React.createElement("button", {
+            key: cat,
+            onClick: () => setFilter(cat),
+            className: `px-2 py-0.5 rounded-full text-xs font-medium border transition-colors ${
+              filter === cat
+                ? 'bg-violet-600 text-white border-violet-600'
+                : 'bg-white text-slate-600 border-slate-300 hover:border-violet-400'
+            }`
+          }, cat === 'all' ? 'All' : cat)
+        )
+      )
+    ),
+
+    // List
+    /*#__PURE__*/React.createElement("div", { className: "space-y-1" },
+      filtered.length === 0
+        ? /*#__PURE__*/React.createElement("p", { className: "text-xs text-slate-400 italic py-2" }, "No cadets approaching this award type.")
+        : filtered.map(({ cadet, award, gap }) => {
+            const rowKey = cadet.pNumber + '_' + award.id;
+            const isOpen = expanded === rowKey;
+            const catColour = categoryColours[award.category] || 'bg-slate-100 text-slate-600';
+            return /*#__PURE__*/React.createElement("div", { key: rowKey, className: `border border-slate-200 rounded-lg overflow-hidden ${award.colour} border-l-4` },
+              // Row header
+              /*#__PURE__*/React.createElement("button", {
+                onClick: () => setExpanded(isOpen ? null : rowKey),
+                className: "w-full flex items-center justify-between px-4 py-2.5 text-left hover:bg-slate-50 transition-colors"
+              },
+                /*#__PURE__*/React.createElement("div", { className: "flex items-center gap-2 min-w-0 flex-1" },
+                  /*#__PURE__*/React.createElement("span", { className: `w-2 h-2 rounded-full flex-shrink-0 ${gap.readyToClaim ? 'bg-green-500' : 'bg-amber-400'}` }),
+                  /*#__PURE__*/React.createElement("span", { className: "font-medium text-sm text-slate-800 truncate" }, cadet.name),
+                  /*#__PURE__*/React.createElement("span", { className: "text-xs text-slate-400 flex-shrink-0" }, "(", cadet.rank, ")")
+                ),
+                /*#__PURE__*/React.createElement("div", { className: "flex items-center gap-2 flex-shrink-0 ml-2" },
+                  /*#__PURE__*/React.createElement("span", { className: `px-2 py-0.5 rounded-full text-xs font-semibold ${catColour}` }, award.label),
+                  gap.readyToClaim && /*#__PURE__*/React.createElement("span", { className: "px-2 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-700" }, "Ready"),
+                  /*#__PURE__*/React.createElement(Icon, { name: isOpen ? "ChevronUp" : "ChevronDown", className: "w-4 h-4 text-slate-400" })
+                )
+              ),
+              // Expanded detail
+              isOpen && /*#__PURE__*/React.createElement("div", { className: "px-4 pb-3 pt-2 bg-slate-50 border-t border-slate-200" },
+                gap.note && /*#__PURE__*/React.createElement("p", { className: "text-xs text-slate-500 italic mb-2" }, gap.note),
+                /*#__PURE__*/React.createElement("div", { className: "grid grid-cols-2 gap-4" },
+                  // Have
+                  /*#__PURE__*/React.createElement("div", null,
+                    /*#__PURE__*/React.createElement("p", { className: "text-xs font-semibold text-green-700 uppercase tracking-wide mb-1" }, "Have"),
+                    gap.achieved.length > 0
+                      ? /*#__PURE__*/React.createElement("ul", { className: "space-y-0.5" },
+                          gap.achieved.map(a => /*#__PURE__*/React.createElement("li", { key: a, className: "text-xs text-green-700 flex items-start gap-1" },
+                            /*#__PURE__*/React.createElement("span", null, "✓"), a.replace(' ✓', '')
+                          ))
+                        )
+                      : /*#__PURE__*/React.createElement("p", { className: "text-xs text-slate-400 italic" }, "None yet")
+                  ),
+                  // Still needs
+                  /*#__PURE__*/React.createElement("div", null,
+                    gap.readyToClaim
+                      ? /*#__PURE__*/React.createElement("p", { className: "text-xs font-semibold text-green-700 uppercase tracking-wide" }, "Ready to claim on Westminster")
+                      : /*#__PURE__*/React.createElement(React.Fragment, null,
+                          /*#__PURE__*/React.createElement("p", { className: "text-xs font-semibold text-red-600 uppercase tracking-wide mb-1" }, "Still needs"),
+                          /*#__PURE__*/React.createElement("ul", { className: "space-y-0.5" },
+                            gap.missing.map(m => /*#__PURE__*/React.createElement("li", { key: m, className: "text-xs text-slate-500 flex items-start gap-1" },
+                              /*#__PURE__*/React.createElement("span", { className: "text-slate-300" }, "○"), m
+                            ))
+                          )
+                        )
+                  )
+                )
+              )
+            );
+          })
+    )
+  );
+};
+
 const HomeView = ({
   personnel,
-  attendanceData
+  attendanceData,
+  qualsData
 }) => {
   const unitName = personnel.length > 0 ? cleanUnitName(personnel[0].unit || "Your Unit") : "Sea Cadets";
   return /*#__PURE__*/React.createElement("div", {
@@ -5716,7 +6029,7 @@ const HomeView = ({
   }, /*#__PURE__*/React.createElement(Icon, {
     name: "AlertCircle",
     className: "w-4 h-4"
-  }), " Data Note"), /*#__PURE__*/React.createElement("p", null, "All data shown here is derived from the CSV reports you uploaded and may not reflect real-time changes if new reports have not been synced."))), attendanceData && attendanceData.length > 0 && (() => {
+  }), " Data Note"), /*#__PURE__*/React.createElement("p", null, "All data shown here is derived from the CSV reports you uploaded and may not reflect real-time changes if new reports have not been synced."))), /*#__PURE__*/React.createElement(UpcomingAwardsPanel, { personnel: personnel, qualsData: qualsData || [] }), attendanceData && attendanceData.length > 0 && (() => {
     const cadets = personnel.filter(p => isCadet(p));
     const cadetPNums = new Set(cadets.map(p => p.pNumber));
     const months = [...new Set(attendanceData.filter(r => cadetPNums.has(r.p_number)).map(r => r.attendance_date.slice(0, 7)))].sort();
@@ -14629,7 +14942,8 @@ const App = ({
     className: `flex-1 ${sidebarCollapsed ? 'ml-20' : 'ml-64'} p-8 overflow-y-auto transition-all duration-300`
   }, view === 'home' && /*#__PURE__*/React.createElement(HomeView, {
     personnel: personnelData,
-    attendanceData: attendanceData
+    attendanceData: attendanceData,
+    qualsData: qualsData
   }), view === 'cadet_focus' && /*#__PURE__*/React.createElement(CadetFocus, {
     personnel: personnelData,
     qualsData: qualsData,

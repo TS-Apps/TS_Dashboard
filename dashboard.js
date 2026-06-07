@@ -264,6 +264,7 @@ const Icons = {
   Command: lucide.icons.Command,
   ShipWheel: lucide.icons.ShipWheel,
   ClipboardList: lucide.icons.ClipboardList,
+  ChevronRight: lucide.icons.ChevronRight,
   Database: lucide.icons.Database,
   Download: lucide.icons.Download,
   Settings: lucide.icons.Settings,
@@ -7866,6 +7867,190 @@ const CadetFocus = ({
     });
     return awardedWaterborne;
   }, [qualsData, selectedCadetPNum]);
+
+  // ── Next Steps: Specialisations ───────────────────────────────────────
+  // SPEC_PROGRESSIONS defines the full ladder for each discipline, lowest to highest.
+  // Label is the display name; req is a short prerequisite note shown under the name.
+  const SPEC_PROGRESSIONS = {
+    "Seamanship": [
+      { name: "Basic Seamanship",        req: "SM01-SM12 then course" },
+      { name: "Intermediate Seamanship", req: "Basic Seamanship + course" },
+      { name: "Advanced Seamanship",     req: "Intermediate + course" }
+    ],
+    "First Aid": [
+      { name: "Basic First Aid",        req: "FA01-FA12 + assessment" },
+      { name: "Intermediate First Aid", req: "Basic FA + FA13-FA26 + assessment" },
+      { name: "Advanced First Aid",     req: "Intermediate FA + FAA Level 3 course" }
+    ],
+    "Marine Engineering": [
+      { name: "Marine Engineering - Basic",        req: "ME course" },
+      { name: "Marine Engineering - Intermediate", req: "Basic ME + course" },
+      { name: "Marine Engineering - Advanced",     req: "Intermediate ME + course" }
+    ],
+    "CIS": [
+      { name: "CIS Basic",        req: "CIS Basic course" },
+      { name: "CIS Intermediate", req: "Basic + course" },
+      { name: "CIS Advanced",     req: "Intermediate + course" }
+    ],
+    "Catering": [
+      { name: "Basic Catering",    req: "Catering Basic course" },
+      { name: "Intermediate Catering", req: "Basic + course" },
+      { name: "Advanced Catering", req: "Intermediate + course" }
+    ],
+    "PT": [
+      { name: "PT Basic",        req: "PT Basic course" },
+      { name: "PT Intermediate", req: "Basic + course" },
+      { name: "PT Advanced",     req: "Intermediate + course" },
+      { name: "PT Instructor",   req: "Advanced + course" }
+    ],
+    "Drill": [
+      { name: "Intermediate Drill", req: "DR01-DR12 then course" },
+      { name: "Advanced Drill",     req: "Intermediate Drill + DR13-DR15 + course" }
+    ]
+  };
+
+  // Map what the cadet currently holds to a progression level index (0 = none, 1 = first, etc.)
+  const specNextSteps = useMemo(() => {
+    if (!selectedCadet) return [];
+    const cadetQuals = qualsData.filter(q => q.pNumber === selectedCadet.pNumber && q.module);
+    const hq = str => cadetQuals.some(q => q.module.toLowerCase().includes(str.toLowerCase()));
+    const results = [];
+
+    // Determine current level per discipline
+    const currentLevels = {
+      "Seamanship": hq("seamanship - advanced") ? 3 : hq("seamanship - intermediate") ? 2 : hq("seamanship - basic") ? 1 : 0,
+      "First Aid": hq("faa level 3") || hq("first aid advanced") ? 3 : hq("first aid intermediate") ? 2 : hq("first aid basic") ? 1 : 0,
+      "Marine Engineering": hq("marine engineering - advanced") || hq("marine engineering (mechanical)") || hq("marine engineering (electrical)") ? 3 : hq("marine engineering - intermediate") ? 2 : hq("marine engineering - basic") ? 1 : 0,
+      "CIS": hq("radio advanced") || hq("cis info sys - advanced") || hq("cis principle") ? 3 : hq("radio intermediate") || hq("cis info sys - intermediate") ? 2 : hq("radio basic") || hq("cis info sys - basic") ? 1 : 0,
+      "Catering": hq("catering - advanced") || hq("stewarding - advanced") ? 3 : hq("intermediate catering") ? 2 : hq("basic catering") || hq("stewarding - basic") ? 1 : 0,
+      "PT": hq("physical training (instructor)") || hq("physical training - instructor") ? 4 : hq("physical training - advanced") ? 3 : hq("physical training - intermediate") ? 2 : hq("physical training - basic") ? 1 : 0,
+      "Drill": hq("drill - advanced") || hq("drill advanced") ? 2 : hq("drill - intermediate") || hq("drill intermediate") ? 1 : 0
+    };
+
+    Object.entries(SPEC_PROGRESSIONS).forEach(([discipline, ladder]) => {
+      const level = currentLevels[discipline] ?? 0;
+      // Only show next step if they have at least started (level > 0) OR if CTP modules suggest they're approaching
+      // For First Aid and Drill, also check CTP progress
+      const approaching = (() => {
+        if (discipline === "First Aid" && level === 0) {
+          const fa = ['FA01','FA02','FA03','FA04','FA05','FA06','FA07','FA08','FA09','FA10','FA11','FA12'];
+          return fa.filter(c => cadetQuals.some(q => q.module.includes(c))).length >= 9;
+        }
+        if (discipline === "Seamanship" && level === 0) {
+          const sm = ['SM01','SM02','SM03','SM04','SM05','SM06','SM07','SM08','SM09','SM10','SM11','SM12'];
+          return sm.filter(c => cadetQuals.some(q => q.module.includes(c))).length >= 9;
+        }
+        if (discipline === "Drill" && level === 0) {
+          const dr = ['DR01','DR02','DR03','DR04','DR05','DR06','DR07','DR08','DR09','DR10','DR11','DR12'];
+          return dr.filter(c => cadetQuals.some(q => q.module.includes(c))).length >= 9;
+        }
+        return false;
+      })();
+
+      if (level === 0 && !approaching) return; // not started, not close — skip
+      if (level >= ladder.length) return; // already at top
+
+      const next = ladder[level]; // next step is the entry at their current level index
+      results.push({ discipline, next, current: level > 0 ? ladder[level - 1]?.name : null });
+    });
+
+    return results;
+  }, [qualsData, selectedCadetPNum]);
+
+  // ── Next Steps: Waterborne ─────────────────────────────────────────────
+  const WATERBORNE_PROGRESSIONS = {
+    "Rowing": [
+      { name: "Rowing Competent Crew",      req: "Rowing course" },
+      { name: "Rowing Supervised Coxswain", req: "Competent Crew + course" },
+      { name: "Rowing Coxswain",            req: "Supervised Cox + course" },
+      { name: "Rowing Instructor",          req: "Coxswain + Instructor course" }
+    ],
+    "Paddlesport": [
+      { name: "BC Paddle Discover Award", req: "Paddlesport taster + course" },
+      { name: "BC Paddle Explore Award",  req: "Discover + course" },
+      { name: "BC PSRC",                  req: "Explore + Safety & Rescue course" },
+      { name: "BC Paddlesport Instructor",req: "PSRC + Instructor course" }
+    ],
+    "Sailing": [
+      { name: "Sailing Stage 2 (YSS)", req: "Sailing course" },
+      { name: "Sailing Stage 3 (YSS)", req: "Stage 2 + course" },
+      { name: "Sailing Stage 4 (YSS)", req: "Stage 3 + course" },
+      { name: "RYA Day Sailing",        req: "Stage 4 + course" },
+      { name: "RYA Dinghy Instructor",  req: "Advanced + Instructor course" }
+    ],
+    "Windsurfing": [
+      { name: "Windsurfing Stage 1", req: "Windsurfing course" },
+      { name: "Windsurfing Stage 2", req: "Stage 1 + course" },
+      { name: "Windsurfing Stage 3", req: "Stage 2 + course" },
+      { name: "Windsurfing Stage 4", req: "Stage 3 + course" },
+      { name: "RYA Windsurfing Instructor", req: "Stage 4 + Instructor course" }
+    ],
+    "Powerboat": [
+      { name: "RYA Powerboat Level 1", req: "Powerboat course" },
+      { name: "RYA Powerboat Level 2", req: "Level 1 + course" },
+      { name: "RYA Safety Boat",       req: "PB Level 2 + Safety Boat course" },
+      { name: "RYA Powerboat Instructor", req: "Level 2 + Instructor course" }
+    ],
+    "Offshore Sail": [
+      { name: "Offshore Sail Grade 1",    req: "Offshore voyage" },
+      { name: "Offshore Sail Grade 2",    req: "Grade 1 + voyage" },
+      { name: "Offshore Sail Seaman",     req: "Grade 2 + voyage" },
+      { name: "Offshore Sail Watch Leader", req: "Seaman + voyage" }
+    ],
+    "Offshore Power": [
+      { name: "Offshore Power Grade 1",    req: "Offshore voyage" },
+      { name: "Offshore Power Grade 2",    req: "Grade 1 + voyage" },
+      { name: "Offshore Power Seaman",     req: "Grade 2 + voyage" },
+      { name: "Offshore Power Watch Leader", req: "Seaman + voyage" }
+    ]
+  };
+
+  const waterborneNextSteps = useMemo(() => {
+    if (!selectedCadet) return [];
+    const cadetQuals = qualsData.filter(q => q.pNumber === selectedCadet.pNumber && q.module);
+    const hq = str => cadetQuals.some(q => q.module.toLowerCase().includes(str.toLowerCase()));
+    const results = [];
+
+    const currentWaterborneLevels = {
+      "Rowing":        hq("rowing instructor") ? 4 : hq("rowing coxswain") && !hq("supervised") ? 3 : hq("supervised coxswain") ? 2 : hq("competent crew") ? 1 : 0,
+      "Paddlesport":   hq("paddlesport instructor") ? 4 : hq("psrc") || hq("safety & rescue") ? 3 : hq("explore award") ? 2 : hq("discover award") ? 1 : 0,
+      "Sailing":       hq("dinghy instructor") ? 5 : hq("day sailing") || hq("performance sailing") || hq("start racing") || hq("spinnakers") || hq("seamanship skills") ? 4 : hq("stage 4") && hq("sail") ? 4 : hq("stage 3") && hq("sail") ? 3 : hq("stage 2") && hq("sail") ? 2 : hq("stage 1") && hq("sail") ? 1 : 0,
+      "Windsurfing":   hq("windsurfing instructor") ? 5 : hq("youthws - stage 4") || hq("windsurfing stage 4") ? 4 : hq("youthws - stage 3") || hq("windsurfing stage 3") ? 3 : hq("youthws - stage 2") || hq("windsurfing stage 2") ? 2 : hq("youthws - stage 1") || hq("windsurfing stage 1") ? 1 : 0,
+      "Powerboat":     hq("powerboat instructor") ? 4 : hq("safety boat") ? 3 : hq("powerboat level 2") || hq("level 2 planing") || hq("level 2 disp") ? 2 : hq("powerboat level 1") ? 1 : 0,
+      "Offshore Sail": hq("sail watch leader") ? 4 : hq("sail seaman") ? 3 : hq("sail grade 2") ? 2 : hq("sail grade 1") ? 1 : 0,
+      "Offshore Power": hq("power watch leader") ? 4 : hq("power seaman") ? 3 : hq("power grade 2") ? 2 : hq("power grade 1") ? 1 : 0
+    };
+
+    Object.entries(WATERBORNE_PROGRESSIONS).forEach(([discipline, ladder]) => {
+      const level = currentWaterborneLevels[discipline] ?? 0;
+      if (level === 0) return; // only show if they've started
+      if (level >= ladder.length) return; // at top
+
+      const next = ladder[level];
+      results.push({ discipline, next, current: ladder[level - 1]?.name });
+    });
+
+    // Also flag Coxswain / Master Coxswain if approaching
+    const hasCox = hq("coxswain award") || hq("scc coxswain");
+    const hasMaster = hq("master coxswain");
+    const profs = [
+      hq("rowing coxswain") || hq("row 3"),
+      hq("paddle explore"),
+      hq("yss stage 4") || hq("sailing stage 4"),
+      hq("windsurfing") && (hq("windsurfing stage 2") || hq("windsurfing stage 3") || hq("windsurfing stage 4") || hq("youthws - stage 2") || hq("youthws - stage 3") || hq("youthws - stage 4"))
+    ];
+    const profsMet = profs.filter(Boolean).length;
+
+    if (!hasCox && profsMet >= 1) {
+      results.push({ discipline: "Coxswain Award", next: { name: "Coxswain Award", req: `${profsMet} of 2 proficiencies met — needs ${2 - profsMet} more from different discipline` }, current: null });
+    }
+    if (hasCox && !hasMaster) {
+      results.push({ discipline: "Master Coxswain", next: { name: "Master Coxswain Award", req: "See Waterborne tab for pathway detail" }, current: "Coxswain Award" });
+    }
+
+    return results;
+  }, [qualsData, selectedCadetPNum]);
+
   const cadetSpecificAwards = useMemo(() => {
     if (!selectedCadet) return [];
     const awards = [];
@@ -8581,7 +8766,22 @@ const CadetFocus = ({
     className: "text-[10px] text-slate-500 mt-1"
   }, formatDate(spec.date)))), cadetSpecs.length === 0 && /*#__PURE__*/React.createElement("div", {
     className: "w-full text-center py-4 text-slate-400 italic bg-slate-50 rounded border border-dashed"
-  }, "No specialisations found for this cadet."))), /*#__PURE__*/React.createElement("div", {
+  }, "No specialisations found for this cadet.")),
+    specNextSteps.length > 0 && /*#__PURE__*/React.createElement("div", { className: "mt-3 pt-3 border-t border-slate-100" },
+      /*#__PURE__*/React.createElement("p", { className: "text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2" }, "Next steps"),
+      /*#__PURE__*/React.createElement("div", { className: "flex flex-wrap gap-2" },
+        specNextSteps.map(({ discipline, next, current }) =>
+          /*#__PURE__*/React.createElement("div", { key: discipline, className: "flex items-start gap-2 bg-violet-50 border border-violet-200 rounded-lg px-3 py-2 text-xs max-w-[220px]" },
+            /*#__PURE__*/React.createElement(Icon, { name: "ChevronRight", className: "w-3.5 h-3.5 text-violet-500 flex-shrink-0 mt-0.5" }),
+            /*#__PURE__*/React.createElement("div", null,
+              /*#__PURE__*/React.createElement("p", { className: "font-semibold text-slate-700" }, next.name),
+              /*#__PURE__*/React.createElement("p", { className: "text-slate-400 mt-0.5" }, next.req)
+            )
+          )
+        )
+      )
+    )
+  ), /*#__PURE__*/React.createElement("div", {
     className: "flex-auto max-w-full"
   }, /*#__PURE__*/React.createElement("h3", {
     className: "text-lg font-bold mb-4 flex items-center gap-2"
@@ -8629,7 +8829,23 @@ const CadetFocus = ({
     className: "text-[10px] text-slate-500 mt-1"
   }, formatDate(wb.date)))), cadetWaterborne.length === 0 && /*#__PURE__*/React.createElement("div", {
     className: "w-full text-center py-4 text-slate-400 italic bg-slate-50 rounded border border-dashed"
-  }, "No waterborne proficiencies found for this cadet."))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h3", {
+  }, "No waterborne proficiencies found for this cadet."),
+    waterborneNextSteps.length > 0 && /*#__PURE__*/React.createElement("div", { className: "mt-3 pt-3 border-t border-slate-100" },
+      /*#__PURE__*/React.createElement("p", { className: "text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2" }, "Next steps"),
+      /*#__PURE__*/React.createElement("div", { className: "flex flex-wrap gap-2" },
+        waterborneNextSteps.map(({ discipline, next, current }) =>
+          /*#__PURE__*/React.createElement("div", { key: discipline, className: "flex items-start gap-2 bg-teal-50 border border-teal-200 rounded-lg px-3 py-2 text-xs max-w-[220px]" },
+            /*#__PURE__*/React.createElement(Icon, { name: "ChevronRight", className: "w-3.5 h-3.5 text-teal-500 flex-shrink-0 mt-0.5" }),
+            /*#__PURE__*/React.createElement("div", null,
+              /*#__PURE__*/React.createElement("p", { className: "font-semibold text-slate-700" }, next.name),
+              /*#__PURE__*/React.createElement("p", { className: "text-slate-400 mt-0.5" }, next.req),
+              current && /*#__PURE__*/React.createElement("p", { className: "text-teal-600 mt-0.5" }, "Currently: ", current)
+            )
+          )
+        )
+      )
+    )
+  )), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h3", {
     className: "text-lg font-bold mb-4 flex items-center gap-2"
   }, /*#__PURE__*/React.createElement(Icon, {
     name: "BookOpen",

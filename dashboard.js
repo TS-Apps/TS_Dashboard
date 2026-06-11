@@ -15141,8 +15141,6 @@ const App = ({
     id: "home",
     icon: "Home",
     label: "Home"
-  }), /*#__PURE__*/React.createElement(NavGroup, {
-    label: "Juniors (JSC)"
   }), /*#__PURE__*/React.createElement(NavItem, {
     id: "juniors",
     icon: "Users",
@@ -15151,20 +15149,14 @@ const App = ({
     id: "junior_progress",
     icon: "BarChart3",
     label: "Junior Progress"
-  }), /*#__PURE__*/React.createElement(NavGroup, {
-    label: "Sea Cadets (SCC)"
   }), /*#__PURE__*/React.createElement(NavItem, {
     id: "planner",
     icon: "ShipWheel",
     label: "SCC CTP Progress"
-  }), /*#__PURE__*/React.createElement(NavGroup, {
-    label: "Royal Marines (RMC)"
   }), /*#__PURE__*/React.createElement(NavItem, {
     id: "rmc_planner",
     icon: "Target",
     label: "RMC CTS Progress"
-  }), /*#__PURE__*/React.createElement(NavGroup, {
-    label: "All Sections"
   }), /*#__PURE__*/React.createElement(NavItem, {
     id: "cadet_focus",
     icon: "User",

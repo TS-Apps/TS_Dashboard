@@ -52,7 +52,7 @@ const checkIsAdmin = async () => {
 // CONSTANTS & DATA
 // ═══════════════════════════════════════════════════════════════════════════
 
-const DATA_VERSION = "2.11-Cloud"; // UI polish: lighter padding, softer shadows, smaller section icons
+const DATA_VERSION = "2.12-Cloud"; // UI polish: lighter chrome, decluttered Home, consolidated colour palette
 
 // Badge & Rank Image Maps
 const RANK_IMG_MAP = {
@@ -2968,10 +2968,10 @@ const getCadetAgeColor = dob => {
     return 'bg-red-500/30 text-red-800 font-bold'; // 18+ (Red)
   }
   if (ageInYears >= 17.5) {
-    return 'bg-orange-500/30 text-orange-800 font-bold'; // 17.5+ (Orange)
+    return 'bg-amber-500/30 text-amber-800 font-bold'; // 17.5+ (Orange)
   }
   if (ageInYears >= 17.0) {
-    return 'bg-yellow-500/30 text-yellow-800 font-bold'; // 17+ (Yellow/Amber)
+    return 'bg-amber-500/30 text-amber-800 font-bold'; // 17+ (Yellow/Amber)
   }
   return ''; // No highlighting
 };
@@ -4774,7 +4774,7 @@ const AttendanceView = ({
     return /*#__PURE__*/React.createElement("div", {
       className: "space-y-6"
     }, /*#__PURE__*/React.createElement("div", {
-      className: "bg-white rounded-lg shadow p-8 text-center border-l-4 border-orange-500"
+      className: "bg-white rounded-lg shadow p-8 text-center border-l-4 border-amber-500"
     }, /*#__PURE__*/React.createElement(Icon, {
       name: "CalendarCheck",
       className: "w-16 h-16 mx-auto text-slate-300 mb-4"
@@ -4787,14 +4787,14 @@ const AttendanceView = ({
   return /*#__PURE__*/React.createElement("div", {
     className: "space-y-6"
   }, /*#__PURE__*/React.createElement("div", {
-    className: "bg-white rounded-lg shadow p-6 border-l-4 border-orange-500"
+    className: "bg-white rounded-lg shadow p-6 border-l-4 border-amber-500"
   }, /*#__PURE__*/React.createElement("div", {
     className: "flex items-center gap-4"
   }, /*#__PURE__*/React.createElement("div", {
-    className: "p-3 bg-orange-100 rounded-full"
+    className: "p-3 bg-amber-100 rounded-full"
   }, /*#__PURE__*/React.createElement(Icon, {
     name: "CalendarCheck",
-    className: "w-7 h-7 text-orange-700"
+    className: "w-7 h-7 text-amber-700"
   })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h1", {
     className: "text-3xl font-extrabold text-slate-900"
   }, "Parade Night Attendance"), /*#__PURE__*/React.createElement("p", {
@@ -4820,7 +4820,7 @@ const AttendanceView = ({
   }), "Marines"), /*#__PURE__*/React.createElement("span", {
     className: "flex items-center gap-1.5"
   }, /*#__PURE__*/React.createElement("span", {
-    className: "w-3 h-3 rounded-sm bg-sky-400 inline-block"
+    className: "w-3 h-3 rounded-sm bg-blue-400 inline-block"
   }), "Juniors")), (() => {
     const recent = [...months].reverse().slice(0, 6);
     const COLS = [{
@@ -4844,8 +4844,8 @@ const AttendanceView = ({
     }, {
       key: 'jsc',
       label: 'JSC',
-      bar: 'bg-sky-400',
-      text: 'text-sky-700',
+      bar: 'bg-blue-400',
+      text: 'text-blue-700',
       nightsKey: 'jsc'
     }];
     return /*#__PURE__*/React.createElement("div", {
@@ -4965,7 +4965,7 @@ const AttendanceView = ({
   }, label))), /*#__PURE__*/React.createElement("select", {
     value: filterRank,
     onChange: e => setFilterRank(e.target.value),
-    className: "text-xs border border-slate-200 rounded px-2.5 py-1.5 bg-white text-slate-700 font-semibold focus:outline-none focus:ring-2 focus:ring-orange-300"
+    className: "text-xs border border-slate-200 rounded px-2.5 py-1.5 bg-white text-slate-700 font-semibold focus:outline-none focus:ring-2 focus:ring-amber-300"
   }, /*#__PURE__*/React.createElement("option", {
     value: "all"
   }, "All Ranks"), availableRanks.filter(r => {
@@ -5400,7 +5400,7 @@ const RetentionView = ({
     label
   }) => /*#__PURE__*/React.createElement("th", {
     onClick: () => setSortBy(col),
-    className: `px-3 py-3 text-center cursor-pointer select-none whitespace-nowrap hover:bg-slate-100 transition-colors ${sortBy === col ? 'text-orange-600 font-bold bg-orange-50' : 'text-slate-500'}`
+    className: `px-3 py-3 text-center cursor-pointer select-none whitespace-nowrap hover:bg-slate-100 transition-colors ${sortBy === col ? 'text-amber-600 font-bold bg-amber-50' : 'text-slate-500'}`
   }, label, sortBy === col ? ' ▼' : '');
 
   // Shared row renderer used for both active and lost tables
@@ -5473,7 +5473,7 @@ const RetentionView = ({
   // ── No data guard ────────────────────────────────────────────────────
   if (attendanceData.length === 0 && qualsData.length === 0) {
     return /*#__PURE__*/React.createElement("div", {
-      className: "bg-white rounded-lg shadow p-8 text-center border-l-4 border-rose-500"
+      className: "bg-white rounded-lg shadow p-8 text-center border-l-4 border-red-500"
     }, /*#__PURE__*/React.createElement(Icon, {
       name: "AlertOctagon",
       className: "w-16 h-16 mx-auto text-slate-300 mb-4"
@@ -5512,14 +5512,14 @@ const RetentionView = ({
   return /*#__PURE__*/React.createElement("div", {
     className: "space-y-6"
   }, /*#__PURE__*/React.createElement("div", {
-    className: "bg-white rounded-lg shadow p-6 border-l-4 border-rose-600"
+    className: "bg-white rounded-lg shadow p-6 border-l-4 border-red-600"
   }, /*#__PURE__*/React.createElement("div", {
     className: "flex items-center gap-4"
   }, /*#__PURE__*/React.createElement("div", {
-    className: "p-3 bg-rose-100 rounded-full"
+    className: "p-3 bg-red-100 rounded-full"
   }, /*#__PURE__*/React.createElement(Icon, {
     name: "UserX",
-    className: "w-7 h-7 text-rose-700"
+    className: "w-7 h-7 text-red-700"
   })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h1", {
     className: "text-3xl font-extrabold text-slate-900"
   }, "Retention Risk"), /*#__PURE__*/React.createElement("p", {
@@ -5743,7 +5743,7 @@ const UpcomingAwardsPanel = ({ personnel, qualsData }) => {
     // ── Seamanship ─────────────────────────────────────────────────────────
     {
       id: 'sm_basic', category: 'Seamanship', label: 'Basic Seamanship',
-      colour: 'border-sky-400',
+      colour: 'border-blue-400',
       check: c => {
         if (hasQ(c.pNumber, 'Seamanship - Basic') || hasQ(c.pNumber, 'Seamanship Basic')) return null;
         const codes = ['SM01','SM02','SM03','SM04','SM05','SM06','SM07','SM08','SM09','SM10','SM11','SM12'];
@@ -5821,7 +5821,7 @@ const UpcomingAwardsPanel = ({ personnel, qualsData }) => {
     // ── Coxswain / Master Coxswain ─────────────────────────────────────────
     {
       id: 'coxswain', category: 'Waterborne', label: 'Coxswain Award',
-      colour: 'border-teal-400',
+      colour: 'border-green-400',
       check: c => {
         if (hasQ(c.pNumber, 'Coxswain Award') || hasQ(c.pNumber, 'SCC Coxswain')) return null;
         const hq = str => hasQ(c.pNumber, str);
@@ -5840,7 +5840,7 @@ const UpcomingAwardsPanel = ({ personnel, qualsData }) => {
     },
     {
       id: 'master_coxswain', category: 'Waterborne', label: 'Master Coxswain Award',
-      colour: 'border-teal-400',
+      colour: 'border-green-400',
       check: c => {
         if (hasQ(c.pNumber, 'Master Coxswain')) return null;
         const hq = str => hasQ(c.pNumber, str);
@@ -5906,16 +5906,16 @@ const UpcomingAwardsPanel = ({ personnel, qualsData }) => {
 
   const categoryColours = {
     'First Aid': 'bg-red-100 text-red-700',
-    'Seamanship': 'bg-sky-100 text-sky-700',
+    'Seamanship': 'bg-blue-100 text-blue-700',
     'Drill': 'bg-slate-100 text-slate-600',
     'Meteorology': 'bg-blue-100 text-blue-700',
-    'Waterborne': 'bg-teal-100 text-teal-700'
+    'Waterborne': 'bg-green-100 text-green-700'
   };
 
-  return /*#__PURE__*/React.createElement("div", { className: "bg-white p-6 rounded-lg shadow border-l-4 border-violet-500" },
+  return /*#__PURE__*/React.createElement("div", { className: "bg-white p-6 rounded-lg shadow border-l-4 border-purple-500" },
     // Header
     /*#__PURE__*/React.createElement("div", { className: "flex flex-wrap items-center gap-3 mb-4" },
-      /*#__PURE__*/React.createElement(Icon, { name: "Target", className: "w-6 h-6 text-violet-600 flex-shrink-0" }),
+      /*#__PURE__*/React.createElement(Icon, { name: "Target", className: "w-6 h-6 text-purple-600 flex-shrink-0" }),
       /*#__PURE__*/React.createElement("div", { className: "flex-1 min-w-0" },
         /*#__PURE__*/React.createElement("h3", { className: "text-lg font-bold text-slate-800" }, "Upcoming Awards"),
         /*#__PURE__*/React.createElement("p", { className: "text-xs text-slate-500" },
@@ -5936,8 +5936,8 @@ const UpcomingAwardsPanel = ({ personnel, qualsData }) => {
             onClick: () => setFilter(cat),
             className: `px-2 py-0.5 rounded-full text-xs font-medium border transition-colors ${
               filter === cat
-                ? 'bg-violet-600 text-white border-violet-600'
-                : 'bg-white text-slate-600 border-slate-300 hover:border-violet-400'
+                ? 'bg-purple-600 text-white border-purple-600'
+                : 'bg-white text-slate-600 border-slate-300 hover:border-purple-400'
             }`
           }, cat === 'all' ? 'All' : cat)
         )
@@ -6030,22 +6030,13 @@ const HomeView = ({
   }, "Welcome to the ", unitName, " Training Dashboard!"), /*#__PURE__*/React.createElement("p", {
     className: "text-sm text-blue-600 font-semibold mt-1"
   }, "Cloud Edition \u2014 v", DATA_VERSION))), /*#__PURE__*/React.createElement("p", {
-    className: "text-lg text-slate-700 mb-4"
-  }, "This dashboard provides a comprehensive overview of your cadets' training progression, qualifications, and awards. It isn't a replacement for ", /*#__PURE__*/React.createElement("a", {
+    className: "text-sm text-slate-600"
+  }, "A read-only overview of your cadets' training, qualifications and awards, drawn from the ", /*#__PURE__*/React.createElement("a", {
     href: "https://www.defencegateway.mod.uk/home/",
     target: "_blank",
     rel: "noopener noreferrer",
-    className: "text-blue-600 hover:text-blue-800 font-bold underline"
-  }, "Westminster"), ", but it's designed to help your team visualise where cadets stand in relation to the Cadet Training Programme (CTP), Cadet Training Syllabus (CTS), and waterborne proficiencies."), /*#__PURE__*/React.createElement("ul", {
-    className: "list-disc list-inside space-y-2 text-slate-600 ml-4"
-  }, /*#__PURE__*/React.createElement("li", null, "Use ", /*#__PURE__*/React.createElement("strong", null, "Cadet Focus"), " to see all achievements and progression for an individual."), /*#__PURE__*/React.createElement("li", null, "Use ", /*#__PURE__*/React.createElement("strong", null, "SCC CTP / RMC CTS Progress"), " to plan training nights for specific rank groups."), /*#__PURE__*/React.createElement("li", null, "Use ", /*#__PURE__*/React.createElement("strong", null, "Awards"), " to review recent accomplishments and generate certificates for presentations."), /*#__PURE__*/React.createElement("li", null, "Use ", /*#__PURE__*/React.createElement("strong", null, "Waterborne"), " to track proficiency levels in all boating activities.")), /*#__PURE__*/React.createElement("div", {
-    className: "mt-6 p-4 bg-yellow-50 border-l-4 border-yellow-500 text-sm text-yellow-800 rounded"
-  }, /*#__PURE__*/React.createElement("p", {
-    className: "font-semibold flex items-center gap-2"
-  }, /*#__PURE__*/React.createElement(Icon, {
-    name: "AlertCircle",
-    className: "w-4 h-4"
-  }), " Data Note"), /*#__PURE__*/React.createElement("p", null, "All data shown here is derived from the CSV reports you uploaded and may not reflect real-time changes if new reports have not been synced."))), /*#__PURE__*/React.createElement(UpcomingAwardsPanel, { personnel: personnel, qualsData: qualsData || [] }), attendanceData && attendanceData.length > 0 && (() => {
+    className: "text-blue-600 hover:text-blue-800 font-semibold underline"
+  }, "Westminster"), " CSV reports you upload \u2014 figures reflect your most recent upload.")), /*#__PURE__*/React.createElement(UpcomingAwardsPanel, { personnel: personnel, qualsData: qualsData || [] }), attendanceData && attendanceData.length > 0 && (() => {
     const cadets = personnel.filter(p => isCadet(p));
     const cadetPNums = new Set(cadets.map(p => p.pNumber));
     const months = [...new Set(attendanceData.filter(r => cadetPNums.has(r.p_number)).map(r => r.attendance_date.slice(0, 7)))].sort();
@@ -6099,12 +6090,12 @@ const HomeView = ({
       year: 'numeric'
     });
     return /*#__PURE__*/React.createElement("div", {
-      className: "bg-white p-6 rounded-lg shadow border-l-4 border-orange-500"
+      className: "bg-white p-6 rounded-lg shadow border-l-4 border-amber-500"
     }, /*#__PURE__*/React.createElement("div", {
       className: "flex items-center gap-3 mb-4"
     }, /*#__PURE__*/React.createElement(Icon, {
       name: "CalendarCheck",
-      className: "w-6 h-6 text-orange-600"
+      className: "w-6 h-6 text-amber-600"
     }), /*#__PURE__*/React.createElement("h3", {
       className: "text-lg font-bold text-slate-800"
     }, "Parade Night Attendance"), /*#__PURE__*/React.createElement("span", {
@@ -6131,15 +6122,13 @@ const HomeView = ({
       className: "text-xs text-slate-500 mt-1"
     }, "Cadets below", /*#__PURE__*/React.createElement("br", null), "60% overall"))));
   })(), /*#__PURE__*/React.createElement("div", {
-    className: "mt-10 max-w-4xl mx-auto text-center text-xs text-slate-400 p-4 border-t border-slate-300"
-  }, /*#__PURE__*/React.createElement("p", {
-    className: "font-semibold mb-1"
-  }, "Disclaimer"), /*#__PURE__*/React.createElement("p", null, "If you spot a bug, have a feature idea, or make an improvement, please share it so others can benefit. Raise an issue at ", /*#__PURE__*/React.createElement("a", {
+    className: "mt-8 text-center text-xs text-slate-400 pt-4 border-t border-slate-200"
+  }, /*#__PURE__*/React.createElement("p", null, "Found a bug or have an idea? ", /*#__PURE__*/React.createElement("a", {
     href: "https://github.com/TS-Apps/TS_Dashboard/issues",
     target: "_blank",
     rel: "noopener noreferrer",
     className: "text-blue-500 hover:text-blue-600 underline"
-  }, "github.com/TS-Apps/TS_Dashboard"), ".")));
+  }, "Raise it on GitHub"), ".")));
 };
 
 // Awards View Component
@@ -7072,7 +7061,7 @@ const AwardsView = ({
   }, award.cadetName), /*#__PURE__*/React.createElement("p", {
     className: "text-xs text-slate-600"
   }, award.module)), /*#__PURE__*/React.createElement("span", {
-    className: `px-2 py-1 rounded-full text-[10px] font-semibold whitespace-nowrap ${award.type === 'Specialisation' ? 'bg-orange-100 text-orange-800' : award.type === 'Proficiency' ? 'bg-emerald-100 text-emerald-800' : award.type === 'DofE' ? 'bg-yellow-100 text-yellow-800' : award.type === 'Promotion' ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'}`
+    className: `px-2 py-1 rounded-full text-[10px] font-semibold whitespace-nowrap ${award.type === 'Specialisation' ? 'bg-amber-100 text-amber-800' : award.type === 'Proficiency' ? 'bg-green-100 text-green-800' : award.type === 'DofE' ? 'bg-amber-100 text-amber-800' : award.type === 'Promotion' ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'}`
   }, award.type)), /*#__PURE__*/React.createElement("p", {
     className: "text-[10px] text-slate-400 mt-1 text-right"
   }, formatDate(award.date))))))), /*#__PURE__*/React.createElement("div", {
@@ -7310,7 +7299,7 @@ const WaterborneView = ({
     if (approachingCadets.length === 0) return null;
 
     const statusLabel = status => {
-      if (status === "status-master-pending") return { text: "Master Ready", bg: "bg-yellow-100", text_color: "text-yellow-800", dot: "bg-[#ffd700]" };
+      if (status === "status-master-pending") return { text: "Master Ready", bg: "bg-amber-100", text_color: "text-amber-800", dot: "bg-[#ffd700]" };
       if (status === "status-cox-pending") return { text: "Cox Ready", bg: "bg-blue-100", text_color: "text-blue-800", dot: "bg-[#add8e6]" };
       return { text: "Approaching", bg: "bg-slate-100", text_color: "text-slate-600", dot: "bg-slate-300" };
     };
@@ -7458,16 +7447,16 @@ const WaterborneView = ({
   return /*#__PURE__*/React.createElement("div", {
     className: "space-y-6"
   }, /*#__PURE__*/React.createElement("div", {
-    className: "bg-white rounded-lg shadow-xl p-6 border-l-4 border-sky-500"
+    className: "bg-white rounded-lg shadow-xl p-6 border-l-4 border-blue-500"
   }, /*#__PURE__*/React.createElement("div", {
     className: "flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4"
   }, /*#__PURE__*/React.createElement("div", {
     className: "flex items-center gap-4"
   }, /*#__PURE__*/React.createElement("div", {
-    className: "p-3 bg-sky-100 rounded-full"
+    className: "p-3 bg-blue-100 rounded-full"
   }, /*#__PURE__*/React.createElement(Icon, {
     name: "Anchor",
-    className: "w-7 h-7 text-sky-700"
+    className: "w-7 h-7 text-blue-700"
   })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h2", {
     className: "text-3xl font-extrabold text-slate-900"
   }, "Waterborne Qualifications"), /*#__PURE__*/React.createElement("p", {
@@ -8567,16 +8556,16 @@ const CadetFocus = ({
   return /*#__PURE__*/React.createElement("div", {
     className: "space-y-6"
   }, /*#__PURE__*/React.createElement("div", {
-    className: "bg-white rounded-lg shadow-xl p-6 border-l-4 border-indigo-500"
+    className: "bg-white rounded-lg shadow-xl p-6 border-l-4 border-blue-500"
   }, /*#__PURE__*/React.createElement("div", {
     className: "flex flex-col md:flex-row justify-between items-start md:items-center gap-4"
   }, /*#__PURE__*/React.createElement("div", {
     className: "flex items-center gap-4"
   }, /*#__PURE__*/React.createElement("div", {
-    className: "p-3 rounded-full bg-indigo-100"
+    className: "p-3 rounded-full bg-blue-100"
   }, /*#__PURE__*/React.createElement(Icon, {
     name: "User",
-    className: "w-7 h-7 text-indigo-700"
+    className: "w-7 h-7 text-blue-700"
   })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h2", {
     className: "text-3xl font-extrabold text-slate-900"
   }, "Cadet Focus"), /*#__PURE__*/React.createElement("p", {
@@ -8636,14 +8625,14 @@ const CadetFocus = ({
     });
     const pCol = p => p === null ? 'text-slate-300' : p >= 75 ? 'text-green-700' : p >= 60 ? 'text-amber-600' : 'text-red-600';
     return /*#__PURE__*/React.createElement("div", {
-      className: "bg-white rounded-lg shadow p-5 border-l-4 border-orange-500"
+      className: "bg-white rounded-lg shadow p-5 border-l-4 border-amber-500"
     }, /*#__PURE__*/React.createElement("div", {
       className: "flex items-center justify-between mb-3"
     }, /*#__PURE__*/React.createElement("h3", {
       className: "font-bold text-slate-800 flex items-center gap-2"
     }, /*#__PURE__*/React.createElement(Icon, {
       name: "CalendarCheck",
-      className: "w-5 h-5 text-orange-600"
+      className: "w-5 h-5 text-amber-600"
     }), "Parade Night Attendance"), /*#__PURE__*/React.createElement("span", {
       className: `text-lg font-extrabold ${pCol(overallPct)}`
     }, overallPct !== null ? overallPct + '%' : '—', " ", /*#__PURE__*/React.createElement("span", {
@@ -8763,7 +8752,7 @@ const CadetFocus = ({
     className: "text-lg font-bold mb-4 flex items-center gap-2"
   }, /*#__PURE__*/React.createElement(Icon, {
     name: "Shield",
-    className: "w-5 h-5 text-indigo-500"
+    className: "w-5 h-5 text-blue-500"
   }), " Specialisations"), /*#__PURE__*/React.createElement("div", {
     className: "flex gap-4 overflow-x-auto pb-4"
   }, cadetSpecs.map((spec, idx) => /*#__PURE__*/React.createElement("div", {
@@ -8786,8 +8775,8 @@ const CadetFocus = ({
       /*#__PURE__*/React.createElement("p", { className: "text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2" }, "Next steps"),
       /*#__PURE__*/React.createElement("div", { className: "flex flex-wrap gap-2" },
         specNextSteps.map(({ discipline, next, current }) =>
-          /*#__PURE__*/React.createElement("div", { key: discipline, className: "flex items-start gap-2 bg-violet-50 border border-violet-200 rounded-lg px-3 py-2 text-xs max-w-[220px]" },
-            /*#__PURE__*/React.createElement(Icon, { name: "ChevronRight", className: "w-3.5 h-3.5 text-violet-500 flex-shrink-0 mt-0.5" }),
+          /*#__PURE__*/React.createElement("div", { key: discipline, className: "flex items-start gap-2 bg-purple-50 border border-purple-200 rounded-lg px-3 py-2 text-xs max-w-[220px]" },
+            /*#__PURE__*/React.createElement(Icon, { name: "ChevronRight", className: "w-3.5 h-3.5 text-purple-500 flex-shrink-0 mt-0.5" }),
             /*#__PURE__*/React.createElement("div", null,
               /*#__PURE__*/React.createElement("p", { className: "font-semibold text-slate-700" }, next.name),
               /*#__PURE__*/React.createElement("p", { className: "text-slate-400 mt-0.5" }, next.req)
@@ -8849,12 +8838,12 @@ const CadetFocus = ({
       /*#__PURE__*/React.createElement("p", { className: "text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2" }, "Next steps"),
       /*#__PURE__*/React.createElement("div", { className: "flex flex-wrap gap-2" },
         waterborneNextSteps.map(({ discipline, next, current }) =>
-          /*#__PURE__*/React.createElement("div", { key: discipline, className: "flex items-start gap-2 bg-teal-50 border border-teal-200 rounded-lg px-3 py-2 text-xs max-w-[220px]" },
-            /*#__PURE__*/React.createElement(Icon, { name: "ChevronRight", className: "w-3.5 h-3.5 text-teal-500 flex-shrink-0 mt-0.5" }),
+          /*#__PURE__*/React.createElement("div", { key: discipline, className: "flex items-start gap-2 bg-green-50 border border-green-200 rounded-lg px-3 py-2 text-xs max-w-[220px]" },
+            /*#__PURE__*/React.createElement(Icon, { name: "ChevronRight", className: "w-3.5 h-3.5 text-green-500 flex-shrink-0 mt-0.5" }),
             /*#__PURE__*/React.createElement("div", null,
               /*#__PURE__*/React.createElement("p", { className: "font-semibold text-slate-700" }, next.name),
               /*#__PURE__*/React.createElement("p", { className: "text-slate-400 mt-0.5" }, next.req),
-              current && /*#__PURE__*/React.createElement("p", { className: "text-teal-600 mt-0.5" }, "Currently: ", current)
+              current && /*#__PURE__*/React.createElement("p", { className: "text-green-600 mt-0.5" }, "Currently: ", current)
             )
           )
         )
@@ -8870,20 +8859,20 @@ const CadetFocus = ({
   }, cadetRecordGroups.ctpKeys.length > 0 && /*#__PURE__*/React.createElement("div", {
     className: "border rounded-lg overflow-hidden shadow-sm"
   }, /*#__PURE__*/React.createElement("div", {
-    className: "bg-indigo-50 px-4 py-2 border-b border-indigo-100"
+    className: "bg-blue-50 px-4 py-2 border-b border-blue-100"
   }, /*#__PURE__*/React.createElement("h4", {
-    className: "font-bold text-indigo-800 text-sm"
+    className: "font-bold text-blue-800 text-sm"
   }, "SCC CTP Modules")), cadetRecordGroups.ctpKeys.map(rank => /*#__PURE__*/React.createElement("div", {
     key: rank
   }, /*#__PURE__*/React.createElement("div", {
-    className: "px-4 py-1.5 bg-indigo-50/30 text-xs font-bold text-indigo-900 border-b border-indigo-50/50 uppercase tracking-wide"
+    className: "px-4 py-1.5 bg-blue-50/30 text-xs font-bold text-blue-900 border-b border-blue-50/50 uppercase tracking-wide"
   }, rank), /*#__PURE__*/React.createElement("div", {
     className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 p-3 bg-white border-b border-slate-100 last:border-0"
   }, cadetRecordGroups.ctp[rank].map((q, i) => /*#__PURE__*/React.createElement("div", {
     key: i,
     className: "flex items-center gap-2 text-xs p-1 hover:bg-slate-50 rounded"
   }, /*#__PURE__*/React.createElement("span", {
-    className: "w-1.5 h-1.5 rounded-full bg-indigo-400 flex-shrink-0"
+    className: "w-1.5 h-1.5 rounded-full bg-blue-400 flex-shrink-0"
   }), /*#__PURE__*/React.createElement("span", {
     className: "truncate flex-1 font-medium text-slate-700",
     title: q.module
@@ -8892,20 +8881,20 @@ const CadetFocus = ({
   }, formatDate(q.date)))))))), cadetRecordGroups.ctsKeys.length > 0 && /*#__PURE__*/React.createElement("div", {
     className: "border rounded-lg overflow-hidden shadow-sm"
   }, /*#__PURE__*/React.createElement("div", {
-    className: "bg-emerald-50 px-4 py-2 border-b border-emerald-100"
+    className: "bg-green-50 px-4 py-2 border-b border-green-100"
   }, /*#__PURE__*/React.createElement("h4", {
-    className: "font-bold text-emerald-800 text-sm"
+    className: "font-bold text-green-800 text-sm"
   }, "RMC CTS Modules")), cadetRecordGroups.ctsKeys.map(rank => /*#__PURE__*/React.createElement("div", {
     key: rank
   }, /*#__PURE__*/React.createElement("div", {
-    className: "px-4 py-1.5 bg-emerald-50/30 text-xs font-bold text-emerald-900 border-b border-emerald-50/50 uppercase tracking-wide"
+    className: "px-4 py-1.5 bg-green-50/30 text-xs font-bold text-green-900 border-b border-green-50/50 uppercase tracking-wide"
   }, rank), /*#__PURE__*/React.createElement("div", {
     className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 p-3 bg-white border-b border-slate-100 last:border-0"
   }, cadetRecordGroups.cts[rank].map((q, i) => /*#__PURE__*/React.createElement("div", {
     key: i,
     className: "flex items-center gap-2 text-xs p-1 hover:bg-slate-50 rounded"
   }, /*#__PURE__*/React.createElement("span", {
-    className: "w-1.5 h-1.5 rounded-full bg-emerald-400 flex-shrink-0"
+    className: "w-1.5 h-1.5 rounded-full bg-green-400 flex-shrink-0"
   }), /*#__PURE__*/React.createElement("span", {
     className: "truncate flex-1 font-medium text-slate-700",
     title: q.module
@@ -8914,20 +8903,20 @@ const CadetFocus = ({
   }, formatDate(q.date)))))))), cadetRecordGroups.wbKeys.length > 0 && /*#__PURE__*/React.createElement("div", {
     className: "border rounded-lg overflow-hidden shadow-sm"
   }, /*#__PURE__*/React.createElement("div", {
-    className: "bg-sky-50 px-4 py-2 border-b border-sky-100"
+    className: "bg-blue-50 px-4 py-2 border-b border-blue-100"
   }, /*#__PURE__*/React.createElement("h4", {
-    className: "font-bold text-sky-800 text-sm"
+    className: "font-bold text-blue-800 text-sm"
   }, "Waterborne Qualifications")), cadetRecordGroups.wbKeys.map(disc => /*#__PURE__*/React.createElement("div", {
     key: disc
   }, /*#__PURE__*/React.createElement("div", {
-    className: "px-4 py-1.5 bg-sky-50/30 text-xs font-bold text-sky-900 border-b border-sky-50/50 uppercase tracking-wide"
+    className: "px-4 py-1.5 bg-blue-50/30 text-xs font-bold text-blue-900 border-b border-blue-50/50 uppercase tracking-wide"
   }, disc), /*#__PURE__*/React.createElement("div", {
     className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 p-3 bg-white border-b border-slate-100 last:border-0"
   }, cadetRecordGroups.waterborne[disc].map((q, i) => /*#__PURE__*/React.createElement("div", {
     key: i,
     className: "flex items-center gap-2 text-xs p-1 hover:bg-slate-50 rounded"
   }, /*#__PURE__*/React.createElement("span", {
-    className: "w-1.5 h-1.5 rounded-full bg-sky-400 flex-shrink-0"
+    className: "w-1.5 h-1.5 rounded-full bg-blue-400 flex-shrink-0"
   }), /*#__PURE__*/React.createElement("span", {
     className: "truncate flex-1 font-medium text-slate-700",
     title: q.module
@@ -9029,14 +9018,14 @@ const TrainingPlanner = ({
     return /*#__PURE__*/React.createElement("div", {
       className: "space-y-6"
     }, /*#__PURE__*/React.createElement("div", {
-      className: "bg-white rounded-lg shadow-xl p-6 border-l-4 border-indigo-500"
+      className: "bg-white rounded-lg shadow-xl p-6 border-l-4 border-blue-500"
     }, /*#__PURE__*/React.createElement("div", {
       className: "flex items-center gap-4 mb-4"
     }, /*#__PURE__*/React.createElement("div", {
-      className: `p-3 rounded-full ${colorTheme === "green" ? "bg-green-100" : "bg-indigo-100"}`
+      className: `p-3 rounded-full ${colorTheme === "green" ? "bg-green-100" : "bg-blue-100"}`
     }, /*#__PURE__*/React.createElement(Icon, {
       name: iconName || "FileText",
-      className: `w-7 h-7 ${colorTheme === "green" ? "text-green-700" : "text-indigo-700"}`
+      className: `w-7 h-7 ${colorTheme === "green" ? "text-green-700" : "text-blue-700"}`
     })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h2", {
       className: "text-3xl font-extrabold text-slate-900"
     }, title), /*#__PURE__*/React.createElement("p", {
@@ -9191,16 +9180,16 @@ const TrainingPlanner = ({
   return /*#__PURE__*/React.createElement("div", {
     className: "space-y-6"
   }, /*#__PURE__*/React.createElement("div", {
-    className: `bg-white rounded-lg shadow-xl p-6 border-l-4 ${colorTheme === "green" ? "border-green-500" : "border-indigo-500"}`
+    className: `bg-white rounded-lg shadow-xl p-6 border-l-4 ${colorTheme === "green" ? "border-green-500" : "border-blue-500"}`
   }, /*#__PURE__*/React.createElement("div", {
     className: "flex flex-col md:flex-row justify-between items-start md:items-center gap-4"
   }, /*#__PURE__*/React.createElement("div", {
     className: "flex items-center gap-4"
   }, /*#__PURE__*/React.createElement("div", {
-    className: `p-3 rounded-full ${colorTheme === "green" ? "bg-green-100" : "bg-indigo-100"}`
+    className: `p-3 rounded-full ${colorTheme === "green" ? "bg-green-100" : "bg-blue-100"}`
   }, /*#__PURE__*/React.createElement(Icon, {
     name: iconName || "FileText",
-    className: `w-7 h-7 ${colorTheme === "green" ? "text-green-700" : "text-indigo-700"}`
+    className: `w-7 h-7 ${colorTheme === "green" ? "text-green-700" : "text-blue-700"}`
   })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h2", {
     className: "text-3xl font-extrabold text-slate-900"
   }, title), /*#__PURE__*/React.createElement("p", {
@@ -11118,7 +11107,7 @@ const JuniorProgressView = ({
       red: 'bg-red-600',
       blue: 'bg-blue-600',
       green: 'bg-green-600',
-      yellow: 'bg-yellow-600',
+      yellow: 'bg-amber-600',
       stem: 'bg-purple-600'
     };
     return colors[section];
@@ -11128,7 +11117,7 @@ const JuniorProgressView = ({
       red: 'bg-red-50',
       blue: 'bg-blue-50',
       green: 'bg-green-50',
-      yellow: 'bg-yellow-50',
+      yellow: 'bg-amber-50',
       stem: 'bg-purple-50'
     };
     return colors[section];
@@ -11138,7 +11127,7 @@ const JuniorProgressView = ({
       red: 'bg-red-100 text-red-900',
       blue: 'bg-blue-100 text-blue-900',
       green: 'bg-green-100 text-green-900',
-      yellow: 'bg-yellow-100 text-yellow-900',
+      yellow: 'bg-amber-100 text-amber-900',
       stem: 'bg-purple-100 text-purple-900'
     };
     return colors[section];
@@ -11356,7 +11345,7 @@ const JuniorProgressView = ({
   }, "Recording Mode Active - Click cells to select")), sectionTabs.map(tab => /*#__PURE__*/React.createElement("button", {
     key: tab.id,
     onClick: () => setSelectedSection(tab.id),
-    className: `px-3 py-1.5 rounded-lg font-semibold text-xs transition-all ${selectedSection === tab.id ? tab.color === 'red' ? 'bg-red-600 text-white' : tab.color === 'blue' ? 'bg-blue-600 text-white' : tab.color === 'green' ? 'bg-green-600 text-white' : tab.color === 'yellow' ? 'bg-yellow-600 text-white' : 'bg-purple-600 text-white' : `bg-${tab.color}-50 text-${tab.color}-700 hover:bg-${tab.color}-100`}`
+    className: `px-3 py-1.5 rounded-lg font-semibold text-xs transition-all ${selectedSection === tab.id ? tab.color === 'red' ? 'bg-red-600 text-white' : tab.color === 'blue' ? 'bg-blue-600 text-white' : tab.color === 'green' ? 'bg-green-600 text-white' : tab.color === 'yellow' ? 'bg-amber-600 text-white' : 'bg-purple-600 text-white' : `bg-${tab.color}-50 text-${tab.color}-700 hover:bg-${tab.color}-100`}`
   }, tab.label, " ", /*#__PURE__*/React.createElement("span", {
     className: "opacity-75"
   }, "(", tab.count, ")")))))), /*#__PURE__*/React.createElement("div", {
@@ -12078,12 +12067,12 @@ const DataUtilitiesView = ({
     name: "Upload",
     className: "w-5 h-5"
   }), "Reload Dashboard")), /*#__PURE__*/React.createElement("div", {
-    className: "bg-white rounded-lg shadow p-6 border-l-4 border-orange-500"
+    className: "bg-white rounded-lg shadow p-6 border-l-4 border-amber-500"
   }, /*#__PURE__*/React.createElement("h2", {
     className: "text-2xl font-bold text-slate-900 mb-2 flex items-center gap-2"
   }, /*#__PURE__*/React.createElement(Icon, {
     name: "CalendarCheck",
-    className: "w-6 h-6 text-orange-600"
+    className: "w-6 h-6 text-amber-600"
   }), "Upload Parade Night Attendance"), /*#__PURE__*/React.createElement("p", {
     className: "text-slate-600 mb-5"
   }, "Upload Westminster attendance CSV files for a given month. Upload all files for that month together (SCC, JSC, RMC). Staff records are ignored automatically. Re-uploading the same month is safe."), attendanceStatus && /*#__PURE__*/React.createElement("div", {
@@ -12096,7 +12085,7 @@ const DataUtilitiesView = ({
     type: "month",
     value: attendanceMonth,
     onChange: e => setAttendanceMonth(e.target.value),
-    className: "w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
+    className: "w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
   }), /*#__PURE__*/React.createElement("p", {
     className: "text-xs text-slate-400 mt-1"
   }, "Select the month the attendance data covers.")), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
@@ -12106,7 +12095,7 @@ const DataUtilitiesView = ({
     accept: ".csv",
     multiple: true,
     onChange: e => setAttendanceFiles(Array.from(e.target.files)),
-    className: "block w-full text-xs text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100"
+    className: "block w-full text-xs text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-amber-50 file:text-amber-700 hover:file:bg-amber-100"
   }), attendanceFiles.length > 0 && /*#__PURE__*/React.createElement("ul", {
     className: "mt-2 space-y-0.5"
   }, attendanceFiles.map((f, i) => /*#__PURE__*/React.createElement("li", {
@@ -12114,11 +12103,11 @@ const DataUtilitiesView = ({
     className: "text-xs text-slate-500 flex items-center gap-1"
   }, /*#__PURE__*/React.createElement(Icon, {
     name: "FileText",
-    className: "w-3 h-3 text-orange-400"
+    className: "w-3 h-3 text-amber-400"
   }), f.name))))), /*#__PURE__*/React.createElement("button", {
     onClick: handleAttendanceUpload,
     disabled: attendanceUploading || !attendanceMonth || attendanceFiles.length === 0,
-    className: "mt-5 bg-orange-600 text-white px-6 py-2.5 rounded-lg hover:bg-orange-700 disabled:opacity-40 disabled:cursor-not-allowed font-semibold flex items-center gap-2 text-sm"
+    className: "mt-5 bg-amber-600 text-white px-6 py-2.5 rounded-lg hover:bg-amber-700 disabled:opacity-40 disabled:cursor-not-allowed font-semibold flex items-center gap-2 text-sm"
   }, attendanceUploading ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(Icon, {
     name: "Loader",
     className: "w-4 h-4 animate-spin"
@@ -12383,7 +12372,7 @@ const DataUtilitiesView = ({
   }, "Restore from Backup"), /*#__PURE__*/React.createElement("p", {
     className: "text-xs text-slate-600 mb-3"
   }, "Loads a previously exported backup file. All existing data in the restored tables will be replaced."), /*#__PURE__*/React.createElement("label", {
-    className: "bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 font-semibold cursor-pointer flex items-center justify-center gap-2 w-full"
+    className: "bg-amber-600 text-white px-4 py-2 rounded-lg hover:bg-amber-700 font-semibold cursor-pointer flex items-center justify-center gap-2 w-full"
   }, /*#__PURE__*/React.createElement(Icon, {
     name: "Upload",
     className: "w-4 h-4"
@@ -13106,7 +13095,7 @@ const JuniorsView = ({
     });
     if (cadetsReadyForPromotion.length === 0) return null;
     return /*#__PURE__*/React.createElement("div", {
-      className: "bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-300 rounded-lg p-4 shadow"
+      className: "bg-gradient-to-r from-blue-50 to-blue-50 border-2 border-blue-300 rounded-lg p-4 shadow"
     }, /*#__PURE__*/React.createElement("div", {
       className: "flex items-center gap-3"
     }, /*#__PURE__*/React.createElement(Icon, {
@@ -13125,7 +13114,7 @@ const JuniorsView = ({
     });
     if (juniorsWithAlerts.length === 0) return null;
     return /*#__PURE__*/React.createElement("div", {
-      className: "bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-300 rounded-lg p-4 shadow"
+      className: "bg-gradient-to-r from-green-50 to-green-50 border-2 border-green-300 rounded-lg p-4 shadow"
     }, /*#__PURE__*/React.createElement("div", {
       className: "flex items-center gap-3"
     }, /*#__PURE__*/React.createElement(Icon, {
@@ -13153,7 +13142,7 @@ const JuniorsView = ({
     });
     if (pennantDue.length === 0) return null;
     return /*#__PURE__*/React.createElement("div", {
-      className: "bg-gradient-to-r from-amber-50 to-yellow-50 border-2 border-amber-300 rounded-lg p-4 shadow"
+      className: "bg-gradient-to-r from-amber-50 to-amber-50 border-2 border-amber-300 rounded-lg p-4 shadow"
     }, /*#__PURE__*/React.createElement("div", {
       className: "flex items-center gap-3"
     }, /*#__PURE__*/React.createElement(Icon, {
@@ -13180,7 +13169,7 @@ const JuniorsView = ({
     });
     if (crestNeeded.length === 0 && stemNeeded.length === 0) return null;
     return /*#__PURE__*/React.createElement("div", {
-      className: "bg-gradient-to-r from-purple-50 to-violet-50 border-2 border-purple-300 rounded-lg p-4 shadow"
+      className: "bg-gradient-to-r from-purple-50 to-purple-50 border-2 border-purple-300 rounded-lg p-4 shadow"
     }, /*#__PURE__*/React.createElement("div", {
       className: "flex items-center gap-3"
     }, /*#__PURE__*/React.createElement(Icon, {
@@ -13595,14 +13584,14 @@ const JuniorDetail = ({
     });
     const pCol = p => p === null ? 'text-slate-300' : p >= 75 ? 'text-green-700' : p >= 60 ? 'text-amber-600' : 'text-red-600';
     return /*#__PURE__*/React.createElement("div", {
-      className: "bg-white rounded-lg shadow p-5 border-l-4 border-orange-500"
+      className: "bg-white rounded-lg shadow p-5 border-l-4 border-amber-500"
     }, /*#__PURE__*/React.createElement("div", {
       className: "flex items-center justify-between mb-3"
     }, /*#__PURE__*/React.createElement("h3", {
       className: "font-bold text-slate-800 flex items-center gap-2"
     }, /*#__PURE__*/React.createElement(Icon, {
       name: "CalendarCheck",
-      className: "w-5 h-5 text-orange-600"
+      className: "w-5 h-5 text-amber-600"
     }), "Parade Night Attendance"), /*#__PURE__*/React.createElement("span", {
       className: `text-lg font-extrabold ${pCol(overallPct)}`
     }, overallPct !== null ? overallPct + '%' : '—', " ", /*#__PURE__*/React.createElement("span", {
@@ -13715,15 +13704,15 @@ const JuniorDetail = ({
     }
     return null;
   })()), /*#__PURE__*/React.createElement("div", {
-    className: "text-center p-4 bg-yellow-50 rounded-lg border-2 border-yellow-200"
+    className: "text-center p-4 bg-amber-50 rounded-lg border-2 border-amber-200"
   }, /*#__PURE__*/React.createElement("p", {
-    className: "text-sm font-semibold text-yellow-800"
+    className: "text-sm font-semibold text-amber-800"
   }, "Yellow - Community"), /*#__PURE__*/React.createElement("p", {
-    className: "text-3xl font-bold text-yellow-700"
+    className: "text-3xl font-bold text-amber-700"
   }, yellowModules, "/15"), /*#__PURE__*/React.createElement("div", {
-    className: "w-full bg-yellow-200 rounded-full h-2 mt-2"
+    className: "w-full bg-amber-200 rounded-full h-2 mt-2"
   }, /*#__PURE__*/React.createElement("div", {
-    className: "bg-yellow-600 h-2 rounded-full",
+    className: "bg-amber-600 h-2 rounded-full",
     style: {
       width: `${Math.min(yellowModules / 15 * 100, 100)}%`
     }
@@ -13731,11 +13720,11 @@ const JuniorDetail = ({
     const yellowBadge = qualifications?.find(q => q.pNumber === junior.pNumber && q.module.includes("JSC Yellow Community & Citizenship Activities Badge"));
     if (yellowBadge && yellowBadge.date) {
       return /*#__PURE__*/React.createElement("p", {
-        className: "text-xs font-semibold text-yellow-900 mt-2 bg-yellow-100 py-1 px-2 rounded"
+        className: "text-xs font-semibold text-amber-900 mt-2 bg-amber-100 py-1 px-2 rounded"
       }, "Awarded on ", formatDate(yellowBadge.date));
     } else if (yellowModules >= 15) {
       return /*#__PURE__*/React.createElement("p", {
-        className: "text-xs font-bold text-yellow-900 mt-2 bg-yellow-100 py-1 px-2 rounded"
+        className: "text-xs font-bold text-amber-900 mt-2 bg-amber-100 py-1 px-2 rounded"
       }, "AWARD DUE");
     }
     return null;
@@ -13821,16 +13810,16 @@ const JuniorDetail = ({
       count: yellowModules,
       icon: 'Users',
       colors14: {
-        bg: 'bg-yellow-50',
-        border: 'border-yellow-400',
-        text: 'text-yellow-900',
-        icon: 'text-yellow-600'
+        bg: 'bg-amber-50',
+        border: 'border-amber-400',
+        text: 'text-amber-900',
+        icon: 'text-amber-600'
       },
       colors13: {
-        bg: 'bg-yellow-50',
-        border: 'border-yellow-300',
-        text: 'text-yellow-800',
-        icon: 'text-yellow-500'
+        bg: 'bg-amber-50',
+        border: 'border-amber-300',
+        text: 'text-amber-800',
+        icon: 'text-amber-500'
       }
     }, {
       name: 'STEM',
@@ -14163,7 +14152,7 @@ const JuniorDetail = ({
       className: "flex-1"
     }, (() => {
       const polUrl = JSC_MODULE_URLS[`${mod.section}:${mod.moduleCode}`];
-      const badgeClass = `inline-block px-2 py-1 rounded text-xs font-semibold mr-2 ${mod.section === 'red' ? 'bg-red-100 text-red-800' : mod.section === 'blue' ? 'bg-blue-100 text-blue-800' : mod.section === 'green' ? 'bg-green-100 text-green-800' : mod.section === 'yellow' ? 'bg-yellow-100 text-yellow-800' : 'bg-purple-100 text-purple-800'}`;
+      const badgeClass = `inline-block px-2 py-1 rounded text-xs font-semibold mr-2 ${mod.section === 'red' ? 'bg-red-100 text-red-800' : mod.section === 'blue' ? 'bg-blue-100 text-blue-800' : mod.section === 'green' ? 'bg-green-100 text-green-800' : mod.section === 'yellow' ? 'bg-amber-100 text-amber-800' : 'bg-purple-100 text-purple-800'}`;
       return polUrl ? /*#__PURE__*/React.createElement("a", {
         href: polUrl,
         target: "_blank",

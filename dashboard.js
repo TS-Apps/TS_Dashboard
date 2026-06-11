@@ -1812,7 +1812,7 @@ const WATER_SYLLABUS = {
   }, {
     code: "PSRC",
     title: "BC Paddle Safety & Rescue Course (PSRC)",
-    alts: ["BC Foundation Safety & Rescue Training (FSRT)"]
+    alts: ["BC Foundation Safety & Rescue Training (FSRT)", "Paddlesport Safety and Rescue Course"]
   }, {
     code: "SUP Sheltered",
     title: "BC Stand Up Paddle Sheltered Water Award",
@@ -7837,17 +7837,32 @@ const CadetFocus = ({
       });
     }
     Object.entries(CADET_FOCUS_WATERBORNE_HIERARCHY).forEach(([category, levels]) => {
-      const highestAward = levels.find(specName => {
+      // Returns the matching qualification record for a hierarchy entry, or undefined.
+      const matchQual = specName => {
         if (specName.includes("Powerboat Instructor")) {
-          return cadetQuals.some(q => q.module.includes("Powerboat Instructor") && !q.module.includes("Pre-Entry"));
+          return cadetQuals.find(q => q.module.includes("Powerboat Instructor") && !q.module.includes("Pre-Entry"));
         }
-        return cadetQuals.some(q => q.module.includes(specName));
+        // PSRC is recorded under several equivalent module names: the canonical
+        // "BC Paddle Safety & Rescue Course (PSRC)", the FSRT alternate
+        // ("BC Foundation Safety & Rescue Training (FSRT)"), and the legacy
+        // "Paddlesport Safety and Rescue Course". Match all of them.
+        if (specName.includes("(PSRC)")) {
+          return cadetQuals.find(q => {
+            const m = q.module.toLowerCase();
+            return m.includes("psrc") || m.includes("fsrt") || m.includes("safety & rescue") || m.includes("safety and rescue");
+          });
+        }
+        return cadetQuals.find(q => q.module.includes(specName));
+      };
+      let qualRecord;
+      const highestAward = levels.find(specName => {
+        qualRecord = matchQual(specName);
+        return !!qualRecord;
       });
       if (highestAward) {
         let key = highestAward;
         // Map to Badge Keys
-        if (highestAward.includes("Rowing Coxswain")) key = "Rowing Coxswain";else if (highestAward.includes("Rowing Supervised Coxswain")) key = "Rowing Supervised Coxswain";else if (highestAward.includes("Rowing Competent Crew")) key = "Rowing Competent Crew";else if (highestAward.includes("Rowing Instructor")) key = "Rowing Instructor";else if (highestAward.includes("Explore Award")) key = "Paddle Explore Award";else if (highestAward.includes("Discover Award")) key = "Paddle Discover Award";else if (highestAward.includes("Paddlesport Instructor")) key = "Paddlesport Instructor";else if (highestAward.includes("Dinghy Instructor")) key = "Dinghy Instructor";else if (highestAward.includes("Stage 4") && category === "Sailing") key = "Sailing Stage 4 / Level 3";else if (highestAward.includes("Stage 3") && category === "Sailing") key = "Sailing Stage 3 / Level 2";else if (highestAward.includes("Stage 2") && category === "Sailing") key = "Sailing Stage 2 / Level 1";else if (highestAward.includes("Spinnakers")) key = "Sailing with Spinnakers";else if (highestAward.includes("Seamanship Skills")) key = "Seamanship Skills";else if (highestAward.includes("Start Racing")) key = "Start Racing";else if (highestAward.includes("Performance Sailing")) key = "Performance Sailing";else if (highestAward.includes("Day Sailing")) key = "Day Sailing";else if (highestAward.includes("Start Windsurfing Instructor")) key = "Windsurfing Instructor";else if (highestAward.includes("Stage 4") && category === "Windsurfing") key = "Windsurfing Stage 4";else if (highestAward.includes("Stage 3") && category === "Windsurfing") key = "Windsurfing Stage 3";else if (highestAward.includes("Stage 2") && category === "Windsurfing") key = "Windsurfing Stage 2";else if (highestAward.includes("Stage 1") && category === "Windsurfing") key = "Windsurfing Stage 1";else if (highestAward.includes("Powerboat Instructor")) key = "Powerboat Instructor";else if (highestAward.includes("Powerboat Level 2")) key = "RYA Powerboat Level 2";else if (highestAward.includes("Powerboat Level 1")) key = "RYA Powerboat Level 1";else if (highestAward.includes("Power Watch Leader")) key = "Offshore Power Watch Leader";else if (highestAward.includes("Power Seaman")) key = "Offshore Power Seaman";else if (highestAward.includes("Power Grade 2")) key = "Offshore Power Grade 2";else if (highestAward.includes("Power Grade 1")) key = "Offshore Power Grade 1";else if (highestAward.includes("Sail Watch Leader")) key = "Offshore Sailing Watch Leader";else if (highestAward.includes("Sail Seaman")) key = "Offshore Sailing Seaman";else if (highestAward.includes("Sail Grade 2")) key = "Offshore Sailing Grade 2";else if (highestAward.includes("Sail Grade 1")) key = "Offshore Sailing Grade 1";else if (highestAward.includes("Master Coxswain")) key = "Master Coxswain";else if (highestAward === "Coxswain Award" || highestAward === "SCC Row Coxswain Module") key = "Cadet Coxswain";
-        const qualRecord = cadetQuals.find(q => q.module.includes(highestAward));
+        if (highestAward.includes("Rowing Coxswain")) key = "Rowing Coxswain";else if (highestAward.includes("Rowing Supervised Coxswain")) key = "Rowing Supervised Coxswain";else if (highestAward.includes("Rowing Competent Crew")) key = "Rowing Competent Crew";else if (highestAward.includes("Rowing Instructor")) key = "Rowing Instructor";else if (highestAward.includes("Explore Award")) key = "Paddle Explore Award";else if (highestAward.includes("Discover Award")) key = "Paddle Discover Award";else if (highestAward.includes("(PSRC)")) key = "Paddle FSRT/PSRC";else if (highestAward.includes("Paddlesport Instructor")) key = "Paddlesport Instructor";else if (highestAward.includes("Dinghy Instructor")) key = "Dinghy Instructor";else if (highestAward.includes("Stage 4") && category === "Sailing") key = "Sailing Stage 4 / Level 3";else if (highestAward.includes("Stage 3") && category === "Sailing") key = "Sailing Stage 3 / Level 2";else if (highestAward.includes("Stage 2") && category === "Sailing") key = "Sailing Stage 2 / Level 1";else if (highestAward.includes("Spinnakers")) key = "Sailing with Spinnakers";else if (highestAward.includes("Seamanship Skills")) key = "Seamanship Skills";else if (highestAward.includes("Start Racing")) key = "Start Racing";else if (highestAward.includes("Performance Sailing")) key = "Performance Sailing";else if (highestAward.includes("Day Sailing")) key = "Day Sailing";else if (highestAward.includes("Start Windsurfing Instructor")) key = "Windsurfing Instructor";else if (highestAward.includes("Stage 4") && category === "Windsurfing") key = "Windsurfing Stage 4";else if (highestAward.includes("Stage 3") && category === "Windsurfing") key = "Windsurfing Stage 3";else if (highestAward.includes("Stage 2") && category === "Windsurfing") key = "Windsurfing Stage 2";else if (highestAward.includes("Stage 1") && category === "Windsurfing") key = "Windsurfing Stage 1";else if (highestAward.includes("Powerboat Instructor")) key = "Powerboat Instructor";else if (highestAward.includes("Powerboat Level 2")) key = "RYA Powerboat Level 2";else if (highestAward.includes("Powerboat Level 1")) key = "RYA Powerboat Level 1";else if (highestAward.includes("Power Watch Leader")) key = "Offshore Power Watch Leader";else if (highestAward.includes("Power Seaman")) key = "Offshore Power Seaman";else if (highestAward.includes("Power Grade 2")) key = "Offshore Power Grade 2";else if (highestAward.includes("Power Grade 1")) key = "Offshore Power Grade 1";else if (highestAward.includes("Sail Watch Leader")) key = "Offshore Sailing Watch Leader";else if (highestAward.includes("Sail Seaman")) key = "Offshore Sailing Seaman";else if (highestAward.includes("Sail Grade 2")) key = "Offshore Sailing Grade 2";else if (highestAward.includes("Sail Grade 1")) key = "Offshore Sailing Grade 1";else if (highestAward.includes("Master Coxswain")) key = "Master Coxswain";else if (highestAward === "Coxswain Award" || highestAward === "SCC Row Coxswain Module") key = "Cadet Coxswain";
         awardedWaterborne.push({
           name: highestAward,
           key: key,
@@ -8013,7 +8028,7 @@ const CadetFocus = ({
 
     const currentWaterborneLevels = {
       "Rowing":        hq("rowing instructor") ? 4 : hq("rowing coxswain") && !hq("supervised") ? 3 : hq("supervised coxswain") ? 2 : hq("competent crew") ? 1 : 0,
-      "Paddlesport":   hq("paddlesport instructor") ? 4 : hq("psrc") || hq("safety & rescue") ? 3 : hq("explore award") ? 2 : hq("discover award") ? 1 : 0,
+      "Paddlesport":   hq("paddlesport instructor") ? 4 : hq("psrc") || hq("fsrt") || hq("safety & rescue") || hq("safety and rescue") ? 3 : hq("explore award") ? 2 : hq("discover award") ? 1 : 0,
       "Sailing":       hq("dinghy instructor") ? 5 : hq("day sailing") || hq("performance sailing") || hq("start racing") || hq("spinnakers") || hq("seamanship skills") ? 4 : hq("stage 4") && hq("sail") ? 4 : hq("stage 3") && hq("sail") ? 3 : hq("stage 2") && hq("sail") ? 2 : hq("stage 1") && hq("sail") ? 1 : 0,
       "Windsurfing":   hq("windsurfing instructor") ? 5 : hq("youthws - stage 4") || hq("windsurfing stage 4") ? 4 : hq("youthws - stage 3") || hq("windsurfing stage 3") ? 3 : hq("youthws - stage 2") || hq("windsurfing stage 2") ? 2 : hq("youthws - stage 1") || hq("windsurfing stage 1") ? 1 : 0,
       "Powerboat":     hq("powerboat instructor") ? 4 : hq("safety boat") ? 3 : hq("powerboat level 2") || hq("level 2 planing") || hq("level 2 disp") ? 2 : hq("powerboat level 1") ? 1 : 0,
@@ -8829,8 +8844,8 @@ const CadetFocus = ({
     className: "text-[10px] text-slate-500 mt-1"
   }, formatDate(wb.date)))), cadetWaterborne.length === 0 && /*#__PURE__*/React.createElement("div", {
     className: "w-full text-center py-4 text-slate-400 italic bg-slate-50 rounded border border-dashed"
-  }, "No waterborne proficiencies found for this cadet."),
-    waterborneNextSteps.length > 0 && /*#__PURE__*/React.createElement("div", { className: "mt-3 pt-3 border-t border-slate-100" },
+  }, "No waterborne proficiencies found for this cadet.")),
+    waterborneNextSteps.length > 0 && /*#__PURE__*/React.createElement("div", { className: "mt-4 pt-4 border-t border-slate-200" },
       /*#__PURE__*/React.createElement("p", { className: "text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2" }, "Next steps"),
       /*#__PURE__*/React.createElement("div", { className: "flex flex-wrap gap-2" },
         waterborneNextSteps.map(({ discipline, next, current }) =>
@@ -8845,7 +8860,7 @@ const CadetFocus = ({
         )
       )
     )
-  )), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h3", {
+  ), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h3", {
     className: "text-lg font-bold mb-4 flex items-center gap-2"
   }, /*#__PURE__*/React.createElement(Icon, {
     name: "BookOpen",

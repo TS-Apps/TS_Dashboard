@@ -52,7 +52,7 @@ const checkIsAdmin = async () => {
 // CONSTANTS & DATA
 // ═══════════════════════════════════════════════════════════════════════════
 
-const DATA_VERSION = "2.9-Cloud"; // Attendance: full names, cards in CadetFocus+JuniorDetail above stats
+const DATA_VERSION = "2.10-Cloud"; // Hash-based URL routing + grouped sidebar (Juniors/SCC/RMC/All Sections/Admin)
 
 // Badge & Rank Image Maps
 const RANK_IMG_MAP = {
@@ -15062,6 +15062,13 @@ const App = ({
   }), !sidebarCollapsed && /*#__PURE__*/React.createElement("span", {
     className: "text-sm"
   }, label));
+  const NavGroup = ({
+    label
+  }) => sidebarCollapsed ? /*#__PURE__*/React.createElement("div", {
+    className: "border-t border-blue-800 my-2 mx-1"
+  }) : /*#__PURE__*/React.createElement("p", {
+    className: "px-2 pt-3 pb-1 text-[10px] font-bold tracking-wider text-blue-400"
+  }, label);
 
   // Show loading spinner while checking for existing data
   if (loading) {
@@ -15129,11 +15136,13 @@ const App = ({
     name: sidebarCollapsed ? "ChevronRight" : "ChevronLeft",
     className: "w-5 h-5"
   }))), /*#__PURE__*/React.createElement("nav", {
-    className: "flex-1 p-3 space-y-0.5 overflow-hidden"
+    className: "flex-1 p-3 space-y-0.5 overflow-y-auto"
   }, /*#__PURE__*/React.createElement(NavItem, {
     id: "home",
     icon: "Home",
     label: "Home"
+  }), /*#__PURE__*/React.createElement(NavGroup, {
+    label: "Juniors (JSC)"
   }), /*#__PURE__*/React.createElement(NavItem, {
     id: "juniors",
     icon: "Users",
@@ -15142,18 +15151,24 @@ const App = ({
     id: "junior_progress",
     icon: "BarChart3",
     label: "Junior Progress"
-  }), /*#__PURE__*/React.createElement(NavItem, {
-    id: "cadet_focus",
-    icon: "User",
-    label: "Cadet Focus"
+  }), /*#__PURE__*/React.createElement(NavGroup, {
+    label: "Sea Cadets (SCC)"
   }), /*#__PURE__*/React.createElement(NavItem, {
     id: "planner",
     icon: "ShipWheel",
     label: "SCC CTP Progress"
+  }), /*#__PURE__*/React.createElement(NavGroup, {
+    label: "Royal Marines (RMC)"
   }), /*#__PURE__*/React.createElement(NavItem, {
     id: "rmc_planner",
     icon: "Target",
     label: "RMC CTS Progress"
+  }), /*#__PURE__*/React.createElement(NavGroup, {
+    label: "All Sections"
+  }), /*#__PURE__*/React.createElement(NavItem, {
+    id: "cadet_focus",
+    icon: "User",
+    label: "Cadet Focus"
   }), /*#__PURE__*/React.createElement(NavItem, {
     id: "waterborne",
     icon: "Anchor",
@@ -15174,6 +15189,8 @@ const App = ({
     id: "retention",
     icon: "UserX",
     label: "Retention Risk"
+  }), /*#__PURE__*/React.createElement(NavGroup, {
+    label: "Admin"
   }), /*#__PURE__*/React.createElement(NavItem, {
     id: "data_utilities",
     icon: "Database",

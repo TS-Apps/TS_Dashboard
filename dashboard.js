@@ -14656,10 +14656,16 @@ const AuthWrapper = ({
     value: user
   }, children(user));
 };
+// ── Hash routing ──────────────────────────────────────────────────────────
+const VALID_VIEWS = ['home', 'juniors', 'junior_progress', 'cadet_focus', 'planner', 'rmc_planner', 'waterborne', 'awards', 'suggestions', 'attendance', 'retention', 'data_utilities'];
+const parseHash = () => {
+  const h = window.location.hash.replace(/^#\/?/, '');
+  return VALID_VIEWS.includes(h) ? h : null;
+};
 const App = ({
   user
 }) => {
-  const [view, setView] = useState('upload');
+  const [view, setView] = useState(parseHash() || 'upload');
   const [forceUploadView, setForceUploadView] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [personnelData, setPersonnelData] = useState([]);
@@ -14668,6 +14674,31 @@ const App = ({
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [attendanceData, setAttendanceData] = useState([]);
+
+  // Hash-based navigation. Must be declared before any conditional early return
+  // (rules of hooks: a hook after an early return previously crashed re-renders).
+  const navigate = id => {
+    if (VALID_VIEWS.includes(id)) {
+      if (window.location.hash === '#/' + id) {
+        window.scrollTo(0, 0);
+        return;
+      }
+      window.location.hash = '/' + id;
+    } else {
+      setView(id);
+    }
+  };
+  useEffect(() => {
+    const onHash = () => {
+      const v = parseHash();
+      if (v) {
+        setView(v);
+        window.scrollTo(0, 0);
+      }
+    };
+    window.addEventListener('hashchange', onHash);
+    return () => window.removeEventListener('hashchange', onHash);
+  }, []);
 
   // Check admin status on mount
   useEffect(() => {
@@ -14774,9 +14805,17 @@ const App = ({
           setPersonnelData(pData);
           setQualsData(qData);
           if (!forceUploadView) {
-            setView('home');
+            navigate('home');
           }
           // If forceUploadView is true, stay on upload screen so user can upload fresh files
+        } else {
+          // Empty database: force the upload page. Upload is an internal state and
+          // must never enter the URL, so use setView (not navigate) and clear the hash
+          // so a deep link like #/attendance against an empty DB resolves cleanly.
+          if (view !== 'upload') {
+            setView('upload');
+          }
+          if (window.location.hash) history.replaceState(null, '', window.location.pathname + window.location.search);
         }
       } catch (error) {
         console.error('Error loading data:', error);
@@ -14934,7 +14973,7 @@ const App = ({
       setPersonnelData(pData);
       setQualsData(qData);
       setForceUploadView(false);
-      setView('home');
+      navigate('home');
     } catch (error) {
       console.error('Error saving data:', error);
       alert('Error saving data to cloud. Please try again.');
@@ -15012,10 +15051,7 @@ const App = ({
     icon,
     label
   }) => /*#__PURE__*/React.createElement("button", {
-    onClick: () => {
-      setView(id);
-      window.scrollTo(0, 0);
-    },
+    onClick: () => navigate(id),
     className: `flex items-center gap-2 w-full p-2 rounded-lg transition-all text-sm ${view === id ? 'bg-blue-800 text-white' : 'text-blue-100 hover:bg-blue-800/50'}`
   }, /*#__PURE__*/React.createElement(Icon, {
     name: icon,
@@ -15193,7 +15229,7 @@ const App = ({
   }), view === 'cadet_focus' && /*#__PURE__*/React.createElement(CadetFocus, {
     personnel: personnelData,
     qualsData: qualsData,
-    setView: setView,
+    setView: id => VALID_VIEWS.includes(id) ? navigate(id) : setView(id),
     attendanceData: attendanceData
   }), view === 'juniors' && /*#__PURE__*/React.createElement(JuniorsView, {
     personnel: personnelData,
@@ -15243,7 +15279,7 @@ const App = ({
   }), view === 'data_utilities' && /*#__PURE__*/React.createElement(DataUtilitiesView, {
     clearData: clearData,
     wipeAllData: wipeAllData,
-    setView: setView,
+    setView: id => VALID_VIEWS.includes(id) ? navigate(id) : setView(id),
     personnel: personnelData,
     isAdmin: isAdmin,
     onResetComplete: (rP, rQ) => {

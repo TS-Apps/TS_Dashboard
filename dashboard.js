@@ -14804,7 +14804,10 @@ const App = ({
           }
           setPersonnelData(pData);
           setQualsData(qData);
-          if (!forceUploadView) {
+          if (!forceUploadView && view === 'upload') {
+            // Only auto-redirect to home from the default upload landing state.
+            // A deep link (e.g. #/attendance) sets view from the hash on mount;
+            // don't override it here or refresh would always bounce back to home.
             navigate('home');
           }
           // If forceUploadView is true, stay on upload screen so user can upload fresh files

@@ -52,7 +52,7 @@ const checkIsAdmin = async () => {
 // CONSTANTS & DATA
 // ═══════════════════════════════════════════════════════════════════════════
 
-const DATA_VERSION = "2.14-Cloud"; // UI polish: tighter vertical rhythm across all views (gaps 24px->16px)
+const DATA_VERSION = "2.15-Cloud"; // UI polish: tighter table/list row heights (py-3->py-2)
 
 // Badge & Rank Image Maps
 const RANK_IMG_MAP = {
@@ -4984,14 +4984,14 @@ const AttendanceView = ({
   }, /*#__PURE__*/React.createElement("thead", {
     className: "bg-slate-50 text-xs text-slate-500 uppercase"
   }, /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("th", {
-    className: "px-4 py-3 text-left sticky left-0 bg-slate-50 z-10"
+    className: "px-4 py-2 text-left sticky left-0 bg-slate-50 z-10"
   }, "Cadet"), /*#__PURE__*/React.createElement("th", {
-    className: "px-3 py-3 text-left"
+    className: "px-3 py-2 text-left"
   }, "Section"), months.map(m => /*#__PURE__*/React.createElement("th", {
     key: m,
-    className: "px-3 py-3 text-center whitespace-nowrap"
+    className: "px-3 py-2 text-center whitespace-nowrap"
   }, formatMonth(m))), /*#__PURE__*/React.createElement("th", {
-    className: "px-4 py-3 text-center bg-slate-100 whitespace-nowrap"
+    className: "px-4 py-2 text-center bg-slate-100 whitespace-nowrap"
   }, "Overall"))), /*#__PURE__*/React.createElement("tbody", {
     className: "divide-y divide-slate-100"
   }, filteredCadets.map(c => {
@@ -5400,7 +5400,7 @@ const RetentionView = ({
     label
   }) => /*#__PURE__*/React.createElement("th", {
     onClick: () => setSortBy(col),
-    className: `px-3 py-3 text-center cursor-pointer select-none whitespace-nowrap hover:bg-slate-100 transition-colors ${sortBy === col ? 'text-amber-600 font-bold bg-amber-50' : 'text-slate-500'}`
+    className: `px-3 py-2 text-center cursor-pointer select-none whitespace-nowrap hover:bg-slate-100 transition-colors ${sortBy === col ? 'text-amber-600 font-bold bg-amber-50' : 'text-slate-500'}`
   }, label, sortBy === col ? ' ▼' : '');
 
   // Shared row renderer used for both active and lost tables
@@ -5422,7 +5422,7 @@ const RetentionView = ({
       key: cadet.pNumber,
       className: `hover:bg-slate-100/60 transition-colors ${rowBg}`
     }, /*#__PURE__*/React.createElement("td", {
-      className: "px-4 py-3 font-semibold text-slate-800 sticky left-0 bg-inherit whitespace-nowrap"
+      className: "px-4 py-2 font-semibold text-slate-800 sticky left-0 bg-inherit whitespace-nowrap"
     }, /*#__PURE__*/React.createElement("div", {
       className: "flex items-center gap-2"
     }, isLost && /*#__PURE__*/React.createElement("span", {
@@ -5430,7 +5430,7 @@ const RetentionView = ({
     }, "Lost"), /*#__PURE__*/React.createElement("span", {
       className: isLost ? 'line-through text-slate-400' : ''
     }, displayName(cadet)))), /*#__PURE__*/React.createElement("td", {
-      className: "px-3 py-3"
+      className: "px-3 py-2"
     }, /*#__PURE__*/React.createElement("div", {
       className: "flex flex-col gap-0.5"
     }, /*#__PURE__*/React.createElement("span", {
@@ -5438,31 +5438,31 @@ const RetentionView = ({
     }, sec), /*#__PURE__*/React.createElement("span", {
       className: "text-[10px] text-slate-500 whitespace-nowrap"
     }, cadet.rank || '—'))), /*#__PURE__*/React.createElement("td", {
-      className: "px-3 py-3 text-center"
+      className: "px-3 py-2 text-center"
     }, /*#__PURE__*/React.createElement(FactorPip, {
       score: isLost ? 0 : f.attendance.score,
       primary: attPrimary,
       secondary: attSecondary
     })), /*#__PURE__*/React.createElement("td", {
-      className: "px-3 py-3 text-center"
+      className: "px-3 py-2 text-center"
     }, /*#__PURE__*/React.createElement(FactorPip, {
       score: isLost ? 0 : f.rankAge.skipped ? 0 : f.rankAge.score,
       primary: rankPrimary,
       secondary: rankSecondary
     })), /*#__PURE__*/React.createElement("td", {
-      className: "px-3 py-3 text-center"
+      className: "px-3 py-2 text-center"
     }, /*#__PURE__*/React.createElement(FactorPip, {
       score: isLost ? 0 : f.qualAge.score,
       primary: qualPrimary,
       secondary: qualSecondary
     })), /*#__PURE__*/React.createElement("td", {
-      className: "px-3 py-3 text-center"
+      className: "px-3 py-2 text-center"
     }, isLost ? /*#__PURE__*/React.createElement("span", {
       className: "px-2.5 py-1 rounded-full text-xs font-bold bg-slate-300 text-slate-600 whitespace-nowrap"
     }, "Lost") : /*#__PURE__*/React.createElement(RagBadge, {
       rag: risk.rag
     })), /*#__PURE__*/React.createElement("td", {
-      className: "px-3 py-3 text-center"
+      className: "px-3 py-2 text-center"
     }, /*#__PURE__*/React.createElement("button", {
       onClick: () => toggleLost(cadet.pNumber),
       title: isLost ? 'Restore to active list' : 'Mark as Lost (cadet leaving/awaiting admin)',
@@ -5488,10 +5488,10 @@ const RetentionView = ({
   const TableHead = () => /*#__PURE__*/React.createElement("thead", {
     className: "bg-slate-50 text-xs text-slate-500 uppercase"
   }, /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("th", {
-    className: "px-4 py-3 text-left sticky left-0 bg-slate-50 cursor-pointer hover:bg-slate-100 select-none",
+    className: "px-4 py-2 text-left sticky left-0 bg-slate-50 cursor-pointer hover:bg-slate-100 select-none",
     onClick: () => setSortBy('name')
   }, "Cadet", sortBy === 'name' ? ' ▼' : ''), /*#__PURE__*/React.createElement("th", {
-    className: "px-3 py-3 text-left whitespace-nowrap"
+    className: "px-3 py-2 text-left whitespace-nowrap"
   }, "Section / Rank"), /*#__PURE__*/React.createElement(SortTh, {
     col: "attendance",
     label: "Attendance"
@@ -5505,7 +5505,7 @@ const RetentionView = ({
     col: "risk",
     label: "Risk"
   }), /*#__PURE__*/React.createElement("th", {
-    className: "px-3 py-3 text-center text-slate-400 whitespace-nowrap"
+    className: "px-3 py-2 text-center text-slate-400 whitespace-nowrap"
   }, "Action")));
 
   // ── Render ───────────────────────────────────────────────────────────
@@ -7321,7 +7321,7 @@ const WaterborneView = ({
           return /*#__PURE__*/React.createElement("div", { key: cadet.pNumber, className: "border border-slate-200 rounded-lg overflow-hidden" },
             /*#__PURE__*/React.createElement("button", {
               onClick: () => setExpanded(isOpen ? null : cadet.pNumber),
-              className: "w-full flex items-center justify-between px-4 py-3 text-left hover:bg-slate-50 transition-colors"
+              className: "w-full flex items-center justify-between px-4 py-2 text-left hover:bg-slate-50 transition-colors"
             },
               /*#__PURE__*/React.createElement("div", { className: "flex items-center gap-3" },
                 /*#__PURE__*/React.createElement("span", { className: `w-2.5 h-2.5 rounded-full flex-shrink-0 ${lbl.dot}` }),
@@ -14147,7 +14147,7 @@ const JuniorDetail = ({
     const isCore = isRedCore || isBlueCore;
     return /*#__PURE__*/React.createElement("div", {
       key: idx,
-      className: "flex justify-between items-center p-3 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors"
+      className: "flex justify-between items-center px-3 py-2 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors"
     }, /*#__PURE__*/React.createElement("div", {
       className: "flex-1"
     }, (() => {

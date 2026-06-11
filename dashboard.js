@@ -52,7 +52,7 @@ const checkIsAdmin = async () => {
 // CONSTANTS & DATA
 // ═══════════════════════════════════════════════════════════════════════════
 
-const DATA_VERSION = "2.12-Cloud"; // UI polish: lighter chrome, decluttered Home, consolidated colour palette
+const DATA_VERSION = "2.13-Cloud"; // UI polish: tighter page headers (smaller titles, flatter cards), p-8->p-6 across views
 
 // Badge & Rank Image Maps
 const RANK_IMG_MAP = {
@@ -3377,9 +3377,9 @@ class ErrorBoundary extends Component {
   render() {
     if (this.state.hasError) {
       return /*#__PURE__*/React.createElement("div", {
-        className: "min-h-screen flex items-center justify-center bg-red-50 p-8"
+        className: "min-h-screen flex items-center justify-center bg-red-50 p-6"
       }, /*#__PURE__*/React.createElement("div", {
-        className: "bg-white p-8 rounded-lg shadow-xl max-w-md w-full text-center"
+        className: "bg-white p-6 rounded-lg shadow-xl max-w-md w-full text-center"
       }, /*#__PURE__*/React.createElement("h2", {
         className: "text-2xl font-bold text-red-600 mb-4"
       }, "Something went wrong"), /*#__PURE__*/React.createElement("p", {
@@ -4774,7 +4774,7 @@ const AttendanceView = ({
     return /*#__PURE__*/React.createElement("div", {
       className: "space-y-6"
     }, /*#__PURE__*/React.createElement("div", {
-      className: "bg-white rounded-lg shadow p-8 text-center border-l-4 border-amber-500"
+      className: "bg-white rounded-lg shadow p-6 text-center border-l-4 border-amber-500"
     }, /*#__PURE__*/React.createElement(Icon, {
       name: "CalendarCheck",
       className: "w-16 h-16 mx-auto text-slate-300 mb-4"
@@ -4796,7 +4796,7 @@ const AttendanceView = ({
     name: "CalendarCheck",
     className: "w-7 h-7 text-amber-700"
   })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h1", {
-    className: "text-3xl font-extrabold text-slate-900"
+    className: "text-2xl font-bold text-slate-900"
   }, "Parade Night Attendance"), /*#__PURE__*/React.createElement("p", {
     className: "text-slate-500 text-sm"
   }, months.length, " month", months.length !== 1 ? 's' : '', " of data \u2014 ", cadets.length, " cadets \u2014 below-threshold flag at ", THRESHOLD, "%")))), /*#__PURE__*/React.createElement("div", {
@@ -5473,7 +5473,7 @@ const RetentionView = ({
   // ── No data guard ────────────────────────────────────────────────────
   if (attendanceData.length === 0 && qualsData.length === 0) {
     return /*#__PURE__*/React.createElement("div", {
-      className: "bg-white rounded-lg shadow p-8 text-center border-l-4 border-red-500"
+      className: "bg-white rounded-lg shadow p-6 text-center border-l-4 border-red-500"
     }, /*#__PURE__*/React.createElement(Icon, {
       name: "AlertOctagon",
       className: "w-16 h-16 mx-auto text-slate-300 mb-4"
@@ -5521,7 +5521,7 @@ const RetentionView = ({
     name: "UserX",
     className: "w-7 h-7 text-red-700"
   })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h1", {
-    className: "text-3xl font-extrabold text-slate-900"
+    className: "text-2xl font-bold text-slate-900"
   }, "Retention Risk"), /*#__PURE__*/React.createElement("p", {
     className: "text-slate-500 text-sm mt-0.5"
   }, cadets.length, " cadets scored across attendance, rank progression, and qualification activity.", lostRisks.length > 0 && /*#__PURE__*/React.createElement("span", {
@@ -6026,7 +6026,7 @@ const HomeView = ({
     name: "ShipWheel",
     className: "w-7 h-7"
   })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h2", {
-    className: "text-3xl font-extrabold text-blue-900"
+    className: "text-2xl font-bold text-blue-900"
   }, "Welcome to the ", unitName, " Training Dashboard!"), /*#__PURE__*/React.createElement("p", {
     className: "text-sm text-blue-600 font-semibold mt-1"
   }, "Cloud Edition \u2014 v", DATA_VERSION))), /*#__PURE__*/React.createElement("p", {
@@ -6961,7 +6961,7 @@ const AwardsView = ({
   return /*#__PURE__*/React.createElement("div", {
     className: "space-y-6"
   }, /*#__PURE__*/React.createElement("div", {
-    className: "bg-white rounded-lg shadow-xl p-6 border-l-4 border-amber-500"
+    className: "bg-white rounded-lg shadow-md p-6 border-l-4 border-amber-500"
   }, /*#__PURE__*/React.createElement("div", {
     className: "flex items-center justify-between gap-4"
   }, /*#__PURE__*/React.createElement("div", {
@@ -6972,7 +6972,7 @@ const AwardsView = ({
     name: "Award",
     className: "w-7 h-7 text-amber-700"
   })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h2", {
-    className: "text-3xl font-extrabold text-slate-900"
+    className: "text-2xl font-bold text-slate-900"
   }, "Awards"), /*#__PURE__*/React.createElement("p", {
     className: "text-slate-600"
   }, "Track achievements, promotions, and upcoming awards"))), /*#__PURE__*/React.createElement("button", {
@@ -7304,7 +7304,7 @@ const WaterborneView = ({
       return { text: "Approaching", bg: "bg-slate-100", text_color: "text-slate-600", dot: "bg-slate-300" };
     };
 
-    return /*#__PURE__*/React.createElement("div", { className: "bg-white rounded-lg shadow-xl p-6 border-l-4 border-amber-400" },
+    return /*#__PURE__*/React.createElement("div", { className: "bg-white rounded-lg shadow-md p-6 border-l-4 border-amber-400" },
       /*#__PURE__*/React.createElement("div", { className: "flex items-center gap-3 mb-4" },
         /*#__PURE__*/React.createElement("div", { className: "p-2 bg-amber-100 rounded-full" },
           /*#__PURE__*/React.createElement(Icon, { name: "Target", className: "w-6 h-6 text-amber-700" })
@@ -7447,7 +7447,7 @@ const WaterborneView = ({
   return /*#__PURE__*/React.createElement("div", {
     className: "space-y-6"
   }, /*#__PURE__*/React.createElement("div", {
-    className: "bg-white rounded-lg shadow-xl p-6 border-l-4 border-blue-500"
+    className: "bg-white rounded-lg shadow-md p-6 border-l-4 border-blue-500"
   }, /*#__PURE__*/React.createElement("div", {
     className: "flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4"
   }, /*#__PURE__*/React.createElement("div", {
@@ -7458,7 +7458,7 @@ const WaterborneView = ({
     name: "Anchor",
     className: "w-7 h-7 text-blue-700"
   })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h2", {
-    className: "text-3xl font-extrabold text-slate-900"
+    className: "text-2xl font-bold text-slate-900"
   }, "Waterborne Qualifications"), /*#__PURE__*/React.createElement("p", {
     className: "text-slate-600"
   }, "Track all waterborne proficiencies and awards"))), /*#__PURE__*/React.createElement("div", {
@@ -8474,9 +8474,9 @@ const CadetFocus = ({
   // Check if there are no cadets aged 12-17
   if (cadets.length === 0) {
     return /*#__PURE__*/React.createElement("div", {
-      className: "space-y-6 p-8"
+      className: "space-y-6 p-6"
     }, /*#__PURE__*/React.createElement("div", {
-      className: "bg-white rounded-lg shadow-xl p-8 text-center border-l-4 border-blue-500"
+      className: "bg-white rounded-lg shadow-md p-6 text-center border-l-4 border-blue-500"
     }, /*#__PURE__*/React.createElement(Icon, {
       name: "Users",
       className: "w-16 h-16 mx-auto text-blue-400 mb-4"
@@ -8551,12 +8551,12 @@ const CadetFocus = ({
     }, /*#__PURE__*/React.createElement("li", null, "\u2022 ", /*#__PURE__*/React.createElement("strong", null, "Junior Focus:"), " Track individual junior progress and add module completions"), /*#__PURE__*/React.createElement("li", null, "\u2022 ", /*#__PURE__*/React.createElement("strong", null, "Junior Progress:"), " Grid view showing all 333 modules across all juniors"), /*#__PURE__*/React.createElement("li", null, "\u2022 ", /*#__PURE__*/React.createElement("strong", null, "Cadet Focus:"), " Detailed view for cadets aged 12-17"), /*#__PURE__*/React.createElement("li", null, "\u2022 ", /*#__PURE__*/React.createElement("strong", null, "SCC CTP / RMC CTS:"), " Training planners for standard cadets"))))));
   }
   if (!selectedCadet) return /*#__PURE__*/React.createElement("div", {
-    className: "p-8 text-center text-slate-500"
+    className: "p-6 text-center text-slate-500"
   }, "Please load data and select a cadet.");
   return /*#__PURE__*/React.createElement("div", {
     className: "space-y-6"
   }, /*#__PURE__*/React.createElement("div", {
-    className: "bg-white rounded-lg shadow-xl p-6 border-l-4 border-blue-500"
+    className: "bg-white rounded-lg shadow-md p-6 border-l-4 border-blue-500"
   }, /*#__PURE__*/React.createElement("div", {
     className: "flex flex-col md:flex-row justify-between items-start md:items-center gap-4"
   }, /*#__PURE__*/React.createElement("div", {
@@ -8567,7 +8567,7 @@ const CadetFocus = ({
     name: "User",
     className: "w-7 h-7 text-blue-700"
   })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h2", {
-    className: "text-3xl font-extrabold text-slate-900"
+    className: "text-2xl font-bold text-slate-900"
   }, "Cadet Focus"), /*#__PURE__*/React.createElement("p", {
     className: "text-slate-600"
   }, "Detailed view of achievements and awards"))), /*#__PURE__*/React.createElement("div", {
@@ -9018,7 +9018,7 @@ const TrainingPlanner = ({
     return /*#__PURE__*/React.createElement("div", {
       className: "space-y-6"
     }, /*#__PURE__*/React.createElement("div", {
-      className: "bg-white rounded-lg shadow-xl p-6 border-l-4 border-blue-500"
+      className: "bg-white rounded-lg shadow-md p-6 border-l-4 border-blue-500"
     }, /*#__PURE__*/React.createElement("div", {
       className: "flex items-center gap-4 mb-4"
     }, /*#__PURE__*/React.createElement("div", {
@@ -9027,7 +9027,7 @@ const TrainingPlanner = ({
       name: iconName || "FileText",
       className: `w-7 h-7 ${colorTheme === "green" ? "text-green-700" : "text-blue-700"}`
     })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h2", {
-      className: "text-3xl font-extrabold text-slate-900"
+      className: "text-2xl font-bold text-slate-900"
     }, title), /*#__PURE__*/React.createElement("p", {
       className: "text-slate-600"
     }, "No syllabus data available"))), /*#__PURE__*/React.createElement("div", {
@@ -9180,7 +9180,7 @@ const TrainingPlanner = ({
   return /*#__PURE__*/React.createElement("div", {
     className: "space-y-6"
   }, /*#__PURE__*/React.createElement("div", {
-    className: `bg-white rounded-lg shadow-xl p-6 border-l-4 ${colorTheme === "green" ? "border-green-500" : "border-blue-500"}`
+    className: `bg-white rounded-lg shadow-md p-6 border-l-4 ${colorTheme === "green" ? "border-green-500" : "border-blue-500"}`
   }, /*#__PURE__*/React.createElement("div", {
     className: "flex flex-col md:flex-row justify-between items-start md:items-center gap-4"
   }, /*#__PURE__*/React.createElement("div", {
@@ -9191,7 +9191,7 @@ const TrainingPlanner = ({
     name: iconName || "FileText",
     className: `w-7 h-7 ${colorTheme === "green" ? "text-green-700" : "text-blue-700"}`
   })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h2", {
-    className: "text-3xl font-extrabold text-slate-900"
+    className: "text-2xl font-bold text-slate-900"
   }, title), /*#__PURE__*/React.createElement("p", {
     className: "text-slate-600"
   }, "Plan training for cadets at selected rank"))), /*#__PURE__*/React.createElement("div", {
@@ -9377,7 +9377,7 @@ const TrainingSuggestions = ({
   return /*#__PURE__*/React.createElement("div", {
     className: "space-y-6"
   }, /*#__PURE__*/React.createElement("div", {
-    className: "bg-white rounded-lg shadow-xl p-6 border-l-4 border-purple-500"
+    className: "bg-white rounded-lg shadow-md p-6 border-l-4 border-purple-500"
   }, /*#__PURE__*/React.createElement("div", {
     className: "flex items-center gap-4 mb-4"
   }, /*#__PURE__*/React.createElement("div", {
@@ -9386,7 +9386,7 @@ const TrainingSuggestions = ({
     name: "Lightbulb",
     className: "w-7 h-7 text-purple-700"
   })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h2", {
-    className: "text-3xl font-extrabold text-slate-900"
+    className: "text-2xl font-bold text-slate-900"
   }, "Training Plan"), /*#__PURE__*/React.createElement("p", {
     className: "text-slate-600"
   }, "12 most-needed modules for selected rank"))), /*#__PURE__*/React.createElement("div", {
@@ -9467,9 +9467,9 @@ const JuniorProgressView = ({
   const juniors = personnel.filter(c => isJunior(c.dob, c.pNumber, c.rank));
   if (loading) {
     return /*#__PURE__*/React.createElement("div", {
-      className: "p-8"
+      className: "p-6"
     }, /*#__PURE__*/React.createElement("div", {
-      className: "bg-white rounded-lg shadow p-8 text-center"
+      className: "bg-white rounded-lg shadow p-6 text-center"
     }, /*#__PURE__*/React.createElement("div", {
       className: "animate-spin rounded-full h-12 w-12 border-b-2 border-purple-700 mx-auto mb-4"
     }), /*#__PURE__*/React.createElement("p", {
@@ -9478,9 +9478,9 @@ const JuniorProgressView = ({
   }
   if (juniors.length === 0) {
     return /*#__PURE__*/React.createElement("div", {
-      className: "p-8"
+      className: "p-6"
     }, /*#__PURE__*/React.createElement("div", {
-      className: "bg-white rounded-lg shadow p-8 text-center"
+      className: "bg-white rounded-lg shadow p-6 text-center"
     }, /*#__PURE__*/React.createElement(Icon, {
       name: "Users",
       className: "w-16 h-16 mx-auto text-slate-300 mb-4"
@@ -12040,7 +12040,7 @@ const DataUtilitiesView = ({
     name: "Database",
     className: "w-7 h-7 text-slate-700"
   }), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h1", {
-    className: "text-3xl font-extrabold text-slate-900"
+    className: "text-2xl font-bold text-slate-900"
   }, "Data / Utilities"), /*#__PURE__*/React.createElement("p", {
     className: "text-slate-600"
   }, "Manage all data imports, exports, and system settings")))), uploadStatus && /*#__PURE__*/React.createElement("div", {
@@ -12737,9 +12737,9 @@ const JuniorsView = ({
   const [selectedJuniorPNum, setSelectedJuniorPNum] = useState(juniors.length > 0 ? juniors[0].pNumber : "");
   if (loading) {
     return /*#__PURE__*/React.createElement("div", {
-      className: "p-8"
+      className: "p-6"
     }, /*#__PURE__*/React.createElement("div", {
-      className: "bg-white rounded-lg shadow p-8 text-center"
+      className: "bg-white rounded-lg shadow p-6 text-center"
     }, /*#__PURE__*/React.createElement("div", {
       className: "animate-spin rounded-full h-12 w-12 border-b-2 border-purple-700 mx-auto mb-4"
     }), /*#__PURE__*/React.createElement("p", {
@@ -12748,9 +12748,9 @@ const JuniorsView = ({
   }
   if (juniors.length === 0) {
     return /*#__PURE__*/React.createElement("div", {
-      className: "p-8"
+      className: "p-6"
     }, /*#__PURE__*/React.createElement("div", {
-      className: "bg-white rounded-lg shadow p-8 text-center"
+      className: "bg-white rounded-lg shadow p-6 text-center"
     }, /*#__PURE__*/React.createElement(Icon, {
       name: "Users",
       className: "w-16 h-16 mx-auto text-slate-300 mb-4"
@@ -12766,7 +12766,7 @@ const JuniorsView = ({
   return /*#__PURE__*/React.createElement("div", {
     className: "space-y-6"
   }, /*#__PURE__*/React.createElement("div", {
-    className: "bg-white rounded-lg shadow-xl p-6 border-l-4 border-purple-500"
+    className: "bg-white rounded-lg shadow-md p-6 border-l-4 border-purple-500"
   }, /*#__PURE__*/React.createElement("div", {
     className: "flex flex-col md:flex-row justify-between items-start md:items-center gap-4"
   }, /*#__PURE__*/React.createElement("div", {
@@ -12777,7 +12777,7 @@ const JuniorsView = ({
     name: "Users",
     className: "w-7 h-7 text-purple-700"
   })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h1", {
-    className: "text-3xl font-extrabold text-slate-900"
+    className: "text-2xl font-bold text-slate-900"
   }, "Junior Focus"), /*#__PURE__*/React.createElement("p", {
     className: "text-slate-600"
   }, juniors.length, " junior", juniors.length !== 1 ? 's' : '', " (ages 9-11)"))), /*#__PURE__*/React.createElement("div", {
@@ -14496,7 +14496,7 @@ const LoginForm = () => {
   return /*#__PURE__*/React.createElement("div", {
     className: "min-h-screen flex items-center justify-center bg-slate-100"
   }, /*#__PURE__*/React.createElement("div", {
-    className: "bg-white p-8 rounded-lg shadow-lg max-w-md w-full"
+    className: "bg-white p-6 rounded-lg shadow-lg max-w-md w-full"
   }, /*#__PURE__*/React.createElement("div", {
     className: "text-center mb-6"
   }, /*#__PURE__*/React.createElement("h1", {
@@ -15083,7 +15083,7 @@ const App = ({
       alt: "TS Dashboard",
       className: "w-[300px] h-auto mb-2 object-contain"
     }), /*#__PURE__*/React.createElement("h1", {
-      className: "text-4xl font-extrabold text-blue-900 mb-1"
+      className: "text-3xl font-bold text-blue-900 mb-1"
     }, "Sea Cadet Training Dashboard"), /*#__PURE__*/React.createElement(FileUploader, {
       onDataLoaded: handleDataLoaded,
       hasData: personnelData.length > 0,

@@ -52,7 +52,7 @@ const checkIsAdmin = async () => {
 // CONSTANTS & DATA
 // ═══════════════════════════════════════════════════════════════════════════
 
-const DATA_VERSION = "2.13-Cloud"; // UI polish: tighter page headers (smaller titles, flatter cards), p-8->p-6 across views
+const DATA_VERSION = "2.14-Cloud"; // UI polish: tighter vertical rhythm across all views (gaps 24px->16px)
 
 // Badge & Rank Image Maps
 const RANK_IMG_MAP = {
@@ -3383,9 +3383,9 @@ class ErrorBoundary extends Component {
       }, /*#__PURE__*/React.createElement("h2", {
         className: "text-2xl font-bold text-red-600 mb-4"
       }, "Something went wrong"), /*#__PURE__*/React.createElement("p", {
-        className: "text-slate-600 mb-6"
+        className: "text-slate-600 mb-4"
       }, "The dashboard encountered an error processing the data."), /*#__PURE__*/React.createElement("div", {
-        className: "bg-slate-100 p-4 rounded text-left text-xs font-mono text-red-800 mb-6 overflow-auto max-h-32"
+        className: "bg-slate-100 p-4 rounded text-left text-xs font-mono text-red-800 mb-4 overflow-auto max-h-32"
       }, this.state.error && this.state.error.toString()), /*#__PURE__*/React.createElement("button", {
         onClick: this.handleReset,
         className: "w-full py-3 px-4 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg transition-colors"
@@ -3904,7 +3904,7 @@ const FileUploader = ({
     name: "Upload",
     className: "w-5 h-5"
   }), " Import Data Sources"), /*#__PURE__*/React.createElement("div", {
-    className: "mb-6 text-sm text-slate-600 bg-blue-50 p-4 rounded border border-blue-100"
+    className: "mb-4 text-sm text-slate-600 bg-blue-50 p-4 rounded border border-blue-100"
   }, /*#__PURE__*/React.createElement("p", {
     className: "mb-3"
   }, "Please watch this video to see how to download the correct CSV files from Westminster, ready to upload to your dashboard. Please note that all data remains secure within your web browser, and no data is uploaded to our servers."), /*#__PURE__*/React.createElement("button", {
@@ -3914,7 +3914,7 @@ const FileUploader = ({
     name: "FileText",
     className: "w-4 h-4"
   }), " Watch Instructions Video")), /*#__PURE__*/React.createElement("div", {
-    className: "mb-6 p-4 bg-amber-50 border-l-4 border-amber-500 rounded"
+    className: "mb-4 p-4 bg-amber-50 border-l-4 border-amber-500 rounded"
   }, /*#__PURE__*/React.createElement("div", {
     className: "flex items-start gap-2"
   }, /*#__PURE__*/React.createElement(Icon, {
@@ -4511,7 +4511,7 @@ const NaturalLanguageQuery = () => {
     }
   };
   return /*#__PURE__*/React.createElement("div", {
-    className: "bg-white rounded-lg shadow p-6 mb-6"
+    className: "bg-white rounded-lg shadow p-6 mb-4"
   }, /*#__PURE__*/React.createElement("div", {
     className: "flex items-center gap-3 mb-4"
   }, /*#__PURE__*/React.createElement(Icon, {
@@ -4772,7 +4772,7 @@ const AttendanceView = ({
   }, [cadets, filterSection, filterRank, pNumSection]);
   if (attendanceData.length === 0) {
     return /*#__PURE__*/React.createElement("div", {
-      className: "space-y-6"
+      className: "space-y-4"
     }, /*#__PURE__*/React.createElement("div", {
       className: "bg-white rounded-lg shadow p-6 text-center border-l-4 border-amber-500"
     }, /*#__PURE__*/React.createElement(Icon, {
@@ -4785,7 +4785,7 @@ const AttendanceView = ({
     }, "Upload parade night CSV files via Data / Utilities to see attendance statistics.")));
   }
   return /*#__PURE__*/React.createElement("div", {
-    className: "space-y-6"
+    className: "space-y-4"
   }, /*#__PURE__*/React.createElement("div", {
     className: "bg-white rounded-lg shadow p-6 border-l-4 border-amber-500"
   }, /*#__PURE__*/React.createElement("div", {
@@ -5510,7 +5510,7 @@ const RetentionView = ({
 
   // ── Render ───────────────────────────────────────────────────────────
   return /*#__PURE__*/React.createElement("div", {
-    className: "space-y-6"
+    className: "space-y-4"
   }, /*#__PURE__*/React.createElement("div", {
     className: "bg-white rounded-lg shadow p-6 border-l-4 border-red-600"
   }, /*#__PURE__*/React.createElement("div", {
@@ -6015,11 +6015,11 @@ const HomeView = ({
 }) => {
   const unitName = personnel.length > 0 ? cleanUnitName(personnel[0].unit || "Your Unit") : "Sea Cadets";
   return /*#__PURE__*/React.createElement("div", {
-    className: "space-y-6"
+    className: "space-y-4"
   }, /*#__PURE__*/React.createElement("div", {
     className: "bg-white p-6 rounded-lg shadow-md border border-blue-200"
   }, /*#__PURE__*/React.createElement("div", {
-    className: "flex items-center gap-6 mb-6"
+    className: "flex items-center gap-4 mb-4"
   }, /*#__PURE__*/React.createElement("div", {
     className: "p-4 bg-blue-100 rounded-full text-blue-800"
   }, /*#__PURE__*/React.createElement(Icon, {
@@ -6959,7 +6959,7 @@ const AwardsView = ({
     doc.save(`SCC_Certificate_Report_60_Days.pdf`);
   };
   return /*#__PURE__*/React.createElement("div", {
-    className: "space-y-6"
+    className: "space-y-4"
   }, /*#__PURE__*/React.createElement("div", {
     className: "bg-white rounded-lg shadow-md p-6 border-l-4 border-amber-500"
   }, /*#__PURE__*/React.createElement("div", {
@@ -6985,7 +6985,7 @@ const AwardsView = ({
   }), "60-Day Certificate Report"))), /*#__PURE__*/React.createElement("div", {
     className: "bg-white p-4 rounded-lg shadow border border-slate-200"
   }, /*#__PURE__*/React.createElement("div", {
-    className: "flex justify-between items-center mb-6"
+    className: "flex justify-between items-center mb-4"
   }, /*#__PURE__*/React.createElement("h2", {
     className: "text-lg font-bold text-slate-800"
   }, "Awards & Recognition"), /*#__PURE__*/React.createElement("div", {
@@ -7007,7 +7007,7 @@ const AwardsView = ({
     name: "ChevronRight",
     className: "w-4 h-4"
   })))), /*#__PURE__*/React.createElement("div", {
-    className: "grid grid-cols-1 lg:grid-cols-2 gap-6"
+    className: "grid grid-cols-1 lg:grid-cols-2 gap-4"
   }, /*#__PURE__*/React.createElement("div", {
     className: "bg-slate-50 rounded-lg p-4 border border-slate-200"
   }, /*#__PURE__*/React.createElement("div", {
@@ -7445,7 +7445,7 @@ const WaterborneView = ({
   };
 
   return /*#__PURE__*/React.createElement("div", {
-    className: "space-y-6"
+    className: "space-y-4"
   }, /*#__PURE__*/React.createElement("div", {
     className: "bg-white rounded-lg shadow-md p-6 border-l-4 border-blue-500"
   }, /*#__PURE__*/React.createElement("div", {
@@ -8474,7 +8474,7 @@ const CadetFocus = ({
   // Check if there are no cadets aged 12-17
   if (cadets.length === 0) {
     return /*#__PURE__*/React.createElement("div", {
-      className: "space-y-6 p-6"
+      className: "space-y-4 p-6"
     }, /*#__PURE__*/React.createElement("div", {
       className: "bg-white rounded-lg shadow-md p-6 text-center border-l-4 border-blue-500"
     }, /*#__PURE__*/React.createElement(Icon, {
@@ -8554,7 +8554,7 @@ const CadetFocus = ({
     className: "p-6 text-center text-slate-500"
   }, "Please load data and select a cadet.");
   return /*#__PURE__*/React.createElement("div", {
-    className: "space-y-6"
+    className: "space-y-4"
   }, /*#__PURE__*/React.createElement("div", {
     className: "bg-white rounded-lg shadow-md p-6 border-l-4 border-blue-500"
   }, /*#__PURE__*/React.createElement("div", {
@@ -8658,7 +8658,7 @@ const CadetFocus = ({
   })(), /*#__PURE__*/React.createElement("div", {
     className: "bg-white p-6 rounded-lg shadow border border-slate-200"
   }, /*#__PURE__*/React.createElement("div", {
-    className: "grid grid-cols-1 md:grid-cols-4 gap-4 mb-6"
+    className: "grid grid-cols-1 md:grid-cols-4 gap-4 mb-4"
   }, /*#__PURE__*/React.createElement("div", {
     className: `p-4 rounded border ${cadetAgeClass ? cadetAgeClass : 'bg-slate-50'}`
   }, /*#__PURE__*/React.createElement("p", {
@@ -8745,7 +8745,7 @@ const CadetFocus = ({
   })), /*#__PURE__*/React.createElement("p", {
     className: "text-sm text-slate-400 italic"
   }, "None held"))))), /*#__PURE__*/React.createElement("div", {
-    className: "flex flex-wrap gap-6 mb-6"
+    className: "flex flex-wrap gap-4 mb-4"
   }, /*#__PURE__*/React.createElement("div", {
     className: "flex-auto max-w-full"
   }, /*#__PURE__*/React.createElement("h3", {
@@ -8810,7 +8810,7 @@ const CadetFocus = ({
   }, formatDate(prof.date)))), cadetProfs.length === 0 && /*#__PURE__*/React.createElement("div", {
     className: "w-full text-center py-4 text-slate-400 italic bg-slate-50 rounded border border-dashed"
   }, "No proficiencies found for this cadet.")))), /*#__PURE__*/React.createElement("div", {
-    className: "mb-6"
+    className: "mb-4"
   }, /*#__PURE__*/React.createElement("h3", {
     className: "text-lg font-bold mb-4 flex items-center gap-2"
   }, /*#__PURE__*/React.createElement(Icon, {
@@ -8855,7 +8855,7 @@ const CadetFocus = ({
     name: "BookOpen",
     className: "w-5 h-5 text-slate-500"
   }), " Other Qualifications / Record"), /*#__PURE__*/React.createElement("div", {
-    className: "space-y-6"
+    className: "space-y-4"
   }, cadetRecordGroups.ctpKeys.length > 0 && /*#__PURE__*/React.createElement("div", {
     className: "border rounded-lg overflow-hidden shadow-sm"
   }, /*#__PURE__*/React.createElement("div", {
@@ -9016,7 +9016,7 @@ const TrainingPlanner = ({
 
   if (!currentSyllabus) {
     return /*#__PURE__*/React.createElement("div", {
-      className: "space-y-6"
+      className: "space-y-4"
     }, /*#__PURE__*/React.createElement("div", {
       className: "bg-white rounded-lg shadow-md p-6 border-l-4 border-blue-500"
     }, /*#__PURE__*/React.createElement("div", {
@@ -9178,7 +9178,7 @@ const TrainingPlanner = ({
     doc.save(filename);
   };
   return /*#__PURE__*/React.createElement("div", {
-    className: "space-y-6"
+    className: "space-y-4"
   }, /*#__PURE__*/React.createElement("div", {
     className: `bg-white rounded-lg shadow-md p-6 border-l-4 ${colorTheme === "green" ? "border-green-500" : "border-blue-500"}`
   }, /*#__PURE__*/React.createElement("div", {
@@ -9375,7 +9375,7 @@ const TrainingSuggestions = ({
     return Array.from(demandMap.values()).sort((a, b) => b.count - a.count).slice(0, 12);
   }, [cadetsAtRank, qualsData, selectedRank]);
   return /*#__PURE__*/React.createElement("div", {
-    className: "space-y-6"
+    className: "space-y-4"
   }, /*#__PURE__*/React.createElement("div", {
     className: "bg-white rounded-lg shadow-md p-6 border-l-4 border-purple-500"
   }, /*#__PURE__*/React.createElement("div", {
@@ -12031,7 +12031,7 @@ const DataUtilitiesView = ({
     }
   };
   return /*#__PURE__*/React.createElement("div", {
-    className: "space-y-6"
+    className: "space-y-4"
   }, /*#__PURE__*/React.createElement("div", {
     className: "bg-white rounded-lg shadow p-6 border-l-4 border-slate-500"
   }, /*#__PURE__*/React.createElement("div", {
@@ -12055,7 +12055,7 @@ const DataUtilitiesView = ({
     name: "Upload",
     className: "w-6 h-6 text-blue-600"
   }), "Upload Westminster Data"), /*#__PURE__*/React.createElement("p", {
-    className: "text-slate-600 mb-6"
+    className: "text-slate-600 mb-4"
   }, "Upload fresh Westminster personnel and qualifications CSV files to refresh the dashboard data."), /*#__PURE__*/React.createElement("button", {
     onClick: () => {
       if (confirm('Navigate to upload page? This will reload the dashboard. Any unsaved changes will be lost.')) {
@@ -12078,7 +12078,7 @@ const DataUtilitiesView = ({
   }, "Upload Westminster attendance CSV files for a given month. Upload all files for that month together (SCC, JSC, RMC). Staff records are ignored automatically. Re-uploading the same month is safe."), attendanceStatus && /*#__PURE__*/React.createElement("div", {
     className: `mb-4 p-3 rounded-lg border-l-4 text-sm font-semibold ${attendanceStatus.startsWith('error:') ? 'bg-red-50 border-red-500 text-red-800' : attendanceStatus.startsWith('success:') ? 'bg-green-50 border-green-500 text-green-800' : 'bg-blue-50 border-blue-500 text-blue-800'}`
   }, attendanceStatus.replace(/^(error:|success:)/, '')), /*#__PURE__*/React.createElement("div", {
-    className: "grid grid-cols-1 md:grid-cols-2 gap-6"
+    className: "grid grid-cols-1 md:grid-cols-2 gap-4"
   }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
     className: "block text-sm font-semibold text-slate-700 mb-1"
   }, "Month and Year"), /*#__PURE__*/React.createElement("input", {
@@ -12122,7 +12122,7 @@ const DataUtilitiesView = ({
     name: "Users",
     className: "w-6 h-6 text-blue-600"
   }), "Junior Sea Cadet Data"), /*#__PURE__*/React.createElement("p", {
-    className: "text-slate-700 mb-6"
+    className: "text-slate-700 mb-4"
   }, "Export junior data to share with other JTOs or create backups. Import to load shared data."), /*#__PURE__*/React.createElement("div", {
     className: "grid grid-cols-1 md:grid-cols-2 gap-4 mb-4"
   }, /*#__PURE__*/React.createElement("div", {
@@ -12350,7 +12350,7 @@ const DataUtilitiesView = ({
     name: "Shield",
     className: "w-6 h-6 text-amber-600"
   }), "Full Backup / Restore"), /*#__PURE__*/React.createElement("p", {
-    className: "text-slate-700 mb-6 text-sm"
+    className: "text-slate-700 mb-4 text-sm"
   }, "Export everything, including personnel, qualifications, and all junior module data, to a single JSON file. Use this as a safety net before major uploads or if you need to recover from user error."), /*#__PURE__*/React.createElement("div", {
     className: "grid grid-cols-1 md:grid-cols-2 gap-4"
   }, /*#__PURE__*/React.createElement("div", {
@@ -12480,9 +12480,9 @@ const DataUtilitiesView = ({
     name: "Image",
     className: "w-6 h-6 text-green-600"
   }), "Logo Manager"), /*#__PURE__*/React.createElement("p", {
-    className: "text-sm text-slate-600 mb-6"
+    className: "text-sm text-slate-600 mb-4"
   }, "Upload new logos to replace existing ones, or remove logos you no longer need. All cadet data will be preserved."), /*#__PURE__*/React.createElement("div", {
-    className: "grid grid-cols-1 md:grid-cols-3 gap-6"
+    className: "grid grid-cols-1 md:grid-cols-3 gap-4"
   }, /*#__PURE__*/React.createElement("div", {
     className: "bg-blue-50 p-6 rounded-lg border-2 border-blue-200"
   }, /*#__PURE__*/React.createElement("h3", {
@@ -12764,7 +12764,7 @@ const JuniorsView = ({
   }
   const selectedJunior = juniors.find(j => j.pNumber === selectedJuniorPNum) || juniors[0];
   return /*#__PURE__*/React.createElement("div", {
-    className: "space-y-6"
+    className: "space-y-4"
   }, /*#__PURE__*/React.createElement("div", {
     className: "bg-white rounded-lg shadow-md p-6 border-l-4 border-purple-500"
   }, /*#__PURE__*/React.createElement("div", {
@@ -13496,7 +13496,7 @@ const JuniorDetail = ({
     }
   };
   return /*#__PURE__*/React.createElement("div", {
-    className: "space-y-6"
+    className: "space-y-4"
   }, /*#__PURE__*/React.createElement("div", {
     className: "bg-white rounded-lg shadow p-6"
   }, /*#__PURE__*/React.createElement("div", {
@@ -13880,7 +13880,7 @@ const JuniorDetail = ({
       className: `text-xs ${alert.textColor}`
     }, alert.message, " ", alert.urgency === 'high' ? '🎯' : '⭐'))))));
   })()), /*#__PURE__*/React.createElement("div", {
-    className: "grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6"
+    className: "grid grid-cols-1 lg:grid-cols-2 gap-4 mt-6"
   }, /*#__PURE__*/React.createElement("div", {
     className: "bg-white rounded-lg shadow p-6"
   }, /*#__PURE__*/React.createElement("h3", {
@@ -14498,7 +14498,7 @@ const LoginForm = () => {
   }, /*#__PURE__*/React.createElement("div", {
     className: "bg-white p-6 rounded-lg shadow-lg max-w-md w-full"
   }, /*#__PURE__*/React.createElement("div", {
-    className: "text-center mb-6"
+    className: "text-center mb-4"
   }, /*#__PURE__*/React.createElement("h1", {
     className: "text-3xl font-bold text-blue-900 mb-2"
   }, "Sea Cadet Training Dashboard"), /*#__PURE__*/React.createElement("p", {

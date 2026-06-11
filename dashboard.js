@@ -1812,7 +1812,7 @@ const WATER_SYLLABUS = {
   }, {
     code: "PSRC",
     title: "BC Paddle Safety & Rescue Course (PSRC)",
-    alts: ["BC Foundation Safety & Rescue Training (FSRT)"]
+    alts: ["BC Foundation Safety & Rescue Training (FSRT)", "Paddlesport Safety and Rescue Course"]
   }, {
     code: "SUP Sheltered",
     title: "BC Stand Up Paddle Sheltered Water Award",

@@ -52,7 +52,7 @@ const checkIsAdmin = async () => {
 // CONSTANTS & DATA
 // ═══════════════════════════════════════════════════════════════════════════
 
-const DATA_VERSION = "2.9-Cloud"; // Attendance: full names, cards in CadetFocus+JuniorDetail above stats
+const DATA_VERSION = "2.10-Cloud"; // Hash-based URL routing + grouped sidebar (Juniors/SCC/RMC/All Sections/Admin)
 
 // Badge & Rank Image Maps
 const RANK_IMG_MAP = {
@@ -14656,10 +14656,16 @@ const AuthWrapper = ({
     value: user
   }, children(user));
 };
+// ── Hash routing ──────────────────────────────────────────────────────────
+const VALID_VIEWS = ['home', 'juniors', 'junior_progress', 'cadet_focus', 'planner', 'rmc_planner', 'waterborne', 'awards', 'suggestions', 'attendance', 'retention', 'data_utilities'];
+const parseHash = () => {
+  const h = window.location.hash.replace(/^#\/?/, '');
+  return VALID_VIEWS.includes(h) ? h : null;
+};
 const App = ({
   user
 }) => {
-  const [view, setView] = useState('upload');
+  const [view, setView] = useState(parseHash() || 'upload');
   const [forceUploadView, setForceUploadView] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [personnelData, setPersonnelData] = useState([]);
@@ -14668,6 +14674,31 @@ const App = ({
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [attendanceData, setAttendanceData] = useState([]);
+
+  // Hash-based navigation. Must be declared before any conditional early return
+  // (rules of hooks: a hook after an early return previously crashed re-renders).
+  const navigate = id => {
+    if (VALID_VIEWS.includes(id)) {
+      if (window.location.hash === '#/' + id) {
+        window.scrollTo(0, 0);
+        return;
+      }
+      window.location.hash = '/' + id;
+    } else {
+      setView(id);
+    }
+  };
+  useEffect(() => {
+    const onHash = () => {
+      const v = parseHash();
+      if (v) {
+        setView(v);
+        window.scrollTo(0, 0);
+      }
+    };
+    window.addEventListener('hashchange', onHash);
+    return () => window.removeEventListener('hashchange', onHash);
+  }, []);
 
   // Check admin status on mount
   useEffect(() => {
@@ -14773,10 +14804,21 @@ const App = ({
           }
           setPersonnelData(pData);
           setQualsData(qData);
-          if (!forceUploadView) {
-            setView('home');
+          if (!forceUploadView && view === 'upload') {
+            // Only auto-redirect to home from the default upload landing state.
+            // A deep link (e.g. #/attendance) sets view from the hash on mount;
+            // don't override it here or refresh would always bounce back to home.
+            navigate('home');
           }
           // If forceUploadView is true, stay on upload screen so user can upload fresh files
+        } else {
+          // Empty database: force the upload page. Upload is an internal state and
+          // must never enter the URL, so use setView (not navigate) and clear the hash
+          // so a deep link like #/attendance against an empty DB resolves cleanly.
+          if (view !== 'upload') {
+            setView('upload');
+          }
+          if (window.location.hash) history.replaceState(null, '', window.location.pathname + window.location.search);
         }
       } catch (error) {
         console.error('Error loading data:', error);
@@ -14934,7 +14976,7 @@ const App = ({
       setPersonnelData(pData);
       setQualsData(qData);
       setForceUploadView(false);
-      setView('home');
+      navigate('home');
     } catch (error) {
       console.error('Error saving data:', error);
       alert('Error saving data to cloud. Please try again.');
@@ -15012,10 +15054,7 @@ const App = ({
     icon,
     label
   }) => /*#__PURE__*/React.createElement("button", {
-    onClick: () => {
-      setView(id);
-      window.scrollTo(0, 0);
-    },
+    onClick: () => navigate(id),
     className: `flex items-center gap-2 w-full p-2 rounded-lg transition-all text-sm ${view === id ? 'bg-blue-800 text-white' : 'text-blue-100 hover:bg-blue-800/50'}`
   }, /*#__PURE__*/React.createElement(Icon, {
     name: icon,
@@ -15023,6 +15062,13 @@ const App = ({
   }), !sidebarCollapsed && /*#__PURE__*/React.createElement("span", {
     className: "text-sm"
   }, label));
+  const NavGroup = ({
+    label
+  }) => sidebarCollapsed ? /*#__PURE__*/React.createElement("div", {
+    className: "border-t border-blue-800 my-2 mx-1"
+  }) : /*#__PURE__*/React.createElement("p", {
+    className: "px-2 pt-3 pb-1 text-[10px] font-bold tracking-wider text-blue-400"
+  }, label);
 
   // Show loading spinner while checking for existing data
   if (loading) {
@@ -15090,7 +15136,7 @@ const App = ({
     name: sidebarCollapsed ? "ChevronRight" : "ChevronLeft",
     className: "w-5 h-5"
   }))), /*#__PURE__*/React.createElement("nav", {
-    className: "flex-1 p-3 space-y-0.5 overflow-hidden"
+    className: "flex-1 p-3 space-y-0.5 overflow-y-auto"
   }, /*#__PURE__*/React.createElement(NavItem, {
     id: "home",
     icon: "Home",
@@ -15104,10 +15150,6 @@ const App = ({
     icon: "BarChart3",
     label: "Junior Progress"
   }), /*#__PURE__*/React.createElement(NavItem, {
-    id: "cadet_focus",
-    icon: "User",
-    label: "Cadet Focus"
-  }), /*#__PURE__*/React.createElement(NavItem, {
     id: "planner",
     icon: "ShipWheel",
     label: "SCC CTP Progress"
@@ -15115,6 +15157,10 @@ const App = ({
     id: "rmc_planner",
     icon: "Target",
     label: "RMC CTS Progress"
+  }), /*#__PURE__*/React.createElement(NavItem, {
+    id: "cadet_focus",
+    icon: "User",
+    label: "Cadet Focus"
   }), /*#__PURE__*/React.createElement(NavItem, {
     id: "waterborne",
     icon: "Anchor",
@@ -15135,6 +15181,8 @@ const App = ({
     id: "retention",
     icon: "UserX",
     label: "Retention Risk"
+  }), /*#__PURE__*/React.createElement(NavGroup, {
+    label: "Admin"
   }), /*#__PURE__*/React.createElement(NavItem, {
     id: "data_utilities",
     icon: "Database",
@@ -15193,7 +15241,7 @@ const App = ({
   }), view === 'cadet_focus' && /*#__PURE__*/React.createElement(CadetFocus, {
     personnel: personnelData,
     qualsData: qualsData,
-    setView: setView,
+    setView: id => VALID_VIEWS.includes(id) ? navigate(id) : setView(id),
     attendanceData: attendanceData
   }), view === 'juniors' && /*#__PURE__*/React.createElement(JuniorsView, {
     personnel: personnelData,
@@ -15243,7 +15291,7 @@ const App = ({
   }), view === 'data_utilities' && /*#__PURE__*/React.createElement(DataUtilitiesView, {
     clearData: clearData,
     wipeAllData: wipeAllData,
-    setView: setView,
+    setView: id => VALID_VIEWS.includes(id) ? navigate(id) : setView(id),
     personnel: personnelData,
     isAdmin: isAdmin,
     onResetComplete: (rP, rQ) => {

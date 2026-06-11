@@ -8844,8 +8844,8 @@ const CadetFocus = ({
     className: "text-[10px] text-slate-500 mt-1"
   }, formatDate(wb.date)))), cadetWaterborne.length === 0 && /*#__PURE__*/React.createElement("div", {
     className: "w-full text-center py-4 text-slate-400 italic bg-slate-50 rounded border border-dashed"
-  }, "No waterborne proficiencies found for this cadet."),
-    waterborneNextSteps.length > 0 && /*#__PURE__*/React.createElement("div", { className: "mt-3 pt-3 border-t border-slate-100" },
+  }, "No waterborne proficiencies found for this cadet.")),
+    waterborneNextSteps.length > 0 && /*#__PURE__*/React.createElement("div", { className: "mt-4 pt-4 border-t border-slate-200" },
       /*#__PURE__*/React.createElement("p", { className: "text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2" }, "Next steps"),
       /*#__PURE__*/React.createElement("div", { className: "flex flex-wrap gap-2" },
         waterborneNextSteps.map(({ discipline, next, current }) =>
@@ -8860,7 +8860,7 @@ const CadetFocus = ({
         )
       )
     )
-  )), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h3", {
+  ), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h3", {
     className: "text-lg font-bold mb-4 flex items-center gap-2"
   }, /*#__PURE__*/React.createElement(Icon, {
     name: "BookOpen",

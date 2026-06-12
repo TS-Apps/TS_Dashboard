@@ -52,7 +52,7 @@ const checkIsAdmin = async () => {
 // CONSTANTS & DATA
 // ═══════════════════════════════════════════════════════════════════════════
 
-const DATA_VERSION = "2.20-Cloud"; // Fix: rowing Coxswain modules no longer confused with boat Coxswain Award proficiency
+const DATA_VERSION = "2.21-Cloud"; // Move Cadet Focus nav item beneath Junior Progress
 
 // Badge & Rank Image Maps
 const RANK_IMG_MAP = {
@@ -15140,6 +15140,10 @@ const App = ({
     icon: "BarChart3",
     label: "Junior Progress"
   }), /*#__PURE__*/React.createElement(NavItem, {
+    id: "cadet_focus",
+    icon: "User",
+    label: "Cadet Focus"
+  }), /*#__PURE__*/React.createElement(NavItem, {
     id: "planner",
     icon: "ShipWheel",
     label: "SCC CTP Progress"
@@ -15147,10 +15151,6 @@ const App = ({
     id: "rmc_planner",
     icon: "Target",
     label: "RMC CTS Progress"
-  }), /*#__PURE__*/React.createElement(NavItem, {
-    id: "cadet_focus",
-    icon: "User",
-    label: "Cadet Focus"
   }), /*#__PURE__*/React.createElement(NavItem, {
     id: "waterborne",
     icon: "Anchor",

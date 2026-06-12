@@ -52,7 +52,7 @@ const checkIsAdmin = async () => {
 // CONSTANTS & DATA
 // ═══════════════════════════════════════════════════════════════════════════
 
-const DATA_VERSION = "2.18-Cloud"; // Fix: separate boat Coxswain Award from rowing "SCC Coxswain" proficiency (was conflated)
+const DATA_VERSION = "2.19-Cloud"; // Master Coxswain: align nav requirement to EN&S/Day Skipper only; match PSRC full name
 
 // Badge & Rank Image Maps
 const RANK_IMG_MAP = {
@@ -5855,8 +5855,8 @@ const UpcomingAwardsPanel = ({ personnel, qualsData }) => {
         const meetsCox = hasCox || profsMet >= 2;
         if (!meetsCox) return null;
         const hasPB2 = hq('Powerboat Level 2') || hq('Powerboat L2') || hq('Level 2 Planing') || hq('Level 2 Disp');
-        const hasNav = hq('Essential Navigation') || hq('Day Skipper') || hq('Watch Leader');
-        const p1Option = hq('Assistant Rowing Instructor') || hq('CST') || hq('FSRT') || hq('PSRC') || hq('Assistant Dinghy Instructor') || hq('Assistant Windsurfing Instructor');
+        const hasNav = hq('Essential Navigation') || hq('Day Skipper');
+        const p1Option = hq('Assistant Rowing Instructor') || hq('CST') || hq('FSRT') || hq('PSRC') || hq('Safety and Rescue') || hq('Safety & Rescue') || hq('Assistant Dinghy Instructor') || hq('Assistant Windsurfing Instructor');
         const p2Option = hq('Paddlesport Instructor') || (hq('Dinghy Instructor') && !hq('Assistant Dinghy')) || (hq('Windsurfing Instructor') && !hq('Assistant Windsurfing')) || (hq('Powerboat Instructor') && !hq('Assistant Powerboat'));
         if (hasPB2 && hasNav && p1Option) return null;
         if (p2Option) return null;
@@ -6284,11 +6284,11 @@ const AwardsView = ({
       if (meetsCoxswainCriteria) {
         const hasPB2 = hasQual("Powerboat Level 2") || hasQual("Powerboat L2") || hasQual("Level 2 Planing") || hasQual("Level 2 Disp");
         const hasENS = hasQual("Essential Navigation");
-        const hasDaySkipper = hasQual("Day Skipper") || hasQual("Watch Leader");
+        const hasDaySkipper = hasQual("Day Skipper");
         // Pathway 1: PB2 + (ENS or Day Skipper Theory) + one assistant/rescue qual
         if (hasPB2 && (hasENS || hasDaySkipper)) {
           const hasP1Option = hasQual("Assistant Rowing Instructor") ||
-            hasQual("CST") || hasQual("FSRT") || hasQual("PSRC") ||
+            hasQual("CST") || hasQual("FSRT") || hasQual("PSRC") || hasQual("Safety and Rescue") || hasQual("Safety & Rescue") ||
             hasQual("Assistant Dinghy Instructor") ||
             hasQual("Assistant Windsurfing Instructor");
           if (hasP1Option) meetsMasterCriteria = true;
@@ -7160,11 +7160,11 @@ const WaterborneView = ({
     if (meetsCoxswainCriteria) {
       const hasPB2 = hasQualContaining(cadet, "Powerboat Level 2") || hasQualContaining(cadet, "Powerboat L2") || hasQualContaining(cadet, "Level 2 Planing") || hasQualContaining(cadet, "Level 2 Disp");
       const hasENS = hasQualContaining(cadet, "Essential Navigation");
-      const hasDaySkipper = hasQualContaining(cadet, "Day Skipper") || hasQualContaining(cadet, "Watch Leader");
+      const hasDaySkipper = hasQualContaining(cadet, "Day Skipper");
       // Pathway 1: PB2 + (ENS or Day Skipper Theory) + one assistant/rescue qual
       if (hasPB2 && (hasENS || hasDaySkipper)) {
         const hasP1Option = hasQualContaining(cadet, "Assistant Rowing Instructor") ||
-          hasQualContaining(cadet, "CST") || hasQualContaining(cadet, "FSRT") || hasQualContaining(cadet, "PSRC") ||
+          hasQualContaining(cadet, "CST") || hasQualContaining(cadet, "FSRT") || hasQualContaining(cadet, "PSRC") || hasQualContaining(cadet, "Safety and Rescue") || hasQualContaining(cadet, "Safety & Rescue") ||
           hasQualContaining(cadet, "Assistant Dinghy Instructor") ||
           hasQualContaining(cadet, "Assistant Windsurfing Instructor");
         if (hasP1Option) meetsMasterCriteria = true;
@@ -7218,14 +7218,14 @@ const WaterborneView = ({
 
     const hasPB2 = hq("Powerboat Level 2") || hq("Powerboat L2") || hq("Level 2 Planing") || hq("Level 2 Disp");
     const hasENS = hq("Essential Navigation");
-    const hasDaySkipper = hq("Day Skipper") || hq("Watch Leader");
+    const hasDaySkipper = hq("Day Skipper");
     const hasNav = hasENS || hasDaySkipper;
     const navLabel = hasENS ? "RYA Essential Navigation & Seamanship" : hasDaySkipper ? "RYA Day Skipper Theory" : null;
 
     // Pathway 1 pieces
     const p1Options = [
       { name: "Assistant Rowing Instructor", met: hq("Assistant Rowing Instructor") },
-      { name: "CST / FSRT / PSRC (rescue test)", met: hq("CST") || hq("FSRT") || hq("PSRC") },
+      { name: "CST / FSRT / PSRC (rescue test)", met: hq("CST") || hq("FSRT") || hq("PSRC") || hq("Safety and Rescue") || hq("Safety & Rescue") },
       { name: "RYA Assistant Dinghy Instructor", met: hq("Assistant Dinghy Instructor") },
       { name: "RYA Assistant Windsurfing Instructor", met: hq("Assistant Windsurfing Instructor") }
     ];

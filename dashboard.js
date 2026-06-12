@@ -52,7 +52,7 @@ const checkIsAdmin = async () => {
 // CONSTANTS & DATA
 // ═══════════════════════════════════════════════════════════════════════════
 
-const DATA_VERSION = "2.17-Cloud"; // Fix: Waterborne rowing/windsurfing next-step detection vs Westminster module names
+const DATA_VERSION = "2.18-Cloud"; // Fix: separate boat Coxswain Award from rowing "SCC Coxswain" proficiency (was conflated)
 
 // Badge & Rank Image Maps
 const RANK_IMG_MAP = {
@@ -5823,10 +5823,10 @@ const UpcomingAwardsPanel = ({ personnel, qualsData }) => {
       id: 'coxswain', category: 'Waterborne', label: 'Coxswain Award',
       colour: 'border-green-400',
       check: c => {
-        if (hasQ(c.pNumber, 'Coxswain Award') || hasQ(c.pNumber, 'SCC Coxswain')) return null;
+        if (hasQ(c.pNumber, 'Coxswain Award')) return null;
         const hq = str => hasQ(c.pNumber, str);
         const profs = [
-          { name: 'Rowing Coxswain', met: hq('Rowing Coxswain') || hq('Row 3') },
+          { name: 'Rowing Coxswain', met: hq('Rowing Coxswain') || hq('SCC Coxswain') || hq('Row 3') },
           { name: 'BC Paddle Explore Award', met: hq('Paddle Explore') },
           { name: 'YSS Stage 4 (Dinghy Sailing)', met: hq('YSS Stage 4') || hq('Sailing Stage 4') },
           { name: 'Windsurfing Stage 2+', met: hq('Windsurfing') && (hq('Windsurfing Stage 2') || hq('Windsurfing Stage 3') || hq('Windsurfing Stage 4') || hq('YouthWS - Stage 2') || hq('YouthWS - Stage 3') || hq('YouthWS - Stage 4')) }
@@ -5844,9 +5844,9 @@ const UpcomingAwardsPanel = ({ personnel, qualsData }) => {
       check: c => {
         if (hasQ(c.pNumber, 'Master Coxswain')) return null;
         const hq = str => hasQ(c.pNumber, str);
-        const hasCox = hq('Coxswain Award') || hq('SCC Coxswain');
+        const hasCox = hq('Coxswain Award');
         const profs = [
-          { name: 'Rowing Coxswain', met: hq('Rowing Coxswain') || hq('Row 3') },
+          { name: 'Rowing Coxswain', met: hq('Rowing Coxswain') || hq('SCC Coxswain') || hq('Row 3') },
           { name: 'BC Paddle Explore Award', met: hq('Paddle Explore') },
           { name: 'YSS Stage 4 (Dinghy Sailing)', met: hq('YSS Stage 4') || hq('Sailing Stage 4') },
           { name: 'Windsurfing Stage 2+', met: hq('Windsurfing') && (hq('Windsurfing Stage 2') || hq('Windsurfing Stage 3') || hq('Windsurfing Stage 4') || hq('YouthWS - Stage 2') || hq('YouthWS - Stage 3') || hq('YouthWS - Stage 4')) }
@@ -7138,8 +7138,8 @@ const WaterborneView = ({
     // Relaxed string matching: "Master Coxswain" instead of "Master Coxswain Award" to catch variations
     const hasMasterAward = hasQualContaining(cadet, "Master Coxswain");
     if (hasMasterAward) return "status-master-awarded";
-    // Relaxed string matching: "Coxswain Award" or "SCC Coxswain"
-    const hasCoxswainAward = hasQualContaining(cadet, "Coxswain Award") || hasQualContaining(cadet, "SCC Coxswain");
+    // Boat Coxswain Award (distinct from the rowing "SCC Coxswain" proficiency)
+    const hasCoxswainAward = hasQualContaining(cadet, "Coxswain Award");
     if (hasCoxswainAward) return "status-cox-awarded";
     // Coxswain Badge: any 2 from different disciplines (T&A criteria)
     // Rowing: Rowing Coxswain | Paddlesport: BC Paddle Explore | Sailing: YSS Stage 4 | Windsurfing: Stage 2+
@@ -7190,7 +7190,7 @@ const WaterborneView = ({
   const getCoxswainGaps = cadet => {
     const hq = str => qualsData.some(q => q.pNumber === cadet.pNumber && q.module && q.module.toLowerCase().includes(str.toLowerCase()));
     const hasMasterAward = hq("Master Coxswain");
-    const hasCoxswainAward = hq("Coxswain Award") || hq("SCC Coxswain");
+    const hasCoxswainAward = hq("Coxswain Award");
     if (hasMasterAward) return { coxswain: null, master: null };
 
     // Coxswain proficiencies
@@ -8017,7 +8017,7 @@ const CadetFocus = ({
     const results = [];
 
     const currentWaterborneLevels = {
-      "Rowing":        hq("rowing instructor") ? 4 : (hq("rowing coxswain") || hq("rowing - scc coxswain")) ? 3 : (hq("supervised cox") || hq("supervised coxswain")) ? 2 : hq("competent crew") ? 1 : 0,
+      "Rowing":        hq("rowing instructor") ? 4 : (hq("rowing coxswain") || hq("scc coxswain")) ? 3 : (hq("supervised cox") || hq("supervised coxswain")) ? 2 : hq("competent crew") ? 1 : 0,
       "Paddlesport":   hq("paddlesport instructor") ? 4 : hq("psrc") || hq("fsrt") || hq("safety & rescue") || hq("safety and rescue") ? 3 : hq("explore award") ? 2 : hq("discover award") ? 1 : 0,
       "Sailing":       hq("dinghy instructor") ? 6 : hq("day sailing") || hq("performance sailing") || hq("start racing") || hq("spinnakers") || hq("seamanship skills") ? 5 : hq("stage 4") && hq("sail") ? 4 : hq("stage 3") && hq("sail") ? 3 : hq("stage 2") && hq("sail") ? 2 : hq("stage 1") && hq("sail") ? 1 : 0,
       "Windsurfing":   hq("windsurfing instructor") ? 5 : hq("youthws - stage 4") || hq("windsurfing stage 4") ? 4 : hq("youthws - stage 3") || hq("windsurfing stage 3") ? 3 : hq("youthws - stage 2") || hq("windsurfing stage 2") ? 2 : hq("youthws - stage 1") || hq("windsurfing stage 1") || hq("nws start windsurfing") ? 1 : 0,
@@ -8036,10 +8036,10 @@ const CadetFocus = ({
     });
 
     // Also flag Coxswain / Master Coxswain if approaching
-    const hasCox = hq("coxswain award") || hq("scc coxswain");
+    const hasCox = hq("coxswain award");
     const hasMaster = hq("master coxswain");
     const profs = [
-      hq("rowing coxswain") || hq("row 3"),
+      hq("rowing coxswain") || hq("scc coxswain") || hq("row 3"),
       hq("paddle explore"),
       hq("yss stage 4") || hq("sailing stage 4"),
       hq("windsurfing") && (hq("windsurfing stage 2") || hq("windsurfing stage 3") || hq("windsurfing stage 4") || hq("youthws - stage 2") || hq("youthws - stage 3") || hq("youthws - stage 4"))

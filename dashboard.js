@@ -52,7 +52,7 @@ const checkIsAdmin = async () => {
 // CONSTANTS & DATA
 // ═══════════════════════════════════════════════════════════════════════════
 
-const DATA_VERSION = "2.19-Cloud"; // Master Coxswain: align nav requirement to EN&S/Day Skipper only; match PSRC full name
+const DATA_VERSION = "2.20-Cloud"; // Fix: rowing Coxswain modules no longer confused with boat Coxswain Award proficiency
 
 // Badge & Rank Image Maps
 const RANK_IMG_MAP = {
@@ -5826,7 +5826,7 @@ const UpcomingAwardsPanel = ({ personnel, qualsData }) => {
         if (hasQ(c.pNumber, 'Coxswain Award')) return null;
         const hq = str => hasQ(c.pNumber, str);
         const profs = [
-          { name: 'Rowing Coxswain', met: hq('Rowing Coxswain') || hq('SCC Coxswain') || hq('Row 3') },
+          { name: 'Rowing Coxswain', met: hq('Rowing Coxswain') || hq('Row Coxswain') || hq('SCC Coxswain') || hq('Row 3') },
           { name: 'BC Paddle Explore Award', met: hq('Paddle Explore') },
           { name: 'YSS Stage 4 (Dinghy Sailing)', met: hq('YSS Stage 4') || hq('Sailing Stage 4') },
           { name: 'Windsurfing Stage 2+', met: hq('Windsurfing') && (hq('Windsurfing Stage 2') || hq('Windsurfing Stage 3') || hq('Windsurfing Stage 4') || hq('YouthWS - Stage 2') || hq('YouthWS - Stage 3') || hq('YouthWS - Stage 4')) }
@@ -5846,7 +5846,7 @@ const UpcomingAwardsPanel = ({ personnel, qualsData }) => {
         const hq = str => hasQ(c.pNumber, str);
         const hasCox = hq('Coxswain Award');
         const profs = [
-          { name: 'Rowing Coxswain', met: hq('Rowing Coxswain') || hq('SCC Coxswain') || hq('Row 3') },
+          { name: 'Rowing Coxswain', met: hq('Rowing Coxswain') || hq('Row Coxswain') || hq('SCC Coxswain') || hq('Row 3') },
           { name: 'BC Paddle Explore Award', met: hq('Paddle Explore') },
           { name: 'YSS Stage 4 (Dinghy Sailing)', met: hq('YSS Stage 4') || hq('Sailing Stage 4') },
           { name: 'Windsurfing Stage 2+', met: hq('Windsurfing') && (hq('Windsurfing Stage 2') || hq('Windsurfing Stage 3') || hq('Windsurfing Stage 4') || hq('YouthWS - Stage 2') || hq('YouthWS - Stage 3') || hq('YouthWS - Stage 4')) }
@@ -6269,7 +6269,7 @@ const AwardsView = ({
       const hasCoxswainAward = hasQual("Coxswain Award");
       // Coxswain Badge: any 2 from different disciplines (T&A criteria)
       // Rowing: Rowing Coxswain | Paddlesport: BC Paddle Explore | Sailing: YSS Stage 4 | Windsurfing: Stage 2+
-      const hasRowingCox = hasQual("Rowing Coxswain") || hasQual("SCC Coxswain") || hasQual("Row 3");
+      const hasRowingCox = hasQual("Rowing Coxswain") || hasQual("Row Coxswain") || hasQual("SCC Coxswain") || hasQual("Row 3");
       const hasPaddleExplore = hasQual("Paddle Explore");
       const hasSailingStage4 = hasQual("YSS Stage 4") || hasQual("Sailing Stage 4");
       const hasWindsurfStage2Plus = hasQual("Windsurfing") && (hasQual("Windsurfing Stage 2") || hasQual("Windsurfing Stage 3") || hasQual("Windsurfing Stage 4") || hasQual("YouthWS - Stage 2") || hasQual("YouthWS - Stage 3") || hasQual("YouthWS - Stage 4"));
@@ -7143,7 +7143,7 @@ const WaterborneView = ({
     if (hasCoxswainAward) return "status-cox-awarded";
     // Coxswain Badge: any 2 from different disciplines (T&A criteria)
     // Rowing: Rowing Coxswain | Paddlesport: BC Paddle Explore | Sailing: YSS Stage 4 | Windsurfing: Stage 2+
-    const hasRowingCox = hasQualContaining(cadet, "Rowing Coxswain") || hasQualContaining(cadet, "SCC Coxswain") || hasQualContaining(cadet, "Row 3");
+    const hasRowingCox = hasQualContaining(cadet, "Rowing Coxswain") || hasQualContaining(cadet, "Row Coxswain") || hasQualContaining(cadet, "SCC Coxswain") || hasQualContaining(cadet, "Row 3");
     const hasPaddleExplore = hasQualContaining(cadet, "Paddle Explore");
     const hasSailingStage4 = hasQualContaining(cadet, "YSS Stage 4") || hasQualContaining(cadet, "Sailing Stage 4");
     const hasWindsurfStage2Plus = hasQualContaining(cadet, "Windsurfing") && (
@@ -7195,7 +7195,7 @@ const WaterborneView = ({
 
     // Coxswain proficiencies
     const profs = [
-      { name: "Rowing Coxswain", met: hq("Rowing Coxswain") || hq("SCC Coxswain") || hq("Row 3") },
+      { name: "Rowing Coxswain", met: hq("Rowing Coxswain") || hq("Row Coxswain") || hq("SCC Coxswain") || hq("Row 3") },
       { name: "BC Paddle Explore Award", met: hq("Paddle Explore") },
       { name: "YSS Stage 4 (Dinghy Sailing)", met: hq("YSS Stage 4") || hq("Sailing Stage 4") },
       { name: "Windsurfing Stage 2+", met: hq("Windsurfing") && (hq("Windsurfing Stage 2") || hq("Windsurfing Stage 3") || hq("Windsurfing Stage 4") || hq("YouthWS - Stage 2") || hq("YouthWS - Stage 3") || hq("YouthWS - Stage 4")) }
@@ -7795,7 +7795,7 @@ const CadetFocus = ({
   }, [qualsData, selectedCadetPNum]);
   const CADET_FOCUS_WATERBORNE_HIERARCHY = {
     "General": ["Master Coxswain Award", "Coxswain Award"],
-    "Rowing": ["SCC Rowing Instructor", "Rowing Instructor", "Rowing Coxswswain", "Rowing Supervised Coxswain", "Rowing Competent Crew", "SCC Row Coxswain Module"],
+    "Rowing": ["SCC Rowing Instructor", "Rowing Instructor", "Rowing Coxswain", "SCC Row Coxswain Module", "Rowing - SCC Coxswain", "SCC Coxswain", "SCC Row 3", "Rowing Supervised Coxswain", "SCC Supervised Cox", "Rowing Competent Crew", "SCC Competent Crew"],
     "Paddlesport": ["BC Paddlesport Instructor", "BC Paddle Discipline Specific", "BC Paddle Safety & Rescue Course (PSRC)", "BC Paddle Explore Award", "BC Paddle Discover Award"],
     "Sailing": ["Dinghy Instructor", "RYA Dinghy Instructor", "Dinghy - RYA Instructor", "Sail - RYA Sailing with Spinnakers", "Sail - RYA Seamanship Skills", "Sail - RYA Start Racing", "Sail - RYA Performance Sailing", "Sail - RYA Day Sailing", "Sailing Stage 4", "Sailing Stage 3", "Sailing Stage 2", "Sail - RYA YSS Stage 4", "Sail - RYA YSS Stage 3", "Sail - RYA YSS Stage 2"],
     "Windsurfing": ["RYA Start Windsurfing Instructor", "Windsurfing - RYA Start Windsurfing Instructor", "Wind - RYA YouthWS - Stage 4", "Wind - RYA YouthWS - Stage 3", "Wind - RYA YouthWS - Stage 2", "Wind - RYA YouthWS - Stage 1"],
@@ -7851,7 +7851,7 @@ const CadetFocus = ({
       if (highestAward) {
         let key = highestAward;
         // Map to Badge Keys
-        if (highestAward.includes("Rowing Coxswain")) key = "Rowing Coxswain";else if (highestAward.includes("Rowing Supervised Coxswain")) key = "Rowing Supervised Coxswain";else if (highestAward.includes("Rowing Competent Crew")) key = "Rowing Competent Crew";else if (highestAward.includes("Rowing Instructor")) key = "Rowing Instructor";else if (highestAward.includes("Explore Award")) key = "Paddle Explore Award";else if (highestAward.includes("Discover Award")) key = "Paddle Discover Award";else if (highestAward.includes("(PSRC)")) key = "Paddle FSRT/PSRC";else if (highestAward.includes("Paddlesport Instructor")) key = "Paddlesport Instructor";else if (highestAward.includes("Dinghy Instructor")) key = "Dinghy Instructor";else if (highestAward.includes("Stage 4") && category === "Sailing") key = "Sailing Stage 4 / Level 3";else if (highestAward.includes("Stage 3") && category === "Sailing") key = "Sailing Stage 3 / Level 2";else if (highestAward.includes("Stage 2") && category === "Sailing") key = "Sailing Stage 2 / Level 1";else if (highestAward.includes("Spinnakers")) key = "Sailing with Spinnakers";else if (highestAward.includes("Seamanship Skills")) key = "Seamanship Skills";else if (highestAward.includes("Start Racing")) key = "Start Racing";else if (highestAward.includes("Performance Sailing")) key = "Performance Sailing";else if (highestAward.includes("Day Sailing")) key = "Day Sailing";else if (highestAward.includes("Start Windsurfing Instructor")) key = "Windsurfing Instructor";else if (highestAward.includes("Stage 4") && category === "Windsurfing") key = "Windsurfing Stage 4";else if (highestAward.includes("Stage 3") && category === "Windsurfing") key = "Windsurfing Stage 3";else if (highestAward.includes("Stage 2") && category === "Windsurfing") key = "Windsurfing Stage 2";else if (highestAward.includes("Stage 1") && category === "Windsurfing") key = "Windsurfing Stage 1";else if (highestAward.includes("Powerboat Instructor")) key = "Powerboat Instructor";else if (highestAward.includes("Powerboat Level 2")) key = "RYA Powerboat Level 2";else if (highestAward.includes("Powerboat Level 1")) key = "RYA Powerboat Level 1";else if (highestAward.includes("Power Watch Leader")) key = "Offshore Power Watch Leader";else if (highestAward.includes("Power Seaman")) key = "Offshore Power Seaman";else if (highestAward.includes("Power Grade 2")) key = "Offshore Power Grade 2";else if (highestAward.includes("Power Grade 1")) key = "Offshore Power Grade 1";else if (highestAward.includes("Sail Watch Leader")) key = "Offshore Sailing Watch Leader";else if (highestAward.includes("Sail Seaman")) key = "Offshore Sailing Seaman";else if (highestAward.includes("Sail Grade 2")) key = "Offshore Sailing Grade 2";else if (highestAward.includes("Sail Grade 1")) key = "Offshore Sailing Grade 1";else if (highestAward.includes("Master Coxswain")) key = "Master Coxswain";else if (highestAward === "Coxswain Award" || highestAward === "SCC Row Coxswain Module") key = "Cadet Coxswain";
+        if (highestAward.includes("Rowing Supervised Coxswain") || highestAward.includes("Supervised Cox")) key = "Rowing Supervised Coxswain";else if (highestAward.includes("Rowing Coxswain") || highestAward.includes("Row Coxswain") || highestAward.includes("SCC Coxswain") || highestAward.includes("Row 3")) key = "Rowing Coxswain";else if (highestAward.includes("Rowing Competent Crew") || highestAward.includes("Competent Crew")) key = "Rowing Competent Crew";else if (highestAward.includes("Rowing Instructor")) key = "Rowing Instructor";else if (highestAward.includes("Explore Award")) key = "Paddle Explore Award";else if (highestAward.includes("Discover Award")) key = "Paddle Discover Award";else if (highestAward.includes("(PSRC)")) key = "Paddle FSRT/PSRC";else if (highestAward.includes("Paddlesport Instructor")) key = "Paddlesport Instructor";else if (highestAward.includes("Dinghy Instructor")) key = "Dinghy Instructor";else if (highestAward.includes("Stage 4") && category === "Sailing") key = "Sailing Stage 4 / Level 3";else if (highestAward.includes("Stage 3") && category === "Sailing") key = "Sailing Stage 3 / Level 2";else if (highestAward.includes("Stage 2") && category === "Sailing") key = "Sailing Stage 2 / Level 1";else if (highestAward.includes("Spinnakers")) key = "Sailing with Spinnakers";else if (highestAward.includes("Seamanship Skills")) key = "Seamanship Skills";else if (highestAward.includes("Start Racing")) key = "Start Racing";else if (highestAward.includes("Performance Sailing")) key = "Performance Sailing";else if (highestAward.includes("Day Sailing")) key = "Day Sailing";else if (highestAward.includes("Start Windsurfing Instructor")) key = "Windsurfing Instructor";else if (highestAward.includes("Stage 4") && category === "Windsurfing") key = "Windsurfing Stage 4";else if (highestAward.includes("Stage 3") && category === "Windsurfing") key = "Windsurfing Stage 3";else if (highestAward.includes("Stage 2") && category === "Windsurfing") key = "Windsurfing Stage 2";else if (highestAward.includes("Stage 1") && category === "Windsurfing") key = "Windsurfing Stage 1";else if (highestAward.includes("Powerboat Instructor")) key = "Powerboat Instructor";else if (highestAward.includes("Powerboat Level 2")) key = "RYA Powerboat Level 2";else if (highestAward.includes("Powerboat Level 1")) key = "RYA Powerboat Level 1";else if (highestAward.includes("Power Watch Leader")) key = "Offshore Power Watch Leader";else if (highestAward.includes("Power Seaman")) key = "Offshore Power Seaman";else if (highestAward.includes("Power Grade 2")) key = "Offshore Power Grade 2";else if (highestAward.includes("Power Grade 1")) key = "Offshore Power Grade 1";else if (highestAward.includes("Sail Watch Leader")) key = "Offshore Sailing Watch Leader";else if (highestAward.includes("Sail Seaman")) key = "Offshore Sailing Seaman";else if (highestAward.includes("Sail Grade 2")) key = "Offshore Sailing Grade 2";else if (highestAward.includes("Sail Grade 1")) key = "Offshore Sailing Grade 1";else if (highestAward.includes("Master Coxswain")) key = "Master Coxswain";else if (highestAward === "Coxswain Award") key = "Cadet Coxswain";
         awardedWaterborne.push({
           name: highestAward,
           key: key,
@@ -8017,7 +8017,7 @@ const CadetFocus = ({
     const results = [];
 
     const currentWaterborneLevels = {
-      "Rowing":        hq("rowing instructor") ? 4 : (hq("rowing coxswain") || hq("scc coxswain")) ? 3 : (hq("supervised cox") || hq("supervised coxswain")) ? 2 : hq("competent crew") ? 1 : 0,
+      "Rowing":        hq("rowing instructor") ? 4 : (hq("rowing coxswain") || hq("row coxswain") || hq("scc coxswain")) ? 3 : (hq("supervised cox") || hq("supervised coxswain")) ? 2 : hq("competent crew") ? 1 : 0,
       "Paddlesport":   hq("paddlesport instructor") ? 4 : hq("psrc") || hq("fsrt") || hq("safety & rescue") || hq("safety and rescue") ? 3 : hq("explore award") ? 2 : hq("discover award") ? 1 : 0,
       "Sailing":       hq("dinghy instructor") ? 6 : hq("day sailing") || hq("performance sailing") || hq("start racing") || hq("spinnakers") || hq("seamanship skills") ? 5 : hq("stage 4") && hq("sail") ? 4 : hq("stage 3") && hq("sail") ? 3 : hq("stage 2") && hq("sail") ? 2 : hq("stage 1") && hq("sail") ? 1 : 0,
       "Windsurfing":   hq("windsurfing instructor") ? 5 : hq("youthws - stage 4") || hq("windsurfing stage 4") ? 4 : hq("youthws - stage 3") || hq("windsurfing stage 3") ? 3 : hq("youthws - stage 2") || hq("windsurfing stage 2") ? 2 : hq("youthws - stage 1") || hq("windsurfing stage 1") || hq("nws start windsurfing") ? 1 : 0,
@@ -8039,7 +8039,7 @@ const CadetFocus = ({
     const hasCox = hq("coxswain award");
     const hasMaster = hq("master coxswain");
     const profs = [
-      hq("rowing coxswain") || hq("scc coxswain") || hq("row 3"),
+      hq("rowing coxswain") || hq("row coxswain") || hq("scc coxswain") || hq("row 3"),
       hq("paddle explore"),
       hq("yss stage 4") || hq("sailing stage 4"),
       hq("windsurfing") && (hq("windsurfing stage 2") || hq("windsurfing stage 3") || hq("windsurfing stage 4") || hq("youthws - stage 2") || hq("youthws - stage 3") || hq("youthws - stage 4"))
@@ -13914,7 +13914,7 @@ const JuniorDetail = ({
 
     // Check for waterborne profs
     const profNames = [{
-      search: ["Rowing Coxswain", "Row 3"],
+      search: ["Rowing Coxswain", "Row Coxswain", "SCC Coxswain", "Row 3"],
       key: "Rowing Coxswain"
     }, {
       search: ["Paddle Explore"],

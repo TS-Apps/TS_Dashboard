@@ -52,7 +52,7 @@ const checkIsAdmin = async () => {
 // CONSTANTS & DATA
 // ═══════════════════════════════════════════════════════════════════════════
 
-const DATA_VERSION = "2.21-Cloud"; // Move Cadet Focus nav item beneath Junior Progress
+const DATA_VERSION = "2.22-Cloud"; // Retention: fairer junior attendance (core parade nights) and module-based activity scoring
 
 // Badge & Rank Image Maps
 const RANK_IMG_MAP = {
@@ -5147,32 +5147,77 @@ const RetentionView = ({
     year: 'numeric'
   });
 
-  // Overall attendance % per cadet (section-aware, TOS-aware)
+  // Overall attendance % per cadet (section-aware, TOS-aware).
+  //
+  // Attendance is measured only against each section's REGULAR parade nights,
+  // not every night anyone happened to attend. Many units run ad-hoc extra
+  // sessions (e.g. occasional Friday boating for juniors) that only a handful
+  // of cadets are invited to. Counting those against everyone unfairly
+  // penalises cadets who were never expected to be there.
+  //
+  // A section's "core" parade weekdays are detected from turnout: a weekday
+  // counts as core if its average attendance is at least CORE_NIGHT_FRACTION
+  // of that section's busiest weekday. Full parades (most of the section turns
+  // out) clear the bar; ad-hoc small-group sessions fall well below it and are
+  // excluded from BOTH the numerator and denominator, so they never help or
+  // hurt the score. This adapts automatically to any unit / parade night
+  // (no hard-coded weekdays) — e.g. SCC/RMC Fridays are full parades and count,
+  // while juniors' occasional Friday boating does not.
+  const CORE_NIGHT_FRACTION = 0.4;
   const attendancePctMap = useMemo(() => {
     const cadetPNums = new Set(cadets.map(c => c.pNumber));
-    const sectionDates = {
-      scc: {},
-      jsc: {},
-      rmc: {}
-    };
+    // section -> date -> Set(pNumber) present (used to gauge turnout per night)
+    const secDateAtt = {};
+    attendanceData.forEach(r => {
+      if (!cadetPNums.has(r.p_number)) return;
+      const sec = r.section || pNumSection[r.p_number] || 'scc';
+      if (!secDateAtt[sec]) secDateAtt[sec] = {};
+      if (!secDateAtt[sec][r.attendance_date]) secDateAtt[sec][r.attendance_date] = new Set();
+      secDateAtt[sec][r.attendance_date].add(r.p_number);
+    });
+    const weekdayOf = d => new Date(d + 'T00:00:00').getDay();
+    // Determine each section's core weekdays by relative turnout.
+    const coreWeekdays = {};
+    Object.keys(secDateAtt).forEach(sec => {
+      const wdTurnouts = {}; // weekday -> [attendee counts per date]
+      Object.entries(secDateAtt[sec]).forEach(([date, set]) => {
+        const wd = weekdayOf(date);
+        if (!wdTurnouts[wd]) wdTurnouts[wd] = [];
+        wdTurnouts[wd].push(set.size);
+      });
+      const wdAvg = {};
+      Object.entries(wdTurnouts).forEach(([wd, arr]) => {
+        wdAvg[wd] = arr.reduce((a, b) => a + b, 0) / arr.length;
+      });
+      const peak = Math.max(0, ...Object.values(wdAvg));
+      const core = new Set();
+      Object.entries(wdAvg).forEach(([wd, avg]) => {
+        if (peak > 0 && avg >= CORE_NIGHT_FRACTION * peak) core.add(Number(wd));
+      });
+      coreWeekdays[sec] = core;
+    });
+    const isCoreDate = (sec, date) => (coreWeekdays[sec] || new Set()).has(weekdayOf(date));
+    // section -> month -> count of distinct core parade nights
+    const secNightCounts = {};
+    Object.keys(secDateAtt).forEach(sec => {
+      secNightCounts[sec] = {};
+      Object.keys(secDateAtt[sec]).forEach(date => {
+        if (!isCoreDate(sec, date)) return;
+        const month = date.slice(0, 7);
+        secNightCounts[sec][month] = (secNightCounts[sec][month] || 0) + 1;
+      });
+    });
+    // cadet -> month -> count of core nights attended
     const cadetMonthMap = {};
     attendanceData.forEach(r => {
       if (!cadetPNums.has(r.p_number)) return;
-      const month = r.attendance_date.slice(0, 7);
       const sec = r.section || pNumSection[r.p_number] || 'scc';
-      if (!sectionDates[sec][month]) sectionDates[sec][month] = new Set();
-      sectionDates[sec][month].add(r.attendance_date);
+      if (!isCoreDate(sec, r.attendance_date)) return;
+      const month = r.attendance_date.slice(0, 7);
       if (!cadetMonthMap[r.p_number]) cadetMonthMap[r.p_number] = {};
       cadetMonthMap[r.p_number][month] = (cadetMonthMap[r.p_number][month] || 0) + 1;
     });
     const months = [...new Set(attendanceData.map(r => r.attendance_date.slice(0, 7)))].sort();
-    const secNightCounts = {};
-    ['scc', 'jsc', 'rmc'].forEach(sec => {
-      secNightCounts[sec] = {};
-      months.forEach(m => {
-        secNightCounts[sec][m] = sectionDates[sec][m]?.size || 0;
-      });
-    });
     const map = {};
     cadets.forEach(c => {
       const sec = pNumSection[c.pNumber] || 'scc';
@@ -5181,7 +5226,7 @@ const RetentionView = ({
         possible = 0;
       months.forEach(m => {
         if (tosMon && m < tosMon) return;
-        possible += secNightCounts[sec][m] || 0;
+        possible += secNightCounts[sec]?.[m] || 0;
         attended += cadetMonthMap[c.pNumber]?.[m] || 0;
       });
       map[c.pNumber] = possible > 0 ? Math.round(attended / possible * 100) : null;
@@ -5221,6 +5266,35 @@ const RetentionView = ({
     return map;
   }, [qualsData]);
 
+  // ── Junior module completions (JSC activity signal) ──
+  // Juniors don't sit the SCC/RMC syllabus; they progress through junior
+  // modules continually. The gap since their last module sign-off (combined
+  // with any waterborne badge in qualsData) is the JSC activity signal that
+  // replaces the senior-cadet qualifications used for SCC/RMC.
+  const [juniorMods, setJuniorMods] = useState([]);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const d = await getJuniorData();
+        if (!cancelled) setJuniorMods(d?.moduleCompletions || []);
+      } catch (err) {
+        console.error('RetentionView: failed to load junior modules', err);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+  const lastJuniorActivityMap = useMemo(() => {
+    const map = {};
+    juniorMods.forEach(m => {
+      if (!m.dateCompleted) return;
+      if (!map[m.pNumber] || m.dateCompleted > map[m.pNumber]) map[m.pNumber] = m.dateCompleted;
+    });
+    return map;
+  }, [juniorMods]);
+
   // monthsDiff anchored to refDate, not today
   const monthsDiff = raw => {
     const d = raw instanceof Date ? raw : parseDate(raw);
@@ -5243,10 +5317,12 @@ const RetentionView = ({
   //   > 18mo  → 3   (stalled)
   //   no date → 1   (unknown)
   //
-  // Factor 3  Months since last recorded qualification
-  //   <= 5mo  → 0   (active)
-  //   6-9mo   → 2   (quiet)
-  //   > 9mo   → 3   (inactive)
+  // Factor 3  Months since last activity
+  //   SCC/RMC: last meaningful qualification.
+  //   JSC: most recent junior module completion OR waterborne badge — juniors
+  //        progress through modules continually, so gaps matter sooner.
+  //   SCC/RMC  <= 5mo → 0,  6-9mo → 2,  > 9mo → 3
+  //   JSC      <= 4mo → 0,  5-8mo → 2,  > 8mo → 3
   //   never, BUT TOS within 4mo → 0  (new joiner grace)
   //   never, no grace → 2   (concerning)
   //
@@ -5269,11 +5345,22 @@ const RetentionView = ({
     const tosMonths = monthsDiff(cadet.tos);
     const isNewJoiner = tosMonths !== null && tosMonths <= 4;
 
-    // Factor 3: months since last qual (anchored to refDate)
-    const lastQual = lastQualMap[cadet.pNumber];
+    // Factor 3: months since last activity (anchored to refDate)
+    // JSC uses junior module progress (plus any waterborne badge); SCC/RMC use
+    // the most recent meaningful qualification.
+    let lastQual;
+    if (isJSC) {
+      const dates = [];
+      if (lastJuniorActivityMap[cadet.pNumber]) dates.push(lastJuniorActivityMap[cadet.pNumber]);
+      if (lastQualMap[cadet.pNumber]) dates.push(lastQualMap[cadet.pNumber]);
+      lastQual = dates.length ? dates.sort().pop() : undefined;
+    } else {
+      lastQual = lastQualMap[cadet.pNumber];
+    }
     const qualMonths = monthsDiff(lastQual);
-    const qualScore = isNewJoiner && qualMonths === null ? 0 // new joiner, no quals yet: grace
-    : qualMonths === null ? 2 // no quals, not new: concerning
+    const qualScore = isNewJoiner && qualMonths === null ? 0 // new joiner, nothing yet: grace
+    : qualMonths === null ? 2 // nothing recorded, not new: concerning
+    : isJSC ? qualMonths > 8 ? 3 : qualMonths > 4 ? 2 : 0 // juniors: continual module progress expected
     : qualMonths > 9 ? 3 : qualMonths > 5 ? 2 : 0;
     const total = attScore + rankScore + qualScore;
     const maxScore = isJSC ? 6 : 9;
@@ -5305,7 +5392,7 @@ const RetentionView = ({
     cadet: c,
     risk: computeRisk(c),
     sec: pNumSection[c.pNumber] || 'scc'
-  })), [cadets, attendancePctMap, lastQualMap, pNumSection, refDate]);
+  })), [cadets, attendancePctMap, lastQualMap, lastJuniorActivityMap, pNumSection, refDate]);
 
   // Separate active from LOST (LOST excluded from counts and main table)
   const {
@@ -5583,11 +5670,11 @@ const RetentionView = ({
     className: "grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs text-blue-700"
   }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("p", {
     className: "font-semibold mb-1"
-  }, "Attendance"), /*#__PURE__*/React.createElement("p", null, "Below 60% adds risk. Below 40% adds maximum risk. Missing data adds a small penalty.")), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("p", {
+  }, "Attendance"), /*#__PURE__*/React.createElement("p", null, "Measured against your section's regular parade nights only — ad-hoc or invitation-only extra sessions (e.g. occasional junior boating) don't count for or against you. Below 60% adds risk; below 40% adds maximum risk. Missing data adds a small penalty.")), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("p", {
     className: "font-semibold mb-1"
   }, "Months at rank (SCC/RMC)"), /*#__PURE__*/React.createElement("p", null, "Over 12 months at the same rank signals slow progression. Over 18 months is high risk. JSC cadets are excluded from this factor.")), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("p", {
     className: "font-semibold mb-1"
-  }, "Last meaningful qualification"), /*#__PURE__*/React.createElement("p", null, "Excludes CTP/CTS tick-box modules, which are earned primarily through attendance. Counts anything else: waterborne activities (rowing, sailing, offshore, paddlesport), specialisations, proficiencies, Good Conduct Badges, First Aid, DofE, and personal development qualifications. Over 5 months adds risk; over 9 months or none recorded adds maximum risk. Cadets who joined within 4 months receive a grace period.")))), /*#__PURE__*/React.createElement("div", {
+  }, "Last meaningful activity"), /*#__PURE__*/React.createElement("p", null, "For SCC/RMC, the most recent meaningful qualification: waterborne activities (rowing, sailing, offshore, paddlesport), specialisations, proficiencies, Good Conduct Badges, First Aid, DofE, and personal development — excluding CTP/CTS tick-box modules earned mainly through attendance. For JSC, the most recent junior module completion or waterborne badge, since juniors progress continually. Over 5 months (4 for juniors) adds risk; over 9 months (8 for juniors) or none recorded adds maximum risk. Cadets who joined within 4 months receive a grace period.")))), /*#__PURE__*/React.createElement("div", {
     className: "flex flex-wrap items-center gap-3"
   }, /*#__PURE__*/React.createElement("div", {
     className: "flex items-center gap-1.5"

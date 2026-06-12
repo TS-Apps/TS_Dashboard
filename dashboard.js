@@ -52,7 +52,7 @@ const checkIsAdmin = async () => {
 // CONSTANTS & DATA
 // ═══════════════════════════════════════════════════════════════════════════
 
-const DATA_VERSION = "2.22-Cloud"; // Retention: fairer junior attendance (core parade nights) and module-based activity scoring
+const DATA_VERSION = "2.23-Cloud"; // Add Anonymise Data toggle (Data/Utilities) to mask cadet names and P numbers for demos
 
 // Badge & Rank Image Maps
 const RANK_IMG_MAP = {
@@ -3321,6 +3321,30 @@ const Icon = React.memo(({
     className: className
   });
 });
+
+// ── Anonymisation helpers (demo-safe display) ──
+// Masks personally identifying details for safe demonstrations. Names are
+// stored "Last, First"; we keep forename(s) and the surname initial, replacing
+// the rest with asterisks (e.g. "Bromilow, George" → "B*******, George", which
+// renders as "Cdt George B*******"). P numbers keep their first character only.
+const maskWord = w => (!w || w.length <= 1) ? w : w[0] + '*'.repeat(w.length - 1);
+const maskName = name => {
+  if (!name) return name;
+  if (name.includes(',')) {
+    const parts = name.split(',');
+    const last = parts.shift();
+    const rest = parts.join(',').trim();
+    return [maskWord(last.trim()), rest].filter(Boolean).join(', ');
+  }
+  const parts = name.trim().split(/\s+/);
+  if (parts.length === 1) return maskWord(parts[0]);
+  parts[parts.length - 1] = maskWord(parts[parts.length - 1]);
+  return parts.join(' ');
+};
+const maskPNumber = pn => {
+  if (!pn) return pn;
+  return maskWord(String(pn));
+};
 const BadgeImage = ({
   name,
   fallbackIcon,
@@ -4334,7 +4358,7 @@ const ModuleDrillDown = ({
     className: "font-medium text-slate-800"
   }, cadet.name), /*#__PURE__*/React.createElement("span", {
     className: "text-xs text-slate-500"
-  }, cadet.pNumber))))), /*#__PURE__*/React.createElement("div", {
+  }, cadet.pNumberDisplay || cadet.pNumber))))), /*#__PURE__*/React.createElement("div", {
     className: "p-4 border-t border-slate-200 bg-slate-50 flex justify-between items-center rounded-b-xl"
   }, portalUrl ? /*#__PURE__*/React.createElement("a", {
     href: portalUrl,
@@ -8430,7 +8454,7 @@ const CadetFocus = ({
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8);
     const details = [
-      selectedCadet.pNumber ? `P/No: ${selectedCadet.pNumber}` : null,
+      selectedCadet.pNumber ? `P/No: ${selectedCadet.pNumberDisplay || selectedCadet.pNumber}` : null,
       cadetAge !== 'Unknown' ? `Age: ${cadetAge}` : null,
       selectedCadet.tos ? `In service: ${formatDate(parseDate(selectedCadet.tos))}` : null,
       selectedCadet.rankDate ? `Current rank since: ${formatDate(parseDate(selectedCadet.rankDate))}` : null,
@@ -8757,7 +8781,7 @@ const CadetFocus = ({
     className: "text-sm text-slate-500"
   }, cadetAge, " years old"), /*#__PURE__*/React.createElement("p", {
     className: "text-xs text-slate-400 mt-2 font-mono bg-slate-100 inline-block px-1 rounded"
-  }, selectedCadet.pNumber)), /*#__PURE__*/React.createElement("div", {
+  }, selectedCadet.pNumberDisplay || selectedCadet.pNumber)), /*#__PURE__*/React.createElement("div", {
     className: "bg-slate-50 p-4 rounded border"
   }, /*#__PURE__*/React.createElement("p", {
     className: "text-xs text-slate-400 font-bold mb-2"
@@ -11588,6 +11612,8 @@ const DataUtilitiesView = ({
   setView,
   personnel,
   isAdmin,
+  anonymise,
+  onToggleAnonymise,
   onResetComplete
 }) => {
   const [uploadStatus, setUploadStatus] = useState('');
@@ -12123,6 +12149,8 @@ const DataUtilitiesView = ({
   }, /*#__PURE__*/React.createElement("div", {
     className: "bg-white rounded-lg shadow p-6 border-l-4 border-slate-500"
   }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-between gap-3 flex-wrap"
+  }, /*#__PURE__*/React.createElement("div", {
     className: "flex items-center gap-3"
   }, /*#__PURE__*/React.createElement(Icon, {
     name: "Database",
@@ -12131,7 +12159,14 @@ const DataUtilitiesView = ({
     className: "text-2xl font-bold text-slate-900"
   }, "Data / Utilities"), /*#__PURE__*/React.createElement("p", {
     className: "text-slate-600"
-  }, "Manage all data imports, exports, and system settings")))), uploadStatus && /*#__PURE__*/React.createElement("div", {
+  }, "Manage all data imports, exports, and system settings"))), /*#__PURE__*/React.createElement("button", {
+    onClick: onToggleAnonymise,
+    title: anonymise ? 'Show real cadet names and P numbers' : 'Hide cadet names and P numbers so the dashboard can be demonstrated safely',
+    className: `px-4 py-2 rounded-lg border text-sm font-bold flex items-center gap-2 transition-all ${anonymise ? 'bg-purple-600 text-white border-purple-700 hover:bg-purple-700' : 'bg-white text-slate-600 border-slate-300 hover:border-purple-400 hover:text-purple-700'}`
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: anonymise ? 'EyeOff' : 'Eye',
+    className: "w-4 h-4"
+  }), anonymise ? 'Anonymised — Show Real Data' : 'Anonymise Data'))), uploadStatus && /*#__PURE__*/React.createElement("div", {
     className: "bg-green-50 border-l-4 border-green-500 p-4 rounded-lg"
   }, /*#__PURE__*/React.createElement("p", {
     className: "text-green-800 font-semibold"
@@ -14751,6 +14786,31 @@ const App = ({
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [attendanceData, setAttendanceData] = useState([]);
+  // Anonymise toggle: blanks cadet names / P numbers in the display for demos.
+  const [anonymise, setAnonymise] = useState(() => {
+    try {
+      return localStorage.getItem('ts_anonymise') === '1';
+    } catch (e) {
+      return false;
+    }
+  });
+  const toggleAnonymise = () => setAnonymise(v => {
+    const next = !v;
+    try {
+      localStorage.setItem('ts_anonymise', next ? '1' : '0');
+    } catch (e) {/* ignore */}
+    return next;
+  });
+  // pNumber is a join key, so we never alter it — we expose a separate
+  // pNumberDisplay for the view layer and only mask the name in place.
+  const displayPersonnel = useMemo(() => personnelData.map(p => anonymise ? {
+    ...p,
+    name: maskName(p.name),
+    pNumberDisplay: maskPNumber(p.pNumber)
+  } : {
+    ...p,
+    pNumberDisplay: p.pNumber
+  }), [personnelData, anonymise]);
 
   // Hash-based navigation. Must be declared before any conditional early return
   // (rules of hooks: a hook after an early return previously crashed re-renders).
@@ -15312,29 +15372,29 @@ const App = ({
   }))))), /*#__PURE__*/React.createElement("main", {
     className: `flex-1 ${sidebarCollapsed ? 'ml-20' : 'ml-64'} p-6 overflow-y-auto transition-all duration-300`
   }, view === 'home' && /*#__PURE__*/React.createElement(HomeView, {
-    personnel: personnelData,
+    personnel: displayPersonnel,
     attendanceData: attendanceData,
     qualsData: qualsData
   }), view === 'cadet_focus' && /*#__PURE__*/React.createElement(CadetFocus, {
-    personnel: personnelData,
+    personnel: displayPersonnel,
     qualsData: qualsData,
     setView: id => VALID_VIEWS.includes(id) ? navigate(id) : setView(id),
     attendanceData: attendanceData
   }), view === 'juniors' && /*#__PURE__*/React.createElement(JuniorsView, {
-    personnel: personnelData,
+    personnel: displayPersonnel,
     qualifications: qualsData,
     attendanceData: attendanceData
   }), view === 'junior_progress' && /*#__PURE__*/React.createElement(JuniorProgressView, {
-    personnel: personnelData,
+    personnel: displayPersonnel,
     qualsData: qualsData
   }), view === 'awards' && /*#__PURE__*/React.createElement(AwardsView, {
-    personnel: personnelData,
+    personnel: displayPersonnel,
     quals: qualsData
   }), view === 'waterborne' && /*#__PURE__*/React.createElement(WaterborneView, {
-    personnel: personnelData,
+    personnel: displayPersonnel,
     qualsData: qualsData
   }), view === 'planner' && /*#__PURE__*/React.createElement(TrainingPlanner, {
-    personnel: personnelData,
+    personnel: displayPersonnel,
     getCadetProgress: getCadetProgress,
     qualsData: qualsData,
     title: "SCC CTP Progress",
@@ -15344,7 +15404,7 @@ const App = ({
     onModuleClick: handleModuleDrillDown,
     moduleUrls: SCC_MODULE_URLS
   }), view === 'rmc_planner' && /*#__PURE__*/React.createElement(TrainingPlanner, {
-    personnel: personnelData,
+    personnel: displayPersonnel,
     getCadetProgress: getCadetProgress,
     qualsData: qualsData,
     title: "RMC CTS Progress",
@@ -15355,22 +15415,24 @@ const App = ({
     onModuleClick: handleModuleDrillDown,
     moduleUrls: RMC_MODULE_URLS
   }), view === 'suggestions' && /*#__PURE__*/React.createElement(TrainingSuggestions, {
-    personnel: personnelData,
+    personnel: displayPersonnel,
     getCadetProgress: getCadetProgress,
     qualsData: qualsData
   }), view === 'attendance' && /*#__PURE__*/React.createElement(AttendanceView, {
-    personnel: personnelData,
+    personnel: displayPersonnel,
     attendanceData: attendanceData
   }), view === 'retention' && /*#__PURE__*/React.createElement(RetentionView, {
-    personnel: personnelData,
+    personnel: displayPersonnel,
     qualsData: qualsData,
     attendanceData: attendanceData
   }), view === 'data_utilities' && /*#__PURE__*/React.createElement(DataUtilitiesView, {
     clearData: clearData,
     wipeAllData: wipeAllData,
     setView: id => VALID_VIEWS.includes(id) ? navigate(id) : setView(id),
-    personnel: personnelData,
+    personnel: displayPersonnel,
     isAdmin: isAdmin,
+    anonymise: anonymise,
+    onToggleAnonymise: toggleAnonymise,
     onResetComplete: (rP, rQ) => {
       if (rP) setPersonnelData([]);
       if (rQ) setQualsData([]);

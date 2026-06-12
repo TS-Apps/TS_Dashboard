@@ -52,7 +52,7 @@ const checkIsAdmin = async () => {
 // CONSTANTS & DATA
 // ═══════════════════════════════════════════════════════════════════════════
 
-const DATA_VERSION = "2.16-Cloud"; // Fix: Waterborne sailing next-step ladder was missing Stage 1 (off-by-one)
+const DATA_VERSION = "2.17-Cloud"; // Fix: Waterborne rowing/windsurfing next-step detection vs Westminster module names
 
 // Badge & Rank Image Maps
 const RANK_IMG_MAP = {
@@ -8017,10 +8017,10 @@ const CadetFocus = ({
     const results = [];
 
     const currentWaterborneLevels = {
-      "Rowing":        hq("rowing instructor") ? 4 : hq("rowing coxswain") && !hq("supervised") ? 3 : hq("supervised coxswain") ? 2 : hq("competent crew") ? 1 : 0,
+      "Rowing":        hq("rowing instructor") ? 4 : (hq("rowing coxswain") || hq("rowing - scc coxswain")) ? 3 : (hq("supervised cox") || hq("supervised coxswain")) ? 2 : hq("competent crew") ? 1 : 0,
       "Paddlesport":   hq("paddlesport instructor") ? 4 : hq("psrc") || hq("fsrt") || hq("safety & rescue") || hq("safety and rescue") ? 3 : hq("explore award") ? 2 : hq("discover award") ? 1 : 0,
       "Sailing":       hq("dinghy instructor") ? 6 : hq("day sailing") || hq("performance sailing") || hq("start racing") || hq("spinnakers") || hq("seamanship skills") ? 5 : hq("stage 4") && hq("sail") ? 4 : hq("stage 3") && hq("sail") ? 3 : hq("stage 2") && hq("sail") ? 2 : hq("stage 1") && hq("sail") ? 1 : 0,
-      "Windsurfing":   hq("windsurfing instructor") ? 5 : hq("youthws - stage 4") || hq("windsurfing stage 4") ? 4 : hq("youthws - stage 3") || hq("windsurfing stage 3") ? 3 : hq("youthws - stage 2") || hq("windsurfing stage 2") ? 2 : hq("youthws - stage 1") || hq("windsurfing stage 1") ? 1 : 0,
+      "Windsurfing":   hq("windsurfing instructor") ? 5 : hq("youthws - stage 4") || hq("windsurfing stage 4") ? 4 : hq("youthws - stage 3") || hq("windsurfing stage 3") ? 3 : hq("youthws - stage 2") || hq("windsurfing stage 2") ? 2 : hq("youthws - stage 1") || hq("windsurfing stage 1") || hq("nws start windsurfing") ? 1 : 0,
       "Powerboat":     hq("powerboat instructor") ? 4 : hq("safety boat") ? 3 : hq("powerboat level 2") || hq("level 2 planing") || hq("level 2 disp") ? 2 : hq("powerboat level 1") ? 1 : 0,
       "Offshore Sail": hq("sail watch leader") ? 4 : hq("sail seaman") ? 3 : hq("sail grade 2") ? 2 : hq("sail grade 1") ? 1 : 0,
       "Offshore Power": hq("power watch leader") ? 4 : hq("power seaman") ? 3 : hq("power grade 2") ? 2 : hq("power grade 1") ? 1 : 0

@@ -52,7 +52,7 @@ const checkIsAdmin = async () => {
 // CONSTANTS & DATA
 // ═══════════════════════════════════════════════════════════════════════════
 
-const DATA_VERSION = "2.24-Cloud"; // Certificate: nudge SCC logo 5mm towards centre line for printer misfeed tolerance
+const DATA_VERSION = "2.25-Cloud"; // Security: add SRI to CDN scripts and harden CSP (frame-ancestors, form-action)
 
 // Badge & Rank Image Maps
 const RANK_IMG_MAP = {

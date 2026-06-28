@@ -17,6 +17,9 @@ jobs:
     name: Security Scan
 
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4   # needed so .zap/rules.tsv is available to the scan
+
       - name: ZAP Baseline Scan
         uses: zaproxy/action-baseline@v0.15.0
         with:

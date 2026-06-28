@@ -52,7 +52,7 @@ const checkIsAdmin = async () => {
 // CONSTANTS & DATA
 // ═══════════════════════════════════════════════════════════════════════════
 
-const DATA_VERSION = "2.25-Cloud"; // Security: add SRI to CDN scripts and harden CSP (frame-ancestors, form-action)
+const DATA_VERSION = "2.26-Cloud"; // Security: serve jsPDF from jsDelivr (npm) for verifiable SRI; drop cdnjs from CSP
 
 // Badge & Rank Image Maps
 const RANK_IMG_MAP = {

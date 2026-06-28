@@ -52,7 +52,7 @@ const checkIsAdmin = async () => {
 // CONSTANTS & DATA
 // ═══════════════════════════════════════════════════════════════════════════
 
-const DATA_VERSION = "2.23-Cloud"; // Add Anonymise Data toggle (Data/Utilities) to mask cadet names and P numbers for demos
+const DATA_VERSION = "2.24-Cloud"; // Certificate: nudge SCC logo 5mm towards centre line for printer misfeed tolerance
 
 // Badge & Rank Image Maps
 const RANK_IMG_MAP = {
@@ -6658,7 +6658,9 @@ const AwardsView = ({
         const imgProps = doc.getImageProperties(sccLogo);
         const width = 52.5; // 35 * 1.5
         const height = imgProps.height * width / imgProps.width; // Maintain aspect ratio
-        doc.addImage(sccLogo, 'JPEG', 297 - width - 10, 210 - height - 10, width, height);
+        // Nudged 5mm towards the centre line (15mm from the right edge instead
+        // of 10mm) to allow for slight printer paper misfeed.
+        doc.addImage(sccLogo, 'JPEG', 297 - width - 15, 210 - height - 10, width, height);
       }
 
       // Header

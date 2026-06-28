@@ -1,2 +1,11 @@
-10096	IGNORE	(X-Frame-Options)
-10038	IGNORE	(Content Security Policy)
+10038	IGNORE	CSP header not set - GitHub Pages cannot send headers; set on Cloudflare prod via _headers
+10049	IGNORE	Storable and Cacheable Content - expected for a static site
+10050	IGNORE	Retrieved from Cache - informational, CDN/Pages caching
+10055	IGNORE	CSP no-fallback - fires on GitHub 404 pages, not our app
+10063	IGNORE	Permissions-Policy not set - Pages cannot send headers; set on Cloudflare prod
+10094	IGNORE	Base64 Disclosure - inline data URIs / public Supabase anon key, no secret
+10096	IGNORE	X-Frame-Options not set - Pages cannot send headers; set on Cloudflare prod
+10098	IGNORE	Cross-Domain Misconfiguration - CDN/Pages asset CORS, not app logic
+10109	IGNORE	Modern Web Application - informational (SPA)
+90004	IGNORE	COEP header missing - Pages cannot send headers; would break CDN scripts
+90005	IGNORE	Sec-Fetch-Dest missing - scanner request header, not server-controlled

@@ -7,11 +7,15 @@ on:
     - cron: '0 2 * * 1'  # Weekly Monday 2am
   workflow_dispatch:  # Manual trigger
 
+permissions:
+  contents: read
+  issues: write   # ZAP baseline records findings by creating/updating an issue
+
 jobs:
   zap_scan:
     runs-on: ubuntu-latest
     name: Security Scan
-    
+
     steps:
       - name: ZAP Baseline Scan
         uses: zaproxy/action-baseline@v0.12.0

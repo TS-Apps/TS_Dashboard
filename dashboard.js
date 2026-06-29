@@ -5940,7 +5940,7 @@ const UpcomingAwardsPanel = ({ personnel, qualsData }) => {
           { name: 'Rowing Coxswain', met: hq('Rowing Coxswain') || hq('Row Coxswain') || hq('SCC Coxswain') || hq('Row 3') },
           { name: 'BC Paddle Explore Award', met: hq('Paddle Explore') },
           { name: 'YSS Stage 4 (Dinghy Sailing)', met: hq('YSS Stage 4') || hq('Sailing Stage 4') },
-          { name: 'Windsurfing Stage 2+', met: hq('Windsurfing') && (hq('Windsurfing Stage 2') || hq('Windsurfing Stage 3') || hq('Windsurfing Stage 4') || hq('YouthWS - Stage 2') || hq('YouthWS - Stage 3') || hq('YouthWS - Stage 4')) }
+          { name: 'Windsurfing Stage 2+', met: hq('Windsurfing Stage 2') || hq('Windsurfing Stage 3') || hq('Windsurfing Stage 4') || hq('YouthWS - Stage 2') || hq('YouthWS - Stage 3') || hq('YouthWS - Stage 4') }
         ];
         const met = profs.filter(p => p.met).length;
         if (met < 1) return null;
@@ -5960,7 +5960,7 @@ const UpcomingAwardsPanel = ({ personnel, qualsData }) => {
           { name: 'Rowing Coxswain', met: hq('Rowing Coxswain') || hq('Row Coxswain') || hq('SCC Coxswain') || hq('Row 3') },
           { name: 'BC Paddle Explore Award', met: hq('Paddle Explore') },
           { name: 'YSS Stage 4 (Dinghy Sailing)', met: hq('YSS Stage 4') || hq('Sailing Stage 4') },
-          { name: 'Windsurfing Stage 2+', met: hq('Windsurfing') && (hq('Windsurfing Stage 2') || hq('Windsurfing Stage 3') || hq('Windsurfing Stage 4') || hq('YouthWS - Stage 2') || hq('YouthWS - Stage 3') || hq('YouthWS - Stage 4')) }
+          { name: 'Windsurfing Stage 2+', met: hq('Windsurfing Stage 2') || hq('Windsurfing Stage 3') || hq('Windsurfing Stage 4') || hq('YouthWS - Stage 2') || hq('YouthWS - Stage 3') || hq('YouthWS - Stage 4') }
         ];
         const profsMet = profs.filter(p => p.met).length;
         const meetsCox = hasCox || profsMet >= 2;
@@ -6383,7 +6383,7 @@ const AwardsView = ({
       const hasRowingCox = hasQual("Rowing Coxswain") || hasQual("Row Coxswain") || hasQual("SCC Coxswain") || hasQual("Row 3");
       const hasPaddleExplore = hasQual("Paddle Explore");
       const hasSailingStage4 = hasQual("YSS Stage 4") || hasQual("Sailing Stage 4");
-      const hasWindsurfStage2Plus = hasQual("Windsurfing") && (hasQual("Windsurfing Stage 2") || hasQual("Windsurfing Stage 3") || hasQual("Windsurfing Stage 4") || hasQual("YouthWS - Stage 2") || hasQual("YouthWS - Stage 3") || hasQual("YouthWS - Stage 4"));
+      const hasWindsurfStage2Plus = hasQual("Windsurfing Stage 2") || hasQual("Windsurfing Stage 3") || hasQual("Windsurfing Stage 4") || hasQual("YouthWS - Stage 2") || hasQual("YouthWS - Stage 3") || hasQual("YouthWS - Stage 4");
       let proficienciesMet = 0;
       if (hasRowingCox) proficienciesMet++;
       if (hasPaddleExplore) proficienciesMet++;
@@ -7259,9 +7259,9 @@ const WaterborneView = ({
     const hasRowingCox = hasQualContaining(cadet, "Rowing Coxswain") || hasQualContaining(cadet, "Row Coxswain") || hasQualContaining(cadet, "SCC Coxswain") || hasQualContaining(cadet, "Row 3");
     const hasPaddleExplore = hasQualContaining(cadet, "Paddle Explore");
     const hasSailingStage4 = hasQualContaining(cadet, "YSS Stage 4") || hasQualContaining(cadet, "Sailing Stage 4");
-    const hasWindsurfStage2Plus = hasQualContaining(cadet, "Windsurfing") && (
+    const hasWindsurfStage2Plus =
       hasQualContaining(cadet, "Windsurfing Stage 2") || hasQualContaining(cadet, "Windsurfing Stage 3") || hasQualContaining(cadet, "Windsurfing Stage 4") ||
-      hasQualContaining(cadet, "YouthWS - Stage 2") || hasQualContaining(cadet, "YouthWS - Stage 3") || hasQualContaining(cadet, "YouthWS - Stage 4"));
+      hasQualContaining(cadet, "YouthWS - Stage 2") || hasQualContaining(cadet, "YouthWS - Stage 3") || hasQualContaining(cadet, "YouthWS - Stage 4");
     let proficienciesMet = 0;
     if (hasRowingCox) proficienciesMet++;
     if (hasPaddleExplore) proficienciesMet++;
@@ -7311,7 +7311,7 @@ const WaterborneView = ({
       { name: "Rowing Coxswain", met: hq("Rowing Coxswain") || hq("Row Coxswain") || hq("SCC Coxswain") || hq("Row 3") },
       { name: "BC Paddle Explore Award", met: hq("Paddle Explore") },
       { name: "YSS Stage 4 (Dinghy Sailing)", met: hq("YSS Stage 4") || hq("Sailing Stage 4") },
-      { name: "Windsurfing Stage 2+", met: hq("Windsurfing") && (hq("Windsurfing Stage 2") || hq("Windsurfing Stage 3") || hq("Windsurfing Stage 4") || hq("YouthWS - Stage 2") || hq("YouthWS - Stage 3") || hq("YouthWS - Stage 4")) }
+      { name: "Windsurfing Stage 2+", met: hq("Windsurfing Stage 2") || hq("Windsurfing Stage 3") || hq("Windsurfing Stage 4") || hq("YouthWS - Stage 2") || hq("YouthWS - Stage 3") || hq("YouthWS - Stage 4") }
     ];
     const profsMet = profs.filter(p => p.met).length;
     const profsAchieved = profs.filter(p => p.met).map(p => p.name);
@@ -8155,7 +8155,7 @@ const CadetFocus = ({
       hq("rowing coxswain") || hq("row coxswain") || hq("scc coxswain") || hq("row 3"),
       hq("paddle explore"),
       hq("yss stage 4") || hq("sailing stage 4"),
-      hq("windsurfing") && (hq("windsurfing stage 2") || hq("windsurfing stage 3") || hq("windsurfing stage 4") || hq("youthws - stage 2") || hq("youthws - stage 3") || hq("youthws - stage 4"))
+      hq("windsurfing stage 2") || hq("windsurfing stage 3") || hq("windsurfing stage 4") || hq("youthws - stage 2") || hq("youthws - stage 3") || hq("youthws - stage 4")
     ];
     const profsMet = profs.filter(Boolean).length;
 

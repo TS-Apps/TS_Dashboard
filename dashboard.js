@@ -11710,7 +11710,6 @@ const DataUtilitiesView = ({
 
   // Load junior data and sync logos from Supabase on mount
   useEffect(() => {
-    fetchUploadHistory();
     fetchPendingRequests();
     const loadData = async () => {
       try {
@@ -11725,6 +11724,11 @@ const DataUtilitiesView = ({
           setLoadingJuniorData(false);
           return;
         }
+        // Upload history is protected by an "authenticated"-only RLS SELECT
+        // policy, so only fetch it once the session is confirmed. Calling it
+        // before the session restores would run as the anon role and silently
+        // return zero rows, leaving the panel empty until the next reload.
+        fetchUploadHistory();
         const data = await getJuniorData();
         setJuniorData(data);
       } catch (error) {
@@ -15108,6 +15112,9 @@ const App = ({
           user_email: user.email,
           upload_type: 'qualifications'
         }]);
+        // Refresh the Recent Upload History panel so it reflects this upload
+        // immediately rather than waiting for the next page load.
+        fetchUploadHistory();
       }
 
       // Sort and update state

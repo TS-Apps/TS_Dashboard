@@ -52,7 +52,7 @@ const checkIsAdmin = async () => {
 // CONSTANTS & DATA
 // ═══════════════════════════════════════════════════════════════════════════
 
-const DATA_VERSION = "2.26-Cloud"; // Security: serve jsPDF from jsDelivr (npm) for verifiable SRI; drop cdnjs from CSP
+const DATA_VERSION = "2.27-Cloud"; // Coxswain/Master Coxswain: fix windsurfing & Row 3 proficiencies, Day Skipper Theory, badge display; consolidate award logic
 
 // Badge & Rank Image Maps
 const RANK_IMG_MAP = {

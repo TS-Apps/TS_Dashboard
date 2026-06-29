@@ -5966,7 +5966,7 @@ const UpcomingAwardsPanel = ({ personnel, qualsData }) => {
         const meetsCox = hasCox || profsMet >= 2;
         if (!meetsCox) return null;
         const hasPB2 = hq('Powerboat Level 2') || hq('Powerboat L2') || hq('Level 2 Planing') || hq('Level 2 Disp');
-        const hasNav = hq('Essential Navigation') || hq('Day Skipper');
+        const hasNav = hq('Essential Navigation') || hq('Day Skipper Theory');
         const p1Option = hq('Assistant Rowing Instructor') || hq('CST') || hq('FSRT') || hq('PSRC') || hq('Safety and Rescue') || hq('Safety & Rescue') || hq('Assistant Dinghy Instructor') || hq('Assistant Windsurfing Instructor');
         const p2Option = hq('Paddlesport Instructor') || (hq('Dinghy Instructor') && !hq('Assistant Dinghy')) || (hq('Windsurfing Instructor') && !hq('Assistant Windsurfing')) || (hq('Powerboat Instructor') && !hq('Assistant Powerboat'));
         if (hasPB2 && hasNav && p1Option) return null;
@@ -6395,7 +6395,7 @@ const AwardsView = ({
       if (meetsCoxswainCriteria) {
         const hasPB2 = hasQual("Powerboat Level 2") || hasQual("Powerboat L2") || hasQual("Level 2 Planing") || hasQual("Level 2 Disp");
         const hasENS = hasQual("Essential Navigation");
-        const hasDaySkipper = hasQual("Day Skipper");
+        const hasDaySkipper = hasQual("Day Skipper Theory");
         // Pathway 1: PB2 + (ENS or Day Skipper Theory) + one assistant/rescue qual
         if (hasPB2 && (hasENS || hasDaySkipper)) {
           const hasP1Option = hasQual("Assistant Rowing Instructor") ||
@@ -7273,7 +7273,7 @@ const WaterborneView = ({
     if (meetsCoxswainCriteria) {
       const hasPB2 = hasQualContaining(cadet, "Powerboat Level 2") || hasQualContaining(cadet, "Powerboat L2") || hasQualContaining(cadet, "Level 2 Planing") || hasQualContaining(cadet, "Level 2 Disp");
       const hasENS = hasQualContaining(cadet, "Essential Navigation");
-      const hasDaySkipper = hasQualContaining(cadet, "Day Skipper");
+      const hasDaySkipper = hasQualContaining(cadet, "Day Skipper Theory");
       // Pathway 1: PB2 + (ENS or Day Skipper Theory) + one assistant/rescue qual
       if (hasPB2 && (hasENS || hasDaySkipper)) {
         const hasP1Option = hasQualContaining(cadet, "Assistant Rowing Instructor") ||
@@ -7331,7 +7331,7 @@ const WaterborneView = ({
 
     const hasPB2 = hq("Powerboat Level 2") || hq("Powerboat L2") || hq("Level 2 Planing") || hq("Level 2 Disp");
     const hasENS = hq("Essential Navigation");
-    const hasDaySkipper = hq("Day Skipper");
+    const hasDaySkipper = hq("Day Skipper Theory");
     const hasNav = hasENS || hasDaySkipper;
     const navLabel = hasENS ? "RYA Essential Navigation & Seamanship" : hasDaySkipper ? "RYA Day Skipper Theory" : null;
 

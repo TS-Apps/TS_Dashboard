@@ -52,7 +52,7 @@ const checkIsAdmin = async () => {
 // CONSTANTS & DATA
 // ═══════════════════════════════════════════════════════════════════════════
 
-const DATA_VERSION = "2.26-Cloud"; // Security: serve jsPDF from jsDelivr (npm) for verifiable SRI; drop cdnjs from CSP
+const DATA_VERSION = "2.27-Cloud"; // Coxswain/Master Coxswain: fix windsurfing & Row 3 proficiencies, Day Skipper Theory, badge display; consolidate award logic
 
 // Badge & Rank Image Maps
 const RANK_IMG_MAP = {
@@ -1787,6 +1787,84 @@ const RMC_SYLLABUS = {
     }]
   }
 };
+// ── Coxswain / Master Coxswain award evaluation (single source of truth) ──
+// Pass an array of a cadet's qualification records ({ module, result }) — or
+// plain module-name strings. Records with an explicit non-pass result
+// (Fail / Revoked / Not Taken, etc.) are ignored. Returns the proficiency and
+// pathway breakdown used by every Coxswain/Master Coxswain panel, so the award
+// rules live in exactly one place. Master eligibility rests on 2+ live
+// proficiencies (not merely holding a recorded Coxswain Award) plus a pathway.
+const COX_NON_PASS_RESULTS = ['fail', 'revoked', 'not taken', 'absent', 'withdrawn', 'incomplete'];
+const evaluateCoxswain = records => {
+  const modules = (records || [])
+    .filter(r => {
+      if (typeof r === 'string') return true;
+      const res = r && r.result;
+      return !res || !COX_NON_PASS_RESULTS.includes(String(res).trim().toLowerCase());
+    })
+    .map(r => (typeof r === 'string' ? r : r && r.module))
+    .filter(Boolean)
+    .map(m => m.toLowerCase());
+  const has = needle => modules.some(m => m.includes(needle.toLowerCase()));
+
+  // Coxswain badge proficiencies — any 2 from different disciplines.
+  // (Powerboating is N/A for the Coxswain badge. Row 3 is Basic, not the
+  // SCC Coxswain advanced module, so it does NOT satisfy the Rowing proficiency.)
+  const proficiencies = [
+    { key: 'rowing', name: 'Rowing Coxswain', discipline: 'Rowing',
+      met: has('rowing coxswain') || has('row coxswain') || has('scc coxswain') },
+    { key: 'paddle', name: 'BC Paddle Explore Award', discipline: 'Paddlesport',
+      met: has('paddle explore') },
+    { key: 'sailing', name: 'YSS Stage 4 (Dinghy Sailing)', discipline: 'Dinghy Sailing',
+      met: has('yss stage 4') || has('sailing stage 4') },
+    { key: 'windsurfing', name: 'Windsurfing Stage 2+', discipline: 'Windsurfing',
+      met: has('windsurfing stage 2') || has('windsurfing stage 3') || has('windsurfing stage 4')
+        || has('youthws - stage 2') || has('youthws - stage 3') || has('youthws - stage 4') }
+  ];
+  const proficienciesMet = proficiencies.filter(p => p.met).length;
+  const meetsCoxCriteria = proficienciesMet >= 2;
+
+  const hasMasterAward = has('master coxswain');
+  // "Master Coxswain Award" contains "coxswain award"; exclude it so this flag
+  // means the standalone Coxswain Award only.
+  const hasCoxAward = has('coxswain award') && !hasMasterAward;
+
+  // Master Coxswain — Pathway One: PB2 + (EN&S or Day Skipper Theory) + one other.
+  const hasPB2 = has('powerboat level 2') || has('powerboat l2') || has('level 2 planing') || has('level 2 disp');
+  const hasNav = has('essential navigation') || has('day skipper theory');
+  const navLabel = has('essential navigation') ? 'RYA Essential Navigation & Seamanship'
+    : has('day skipper theory') ? 'RYA Day Skipper Theory' : null;
+  const pathway1Options = [
+    { name: 'Assistant Rowing Instructor', met: has('assistant rowing instructor') },
+    { name: 'CST / FSRT / PSRC (rescue test)', met: has('cst') || has('fsrt') || has('psrc') || has('safety and rescue') || has('safety & rescue') },
+    { name: 'RYA Assistant Dinghy Instructor', met: has('assistant dinghy instructor') },
+    { name: 'RYA Assistant Windsurfing Instructor', met: has('assistant windsurfing instructor') }
+  ];
+  const p1OptionMet = pathway1Options.find(o => o.met) || null;
+  const pathway1Met = hasPB2 && hasNav && !!p1OptionMet;
+
+  // Master Coxswain — Pathway Two: any one full instructor qualification.
+  const pathway2Options = [
+    { name: 'BC Paddlesport Instructor', met: has('paddlesport instructor') },
+    { name: 'RYA Dinghy Instructor', met: has('dinghy instructor') && !has('assistant dinghy') },
+    { name: 'RYA Windsurfing Instructor', met: has('windsurfing instructor') && !has('assistant windsurfing') },
+    { name: 'RYA Powerboat Instructor', met: has('powerboat instructor') && !has('assistant powerboat') }
+  ];
+  const p2OptionMet = pathway2Options.find(o => o.met) || null;
+  const pathway2Met = !!p2OptionMet;
+
+  const meetsMaster = meetsCoxCriteria && (pathway1Met || pathway2Met);
+
+  return {
+    proficiencies, proficienciesMet, meetsCoxCriteria,
+    hasCoxAward, hasMasterAward,
+    hasPB2, hasNav, navLabel,
+    pathway1Options, p1OptionMet, pathway1Met,
+    pathway2Options, p2OptionMet, pathway2Met,
+    meetsMaster
+  };
+};
+
 const WATER_SYLLABUS = {
   "Swim": [{
     code: "Swim Test",
@@ -1845,7 +1923,7 @@ const WATER_SYLLABUS = {
   }, {
     code: "Go Row 3 (Fixed)",
     title: "BR Explore Rowing - Go Row 3 (Fixed)",
-    alts: ["SCC Coxswain", "SCC Row 3"]
+    alts: ["SCC Row 3"]
   }, {
     code: "Asst Instructor",
     title: "SCC Assistant Rowing Instructor",
@@ -5934,18 +6012,12 @@ const UpcomingAwardsPanel = ({ personnel, qualsData }) => {
       id: 'coxswain', category: 'Waterborne', label: 'Coxswain Award',
       colour: 'border-green-400',
       check: c => {
-        if (hasQ(c.pNumber, 'Coxswain Award')) return null;
-        const hq = str => hasQ(c.pNumber, str);
-        const profs = [
-          { name: 'Rowing Coxswain', met: hq('Rowing Coxswain') || hq('Row Coxswain') || hq('SCC Coxswain') || hq('Row 3') },
-          { name: 'BC Paddle Explore Award', met: hq('Paddle Explore') },
-          { name: 'YSS Stage 4 (Dinghy Sailing)', met: hq('YSS Stage 4') || hq('Sailing Stage 4') },
-          { name: 'Windsurfing Stage 2+', met: hq('Windsurfing') && (hq('Windsurfing Stage 2') || hq('Windsurfing Stage 3') || hq('Windsurfing Stage 4') || hq('YouthWS - Stage 2') || hq('YouthWS - Stage 3') || hq('YouthWS - Stage 4')) }
-        ];
-        const met = profs.filter(p => p.met).length;
+        const ev = evaluateCoxswain(qualsData.filter(q => q.pNumber === c.pNumber));
+        if (ev.hasCoxAward || ev.hasMasterAward) return null;
+        const met = ev.proficienciesMet;
         if (met < 1) return null;
-        const achieved = profs.filter(p => p.met).map(p => p.name + ' ✓');
-        const missing = profs.filter(p => !p.met).map(p => p.name);
+        const achieved = ev.proficiencies.filter(p => p.met).map(p => p.name + ' ✓');
+        const missing = ev.proficiencies.filter(p => !p.met).map(p => p.name);
         return { achieved, missing, readyToClaim: met >= 2, note: 'Requires any 2 from different disciplines' };
       }
     },
@@ -5953,38 +6025,23 @@ const UpcomingAwardsPanel = ({ personnel, qualsData }) => {
       id: 'master_coxswain', category: 'Waterborne', label: 'Master Coxswain Award',
       colour: 'border-green-400',
       check: c => {
-        if (hasQ(c.pNumber, 'Master Coxswain')) return null;
-        const hq = str => hasQ(c.pNumber, str);
-        const hasCox = hq('Coxswain Award');
-        const profs = [
-          { name: 'Rowing Coxswain', met: hq('Rowing Coxswain') || hq('Row Coxswain') || hq('SCC Coxswain') || hq('Row 3') },
-          { name: 'BC Paddle Explore Award', met: hq('Paddle Explore') },
-          { name: 'YSS Stage 4 (Dinghy Sailing)', met: hq('YSS Stage 4') || hq('Sailing Stage 4') },
-          { name: 'Windsurfing Stage 2+', met: hq('Windsurfing') && (hq('Windsurfing Stage 2') || hq('Windsurfing Stage 3') || hq('Windsurfing Stage 4') || hq('YouthWS - Stage 2') || hq('YouthWS - Stage 3') || hq('YouthWS - Stage 4')) }
-        ];
-        const profsMet = profs.filter(p => p.met).length;
-        const meetsCox = hasCox || profsMet >= 2;
-        if (!meetsCox) return null;
-        const hasPB2 = hq('Powerboat Level 2') || hq('Powerboat L2') || hq('Level 2 Planing') || hq('Level 2 Disp');
-        const hasNav = hq('Essential Navigation') || hq('Day Skipper');
-        const p1Option = hq('Assistant Rowing Instructor') || hq('CST') || hq('FSRT') || hq('PSRC') || hq('Safety and Rescue') || hq('Safety & Rescue') || hq('Assistant Dinghy Instructor') || hq('Assistant Windsurfing Instructor');
-        const p2Option = hq('Paddlesport Instructor') || (hq('Dinghy Instructor') && !hq('Assistant Dinghy')) || (hq('Windsurfing Instructor') && !hq('Assistant Windsurfing')) || (hq('Powerboat Instructor') && !hq('Assistant Powerboat'));
-        if (hasPB2 && hasNav && p1Option) return null;
-        if (p2Option) return null;
+        const ev = evaluateCoxswain(qualsData.filter(q => q.pNumber === c.pNumber));
+        if (ev.hasMasterAward) return null;
+        if (!ev.meetsCoxCriteria) return null;
+        if (ev.pathway1Met || ev.pathway2Met) return null;
         const achieved = [
-          ...(hasCox ? ['Coxswain Award ✓'] : profs.filter(p => p.met).map(p => p.name + ' ✓')),
-          ...(hasPB2 ? ['Powerboat Level 2 ✓'] : []),
-          ...(hasNav ? ['Navigation qualification ✓'] : []),
-          ...(p1Option ? ['Assistant/rescue qual ✓'] : [])
+          ...(ev.hasCoxAward ? ['Coxswain Award ✓'] : ev.proficiencies.filter(p => p.met).map(p => p.name + ' ✓')),
+          ...(ev.hasPB2 ? ['Powerboat Level 2 ✓'] : []),
+          ...(ev.hasNav ? ['Navigation qualification ✓'] : []),
+          ...(ev.p1OptionMet ? ['Assistant/rescue qual ✓'] : [])
         ];
         const missing = [
-          ...(!hasPB2 ? ['RYA Powerboat Level 2 (Pathway 1)'] : []),
-          ...(!hasNav ? ['RYA Essential Navigation & Seamanship or Day Skipper Theory (Pathway 1)'] : []),
-          ...(!p1Option && hasPB2 && hasNav ? ['One of: Assistant Rowing Instructor, CST/FSRT/PSRC, Assistant Dinghy or Windsurfing Instructor (Pathway 1)'] : []),
+          ...(!ev.hasPB2 ? ['RYA Powerboat Level 2 (Pathway 1)'] : []),
+          ...(!ev.hasNav ? ['RYA Essential Navigation & Seamanship or Day Skipper Theory (Pathway 1)'] : []),
+          ...(!ev.p1OptionMet && ev.hasPB2 && ev.hasNav ? ['One of: Assistant Rowing Instructor, CST/FSRT/PSRC, Assistant Dinghy or Windsurfing Instructor (Pathway 1)'] : []),
           'Or: BC Paddlesport / RYA Dinghy / Windsurfing / Powerboat Instructor (Pathway 2)'
         ];
-        const readyToClaim = false;
-        return { achieved, missing, readyToClaim, note: 'Coxswain criteria met' };
+        return { achieved, missing, readyToClaim: false, note: 'Coxswain criteria met' };
       }
     }
   ];
@@ -6373,46 +6430,12 @@ const AwardsView = ({
       }
 
       // Waterborne Award Logic
-      const cadetQuals = quals.filter(q => q.pNumber === p.pNumber);
-      const hasQual = str => cadetQuals.some(q => q.module && q.module.toLowerCase().includes(str.toLowerCase()));
-      const hasMasterAward = hasQual("Master Coxswain Award");
+      const ev = evaluateCoxswain(quals.filter(q => q.pNumber === p.pNumber));
+      const hasMasterAward = ev.hasMasterAward;
       if (hasMasterAward) return; // Skip logic if highest award achieved
-      const hasCoxswainAward = hasQual("Coxswain Award");
-      // Coxswain Badge: any 2 from different disciplines (T&A criteria)
-      // Rowing: Rowing Coxswain | Paddlesport: BC Paddle Explore | Sailing: YSS Stage 4 | Windsurfing: Stage 2+
-      const hasRowingCox = hasQual("Rowing Coxswain") || hasQual("Row Coxswain") || hasQual("SCC Coxswain") || hasQual("Row 3");
-      const hasPaddleExplore = hasQual("Paddle Explore");
-      const hasSailingStage4 = hasQual("YSS Stage 4") || hasQual("Sailing Stage 4");
-      const hasWindsurfStage2Plus = hasQual("Windsurfing") && (hasQual("Windsurfing Stage 2") || hasQual("Windsurfing Stage 3") || hasQual("Windsurfing Stage 4") || hasQual("YouthWS - Stage 2") || hasQual("YouthWS - Stage 3") || hasQual("YouthWS - Stage 4"));
-      let proficienciesMet = 0;
-      if (hasRowingCox) proficienciesMet++;
-      if (hasPaddleExplore) proficienciesMet++;
-      if (hasSailingStage4) proficienciesMet++;
-      if (hasWindsurfStage2Plus) proficienciesMet++;
-      const meetsCoxswainCriteria = proficienciesMet >= 2;
-      // Master Coxswain Badge: Coxswain criteria + Pathway 1 or Pathway 2 (T&A criteria)
-      let meetsMasterCriteria = false;
-      if (meetsCoxswainCriteria) {
-        const hasPB2 = hasQual("Powerboat Level 2") || hasQual("Powerboat L2") || hasQual("Level 2 Planing") || hasQual("Level 2 Disp");
-        const hasENS = hasQual("Essential Navigation");
-        const hasDaySkipper = hasQual("Day Skipper");
-        // Pathway 1: PB2 + (ENS or Day Skipper Theory) + one assistant/rescue qual
-        if (hasPB2 && (hasENS || hasDaySkipper)) {
-          const hasP1Option = hasQual("Assistant Rowing Instructor") ||
-            hasQual("CST") || hasQual("FSRT") || hasQual("PSRC") || hasQual("Safety and Rescue") || hasQual("Safety & Rescue") ||
-            hasQual("Assistant Dinghy Instructor") ||
-            hasQual("Assistant Windsurfing Instructor");
-          if (hasP1Option) meetsMasterCriteria = true;
-        }
-        // Pathway 2: any full instructor qual (no ENS/PB2 required)
-        if (!meetsMasterCriteria) {
-          const hasP2Option = hasQual("Paddlesport Instructor") ||
-            (hasQual("Dinghy Instructor") && !hasQual("Assistant Dinghy")) ||
-            (hasQual("Windsurfing Instructor") && !hasQual("Assistant Windsurfing")) ||
-            (hasQual("Powerboat Instructor") && !hasQual("Assistant Powerboat"));
-          if (hasP2Option) meetsMasterCriteria = true;
-        }
-      }
+      const hasCoxswainAward = ev.hasCoxAward;
+      const meetsCoxswainCriteria = ev.meetsCoxCriteria;
+      const meetsMasterCriteria = ev.meetsMaster;
       if (meetsMasterCriteria && !hasMasterAward) {
         const d = new Date();
         const uniqueId = `${p.pNumber}-MASTERCOX-${d.getTime()}`;
@@ -7249,50 +7272,11 @@ const WaterborneView = ({
   const getCadetStatusColor = cadet => {
     // Check if they already have the award
     // Relaxed string matching: "Master Coxswain" instead of "Master Coxswain Award" to catch variations
-    const hasMasterAward = hasQualContaining(cadet, "Master Coxswain");
-    if (hasMasterAward) return "status-master-awarded";
-    // Boat Coxswain Award (distinct from the rowing "SCC Coxswain" proficiency)
-    const hasCoxswainAward = hasQualContaining(cadet, "Coxswain Award");
-    if (hasCoxswainAward) return "status-cox-awarded";
-    // Coxswain Badge: any 2 from different disciplines (T&A criteria)
-    // Rowing: Rowing Coxswain | Paddlesport: BC Paddle Explore | Sailing: YSS Stage 4 | Windsurfing: Stage 2+
-    const hasRowingCox = hasQualContaining(cadet, "Rowing Coxswain") || hasQualContaining(cadet, "Row Coxswain") || hasQualContaining(cadet, "SCC Coxswain") || hasQualContaining(cadet, "Row 3");
-    const hasPaddleExplore = hasQualContaining(cadet, "Paddle Explore");
-    const hasSailingStage4 = hasQualContaining(cadet, "YSS Stage 4") || hasQualContaining(cadet, "Sailing Stage 4");
-    const hasWindsurfStage2Plus = hasQualContaining(cadet, "Windsurfing") && (
-      hasQualContaining(cadet, "Windsurfing Stage 2") || hasQualContaining(cadet, "Windsurfing Stage 3") || hasQualContaining(cadet, "Windsurfing Stage 4") ||
-      hasQualContaining(cadet, "YouthWS - Stage 2") || hasQualContaining(cadet, "YouthWS - Stage 3") || hasQualContaining(cadet, "YouthWS - Stage 4"));
-    let proficienciesMet = 0;
-    if (hasRowingCox) proficienciesMet++;
-    if (hasPaddleExplore) proficienciesMet++;
-    if (hasSailingStage4) proficienciesMet++;
-    if (hasWindsurfStage2Plus) proficienciesMet++;
-    const meetsCoxswainCriteria = proficienciesMet >= 2;
-    // Master Coxswain Badge: Coxswain criteria + Pathway 1 or Pathway 2 (T&A criteria)
-    let meetsMasterCriteria = false;
-    if (meetsCoxswainCriteria) {
-      const hasPB2 = hasQualContaining(cadet, "Powerboat Level 2") || hasQualContaining(cadet, "Powerboat L2") || hasQualContaining(cadet, "Level 2 Planing") || hasQualContaining(cadet, "Level 2 Disp");
-      const hasENS = hasQualContaining(cadet, "Essential Navigation");
-      const hasDaySkipper = hasQualContaining(cadet, "Day Skipper");
-      // Pathway 1: PB2 + (ENS or Day Skipper Theory) + one assistant/rescue qual
-      if (hasPB2 && (hasENS || hasDaySkipper)) {
-        const hasP1Option = hasQualContaining(cadet, "Assistant Rowing Instructor") ||
-          hasQualContaining(cadet, "CST") || hasQualContaining(cadet, "FSRT") || hasQualContaining(cadet, "PSRC") || hasQualContaining(cadet, "Safety and Rescue") || hasQualContaining(cadet, "Safety & Rescue") ||
-          hasQualContaining(cadet, "Assistant Dinghy Instructor") ||
-          hasQualContaining(cadet, "Assistant Windsurfing Instructor");
-        if (hasP1Option) meetsMasterCriteria = true;
-      }
-      // Pathway 2: any full instructor qual (no ENS/PB2 required)
-      if (!meetsMasterCriteria) {
-        const hasP2Option = hasQualContaining(cadet, "Paddlesport Instructor") ||
-          (hasQualContaining(cadet, "Dinghy Instructor") && !hasQualContaining(cadet, "Assistant Dinghy")) ||
-          (hasQualContaining(cadet, "Windsurfing Instructor") && !hasQualContaining(cadet, "Assistant Windsurfing")) ||
-          (hasQualContaining(cadet, "Powerboat Instructor") && !hasQualContaining(cadet, "Assistant Powerboat"));
-        if (hasP2Option) meetsMasterCriteria = true;
-      }
-    }
-    if (meetsMasterCriteria) return "status-master-pending";
-    if (meetsCoxswainCriteria) return "status-cox-pending";
+    const ev = evaluateCoxswain(qualsData.filter(q => q.pNumber === cadet.pNumber));
+    if (ev.hasMasterAward) return "status-master-awarded";
+    if (ev.hasCoxAward) return "status-cox-awarded";
+    if (ev.meetsMaster) return "status-master-pending";
+    if (ev.meetsCoxCriteria) return "status-cox-pending";
     return "";
   };
 
@@ -7301,87 +7285,43 @@ const WaterborneView = ({
   // gap.coxswain: null (awarded/not applicable) | { proficienciesMet, needed, missing[] }
   // gap.master:   null | { pathway1: {hasPB2,hasNav,missingP1[]}, pathway2: {missingP2[]}, notes }
   const getCoxswainGaps = cadet => {
-    const hq = str => qualsData.some(q => q.pNumber === cadet.pNumber && q.module && q.module.toLowerCase().includes(str.toLowerCase()));
-    const hasMasterAward = hq("Master Coxswain");
-    const hasCoxswainAward = hq("Coxswain Award");
-    if (hasMasterAward) return { coxswain: null, master: null };
+    const ev = evaluateCoxswain(qualsData.filter(q => q.pNumber === cadet.pNumber));
+    if (ev.hasMasterAward) return { coxswain: null, master: null };
 
-    // Coxswain proficiencies
-    const profs = [
-      { name: "Rowing Coxswain", met: hq("Rowing Coxswain") || hq("Row Coxswain") || hq("SCC Coxswain") || hq("Row 3") },
-      { name: "BC Paddle Explore Award", met: hq("Paddle Explore") },
-      { name: "YSS Stage 4 (Dinghy Sailing)", met: hq("YSS Stage 4") || hq("Sailing Stage 4") },
-      { name: "Windsurfing Stage 2+", met: hq("Windsurfing") && (hq("Windsurfing Stage 2") || hq("Windsurfing Stage 3") || hq("Windsurfing Stage 4") || hq("YouthWS - Stage 2") || hq("YouthWS - Stage 3") || hq("YouthWS - Stage 4")) }
-    ];
-    const profsMet = profs.filter(p => p.met).length;
-    const profsAchieved = profs.filter(p => p.met).map(p => p.name);
-    const profsMissing = profs.filter(p => !p.met).map(p => p.name);
-    const meetsCox = profsMet >= 2;
+    const profsAchieved = ev.proficiencies.filter(p => p.met).map(p => p.name);
+    const profsMissing = ev.proficiencies.filter(p => !p.met).map(p => p.name);
 
-    const coxGap = hasCoxswainAward ? null : {
-      proficienciesMet: profsMet,
-      needed: Math.max(0, 2 - profsMet),
+    const coxGap = ev.hasCoxAward ? null : {
+      proficienciesMet: ev.proficienciesMet,
+      needed: Math.max(0, 2 - ev.proficienciesMet),
       achieved: profsAchieved,
       missing: profsMissing,
-      awarded: hasCoxswainAward
+      awarded: ev.hasCoxAward
     };
 
     // Master Coxswain gaps
-    if (!meetsCox) return { coxswain: coxGap, master: null };
-
-    const hasPB2 = hq("Powerboat Level 2") || hq("Powerboat L2") || hq("Level 2 Planing") || hq("Level 2 Disp");
-    const hasENS = hq("Essential Navigation");
-    const hasDaySkipper = hq("Day Skipper");
-    const hasNav = hasENS || hasDaySkipper;
-    const navLabel = hasENS ? "RYA Essential Navigation & Seamanship" : hasDaySkipper ? "RYA Day Skipper Theory" : null;
-
-    // Pathway 1 pieces
-    const p1Options = [
-      { name: "Assistant Rowing Instructor", met: hq("Assistant Rowing Instructor") },
-      { name: "CST / FSRT / PSRC (rescue test)", met: hq("CST") || hq("FSRT") || hq("PSRC") || hq("Safety and Rescue") || hq("Safety & Rescue") },
-      { name: "RYA Assistant Dinghy Instructor", met: hq("Assistant Dinghy Instructor") },
-      { name: "RYA Assistant Windsurfing Instructor", met: hq("Assistant Windsurfing Instructor") }
-    ];
-    const p1OptionMet = p1Options.find(o => o.met);
-    const hasP1Option = !!p1OptionMet;
-    const meetsP1 = hasPB2 && hasNav && hasP1Option;
-
-    // Pathway 2 pieces
-    const p2Options = [
-      { name: "BC Paddlesport Instructor", met: hq("Paddlesport Instructor") },
-      { name: "RYA Dinghy Instructor", met: hq("Dinghy Instructor") && !hq("Assistant Dinghy") },
-      { name: "RYA Windsurfing Instructor", met: hq("Windsurfing Instructor") && !hq("Assistant Windsurfing") },
-      { name: "RYA Powerboat Instructor", met: hq("Powerboat Instructor") && !hq("Assistant Powerboat") }
-    ];
-    const p2OptionMet = p2Options.find(o => o.met);
-    const hasP2Option = !!p2OptionMet;
-    const meetsP2 = hasP2Option;
-
-    const meetsMaster = meetsP1 || meetsP2;
-    if (meetsMaster) return { coxswain: coxGap, master: null };
+    if (!ev.meetsCoxCriteria) return { coxswain: coxGap, master: null };
+    if (ev.meetsMaster) return { coxswain: coxGap, master: null };
 
     // Build master gap detail - include what they have
     const p1MissingBase = [];
-    if (!hasPB2) p1MissingBase.push("RYA Powerboat Level 2");
-    if (!hasNav) p1MissingBase.push("RYA Essential Navigation & Seamanship (or Day Skipper Theory)");
-    const p1MissingOption = hasP1Option ? [] : p1Options.filter(o => !o.met).map(o => o.name);
+    if (!ev.hasPB2) p1MissingBase.push("RYA Powerboat Level 2");
+    if (!ev.hasNav) p1MissingBase.push("RYA Essential Navigation & Seamanship (or Day Skipper Theory)");
+    const p1MissingOption = ev.p1OptionMet ? [] : ev.pathway1Options.filter(o => !o.met).map(o => o.name);
     const p1HaveBase = [
-      ...(hasPB2 ? ["RYA Powerboat Level 2"] : []),
-      ...(navLabel ? [navLabel] : [])
+      ...(ev.hasPB2 ? ["RYA Powerboat Level 2"] : []),
+      ...(ev.navLabel ? [ev.navLabel] : [])
     ];
-    const p1HaveOption = p1OptionMet ? [p1OptionMet.name] : [];
+    const p1HaveOption = ev.p1OptionMet ? [ev.p1OptionMet.name] : [];
 
-    const p2Missing = p2Options.filter(o => !o.met).map(o => o.name);
-    const p2Have = p2Options.filter(o => o.met).map(o => o.name);
-
-    // Also include cox proficiencies in master "have" section
-    const masterHave = [...profsAchieved];
+    const p2Missing = ev.pathway2Options.filter(o => !o.met).map(o => o.name);
+    const p2Have = ev.pathway2Options.filter(o => o.met).map(o => o.name);
 
     return {
       coxswain: coxGap,
       master: {
         coxProficienciesAchieved: profsAchieved,
-        pathway1: { hasPB2, hasNav, haveBase: p1HaveBase, haveOption: p1HaveOption, missingBase: p1MissingBase, missingOption: p1MissingOption },
+        pathway1: { hasPB2: ev.hasPB2, hasNav: ev.hasNav, haveBase: p1HaveBase, haveOption: p1HaveOption, missingBase: p1MissingBase, missingOption: p1MissingOption },
         pathway2: { have: p2Have, missing: p2Missing }
       }
     };
@@ -7964,7 +7904,7 @@ const CadetFocus = ({
       if (highestAward) {
         let key = highestAward;
         // Map to Badge Keys
-        if (highestAward.includes("Rowing Supervised Coxswain") || highestAward.includes("Supervised Cox")) key = "Rowing Supervised Coxswain";else if (highestAward.includes("Rowing Coxswain") || highestAward.includes("Row Coxswain") || highestAward.includes("SCC Coxswain") || highestAward.includes("Row 3")) key = "Rowing Coxswain";else if (highestAward.includes("Rowing Competent Crew") || highestAward.includes("Competent Crew")) key = "Rowing Competent Crew";else if (highestAward.includes("Rowing Instructor")) key = "Rowing Instructor";else if (highestAward.includes("Explore Award")) key = "Paddle Explore Award";else if (highestAward.includes("Discover Award")) key = "Paddle Discover Award";else if (highestAward.includes("(PSRC)")) key = "Paddle FSRT/PSRC";else if (highestAward.includes("Paddlesport Instructor")) key = "Paddlesport Instructor";else if (highestAward.includes("Dinghy Instructor")) key = "Dinghy Instructor";else if (highestAward.includes("Stage 4") && category === "Sailing") key = "Sailing Stage 4 / Level 3";else if (highestAward.includes("Stage 3") && category === "Sailing") key = "Sailing Stage 3 / Level 2";else if (highestAward.includes("Stage 2") && category === "Sailing") key = "Sailing Stage 2 / Level 1";else if (highestAward.includes("Spinnakers")) key = "Sailing with Spinnakers";else if (highestAward.includes("Seamanship Skills")) key = "Seamanship Skills";else if (highestAward.includes("Start Racing")) key = "Start Racing";else if (highestAward.includes("Performance Sailing")) key = "Performance Sailing";else if (highestAward.includes("Day Sailing")) key = "Day Sailing";else if (highestAward.includes("Start Windsurfing Instructor")) key = "Windsurfing Instructor";else if (highestAward.includes("Stage 4") && category === "Windsurfing") key = "Windsurfing Stage 4";else if (highestAward.includes("Stage 3") && category === "Windsurfing") key = "Windsurfing Stage 3";else if (highestAward.includes("Stage 2") && category === "Windsurfing") key = "Windsurfing Stage 2";else if (highestAward.includes("Stage 1") && category === "Windsurfing") key = "Windsurfing Stage 1";else if (highestAward.includes("Powerboat Instructor")) key = "Powerboat Instructor";else if (highestAward.includes("Powerboat Level 2")) key = "RYA Powerboat Level 2";else if (highestAward.includes("Powerboat Level 1")) key = "RYA Powerboat Level 1";else if (highestAward.includes("Power Watch Leader")) key = "Offshore Power Watch Leader";else if (highestAward.includes("Power Seaman")) key = "Offshore Power Seaman";else if (highestAward.includes("Power Grade 2")) key = "Offshore Power Grade 2";else if (highestAward.includes("Power Grade 1")) key = "Offshore Power Grade 1";else if (highestAward.includes("Sail Watch Leader")) key = "Offshore Sailing Watch Leader";else if (highestAward.includes("Sail Seaman")) key = "Offshore Sailing Seaman";else if (highestAward.includes("Sail Grade 2")) key = "Offshore Sailing Grade 2";else if (highestAward.includes("Sail Grade 1")) key = "Offshore Sailing Grade 1";else if (highestAward.includes("Master Coxswain")) key = "Master Coxswain";else if (highestAward === "Coxswain Award") key = "Cadet Coxswain";
+        if (highestAward.includes("Rowing Supervised Coxswain") || highestAward.includes("Supervised Cox")) key = "Rowing Supervised Coxswain";else if (highestAward.includes("Row 3")) key = "Rowing Supervised Coxswain";else if (highestAward.includes("Rowing Coxswain") || highestAward.includes("Row Coxswain") || highestAward.includes("SCC Coxswain")) key = "Rowing Coxswain";else if (highestAward.includes("Rowing Competent Crew") || highestAward.includes("Competent Crew")) key = "Rowing Competent Crew";else if (highestAward.includes("Rowing Instructor")) key = "Rowing Instructor";else if (highestAward.includes("Explore Award")) key = "Paddle Explore Award";else if (highestAward.includes("Discover Award")) key = "Paddle Discover Award";else if (highestAward.includes("(PSRC)")) key = "Paddle FSRT/PSRC";else if (highestAward.includes("Paddlesport Instructor")) key = "Paddlesport Instructor";else if (highestAward.includes("Dinghy Instructor")) key = "Dinghy Instructor";else if (highestAward.includes("Stage 4") && category === "Sailing") key = "Sailing Stage 4 / Level 3";else if (highestAward.includes("Stage 3") && category === "Sailing") key = "Sailing Stage 3 / Level 2";else if (highestAward.includes("Stage 2") && category === "Sailing") key = "Sailing Stage 2 / Level 1";else if (highestAward.includes("Spinnakers")) key = "Sailing with Spinnakers";else if (highestAward.includes("Seamanship Skills")) key = "Seamanship Skills";else if (highestAward.includes("Start Racing")) key = "Start Racing";else if (highestAward.includes("Performance Sailing")) key = "Performance Sailing";else if (highestAward.includes("Day Sailing")) key = "Day Sailing";else if (highestAward.includes("Start Windsurfing Instructor")) key = "Windsurfing Instructor";else if (highestAward.includes("Stage 4") && category === "Windsurfing") key = "Windsurfing Stage 4";else if (highestAward.includes("Stage 3") && category === "Windsurfing") key = "Windsurfing Stage 3";else if (highestAward.includes("Stage 2") && category === "Windsurfing") key = "Windsurfing Stage 2";else if (highestAward.includes("Stage 1") && category === "Windsurfing") key = "Windsurfing Stage 1";else if (highestAward.includes("Powerboat Instructor")) key = "Powerboat Instructor";else if (highestAward.includes("Powerboat Level 2")) key = "RYA Powerboat Level 2";else if (highestAward.includes("Powerboat Level 1")) key = "RYA Powerboat Level 1";else if (highestAward.includes("Power Watch Leader")) key = "Offshore Power Watch Leader";else if (highestAward.includes("Power Seaman")) key = "Offshore Power Seaman";else if (highestAward.includes("Power Grade 2")) key = "Offshore Power Grade 2";else if (highestAward.includes("Power Grade 1")) key = "Offshore Power Grade 1";else if (highestAward.includes("Sail Watch Leader")) key = "Offshore Sailing Watch Leader";else if (highestAward.includes("Sail Seaman")) key = "Offshore Sailing Seaman";else if (highestAward.includes("Sail Grade 2")) key = "Offshore Sailing Grade 2";else if (highestAward.includes("Sail Grade 1")) key = "Offshore Sailing Grade 1";else if (highestAward.includes("Master Coxswain")) key = "Master Coxswain";else if (highestAward === "Coxswain Award") key = "Cadet Coxswain";
         awardedWaterborne.push({
           name: highestAward,
           key: key,
@@ -8149,15 +8089,10 @@ const CadetFocus = ({
     });
 
     // Also flag Coxswain / Master Coxswain if approaching
-    const hasCox = hq("coxswain award");
-    const hasMaster = hq("master coxswain");
-    const profs = [
-      hq("rowing coxswain") || hq("row coxswain") || hq("scc coxswain") || hq("row 3"),
-      hq("paddle explore"),
-      hq("yss stage 4") || hq("sailing stage 4"),
-      hq("windsurfing") && (hq("windsurfing stage 2") || hq("windsurfing stage 3") || hq("windsurfing stage 4") || hq("youthws - stage 2") || hq("youthws - stage 3") || hq("youthws - stage 4"))
-    ];
-    const profsMet = profs.filter(Boolean).length;
+    const ev = evaluateCoxswain(cadetQuals);
+    const hasCox = ev.hasCoxAward || ev.hasMasterAward;
+    const hasMaster = ev.hasMasterAward;
+    const profsMet = ev.proficienciesMet;
 
     if (!hasCox && profsMet >= 1) {
       results.push({ discipline: "Coxswain Award", next: { name: "Coxswain Award", req: `${profsMet} of 2 proficiencies met — needs ${2 - profsMet} more from different discipline` }, current: null });
@@ -14038,8 +13973,11 @@ const JuniorDetail = ({
 
     // Check for waterborne profs
     const profNames = [{
-      search: ["Rowing Coxswain", "Row Coxswain", "SCC Coxswain", "Row 3"],
+      search: ["Rowing Coxswain", "Row Coxswain", "SCC Coxswain"],
       key: "Rowing Coxswain"
+    }, {
+      search: ["Row 3"],
+      key: "Rowing Supervised Coxswain"
     }, {
       search: ["Paddle Explore"],
       key: "Paddle Explore Award"

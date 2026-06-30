@@ -52,7 +52,7 @@ const checkIsAdmin = async () => {
 // CONSTANTS & DATA
 // ═══════════════════════════════════════════════════════════════════════════
 
-const DATA_VERSION = "2.27-Cloud"; // Coxswain/Master Coxswain: fix windsurfing & Row 3 proficiencies, Day Skipper Theory, badge display; consolidate award logic
+const DATA_VERSION = "2.28-Cloud"; // Junior promotions: count BC Paddle Discover Award & explicit JSC STEM Unit Activities Badge as junior proficiencies
 
 // Badge & Rank Image Maps
 const RANK_IMG_MAP = {
@@ -13094,8 +13094,10 @@ const JuniorsView = ({
         // EXCLUDE: Swimming tests (safety requirements, not proficiencies)
         juniorProficiencies += cadetQuals.filter(q => q.syllabus && q.syllabus.includes("Proficiencies") && q.module && !q.module.includes("Water Safety") && !q.module.includes("Swimming Test")).length;
 
-        // JSC STEM Award (15+ STEM modules)
-        if (stemCount >= 15) juniorProficiencies++;
+        // JSC STEM Award - junior proficiency
+        // Westminster records this as "SCC - JSC STEM Unit Activities Badge".
+        // Recognise the explicit badge qualification, or 15+ STEM modules.
+        if (cadetQuals.some(q => q.module && (q.module.includes("JSC STEM") || q.module.includes("STEM Unit Activities Badge"))) || stemCount >= 15) juniorProficiencies++;
 
         // YSS Stage 2 sailing - junior proficiency
         if (cadetQuals.some(q => q.module && q.module.includes("YSS Stage 2"))) {
@@ -13108,9 +13110,10 @@ const JuniorsView = ({
           juniorProficiencies++;
         }
 
-        // BC Paddlesport Discover - junior proficiency
-        // EXCLUDE: Start awards
-        if (cadetQuals.some(q => q.module && (q.module.includes("Paddlesport Discover") || q.module.includes("BC Paddlesport Discover")) && !q.module.includes("Start"))) {
+        // BC Paddle Discover Award - junior proficiency
+        // Westminster records this as "BC Paddle Discover Award".
+        // EXCLUDE: Start awards (e.g. "BC Paddle Start Award")
+        if (cadetQuals.some(q => q.module && q.module.includes("Paddle Discover") && !q.module.includes("Start"))) {
           juniorProficiencies++;
         }
 
@@ -13323,9 +13326,11 @@ const JuniorDetail = ({
     // EXCLUDE: Swimming tests (not proficiencies, just safety requirements)
     count += juniorQuals.filter(q => q.syllabus && q.syllabus.includes("Proficiencies") && q.module && !q.module.includes("Water Safety") && !q.module.includes("Swimming Test")).length;
 
-    // JSC STEM Award (15+ STEM modules)
+    // JSC STEM Award - junior proficiency
+    // Westminster records this as "SCC - JSC STEM Unit Activities Badge".
+    // Recognise the explicit badge qualification, or 15+ STEM modules.
     const stemCount = juniorMods.filter(m => m.section === 'stem').length;
-    if (stemCount >= 15) count++;
+    if (juniorQuals.some(q => q.module && (q.module.includes("JSC STEM") || q.module.includes("STEM Unit Activities Badge"))) || stemCount >= 15) count++;
 
     // YSS Stage 2 sailing (RYA) - junior proficiency
     if (juniorQuals.some(q => q.module && (q.module.includes("YSS Stage 2") || q.module.includes("RYA YSS Stage 2")))) {
@@ -13338,9 +13343,10 @@ const JuniorDetail = ({
       count++;
     }
 
-    // BC Paddlesport Discover - junior proficiency
-    // EXCLUDE: Start awards (introductory, not proficiency level)
-    if (juniorQuals.some(q => q.module && (q.module.includes("Paddlesport Discover") || q.module.includes("BC Paddlesport Discover")) && !q.module.includes("Start"))) {
+    // BC Paddle Discover Award - junior proficiency
+    // Westminster records this as "BC Paddle Discover Award".
+    // EXCLUDE: Start awards (e.g. "BC Paddle Start Award")
+    if (juniorQuals.some(q => q.module && q.module.includes("Paddle Discover") && !q.module.includes("Start"))) {
       count++;
     }
     return count;

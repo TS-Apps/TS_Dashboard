@@ -52,7 +52,7 @@ const checkIsAdmin = async () => {
 // CONSTANTS & DATA
 // ═══════════════════════════════════════════════════════════════════════════
 
-const DATA_VERSION = "2.30-Cloud"; // Junior Focus: consistent status-box icons (w-5 h-5) aligned inline with the bold header line
+const DATA_VERSION = "2.31-Cloud"; // Junior Focus: abbreviate month in turning-12 box (e.g. Jul 2026)
 
 // Badge & Rank Image Maps
 const RANK_IMG_MAP = {
@@ -13224,7 +13224,7 @@ const JuniorsView = ({
         name: junior.name,
         date: twelfthBirthday,
         monthLabel: twelfthBirthday.toLocaleDateString('en-GB', {
-          month: 'long',
+          month: 'short',
           year: 'numeric'
         })
       };

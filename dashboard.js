@@ -52,7 +52,7 @@ const checkIsAdmin = async () => {
 // CONSTANTS & DATA
 // ═══════════════════════════════════════════════════════════════════════════
 
-const DATA_VERSION = "2.28-Cloud"; // Junior promotions: count BC Paddle Discover Award & explicit JSC STEM Unit Activities Badge as junior proficiencies
+const DATA_VERSION = "2.29-Cloud"; // Junior Focus: add status box listing juniors due to turn 12 within the next 3 months
 
 // Badge & Rank Image Maps
 const RANK_IMG_MAP = {
@@ -13066,7 +13066,7 @@ const JuniorsView = ({
     name: "FileDown",
     className: "w-4 h-4"
   }), "Export PDF")))), /*#__PURE__*/React.createElement("div", {
-    className: "grid grid-cols-1 md:grid-cols-3 gap-4"
+    className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"
   }, (() => {
     // Check ALL personnel (not just juniors) for promotion readiness
     const cadetsReadyForPromotion = personnel.filter(cadet => {
@@ -13216,6 +13216,40 @@ const JuniorsView = ({
     }, pennantDue.length, " junior", pennantDue.length !== 1 ? 's have' : ' has', " the Commodore's Broad Pennant due!"), /*#__PURE__*/React.createElement("p", {
       className: "text-sm text-amber-800"
     }, pennantDue.map(j => j.name).join(', '), " - all four core badges awarded + 8 extra modules from each section completed"))));
+  })(), (() => {
+    // Juniors due to turn 12 within the next 3 months
+    const today = new Date();
+    const cutoff = new Date(today.getFullYear(), today.getMonth() + 3, today.getDate());
+    const turningTwelve = juniors.map(junior => {
+      if (!junior.dob) return null;
+      const birthDate = parseDate(junior.dob);
+      if (!birthDate) return null;
+      const twelfthBirthday = new Date(birthDate.getFullYear() + 12, birthDate.getMonth(), birthDate.getDate());
+      if (twelfthBirthday < today || twelfthBirthday > cutoff) return null;
+      return {
+        name: junior.name,
+        date: twelfthBirthday,
+        monthLabel: twelfthBirthday.toLocaleDateString('en-GB', {
+          month: 'long',
+          year: 'numeric'
+        })
+      };
+    }).filter(Boolean).sort((a, b) => a.date - b.date);
+    if (turningTwelve.length === 0) return null;
+    return /*#__PURE__*/React.createElement("div", {
+      className: "bg-gradient-to-r from-rose-50 to-rose-50 border-2 border-rose-300 rounded-lg p-4 shadow"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "flex items-center gap-3"
+    }, /*#__PURE__*/React.createElement(Icon, {
+      name: "Calendar",
+      className: "w-6 h-6 text-rose-600"
+    }), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("p", {
+      className: "font-bold text-rose-900"
+    }, turningTwelve.length, " junior", turningTwelve.length !== 1 ? 's' : '', " turning 12 within 3 months"), /*#__PURE__*/React.createElement("div", {
+      className: "text-sm text-rose-800 mt-1"
+    }, turningTwelve.map((j, idx) => /*#__PURE__*/React.createElement("p", {
+      key: idx
+    }, idx + 1 + " - " + j.name + " - " + j.monthLabel))))));
   })()) /* end status boxes grid */, (() => {
     const crestNeeded = [];
     const stemNeeded = [];

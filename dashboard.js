@@ -52,7 +52,7 @@ const checkIsAdmin = async () => {
 // CONSTANTS & DATA
 // ═══════════════════════════════════════════════════════════════════════════
 
-const DATA_VERSION = "2.29-Cloud"; // Junior Focus: add status box listing juniors due to turn 12 within the next 3 months
+const DATA_VERSION = "2.30-Cloud"; // Junior Focus: consistent status-box icons (w-5 h-5) aligned inline with the bold header line
 
 // Badge & Rank Image Maps
 const RANK_IMG_MAP = {
@@ -13159,16 +13159,14 @@ const JuniorsView = ({
     if (cadetsReadyForPromotion.length === 0) return null;
     return /*#__PURE__*/React.createElement("div", {
       className: "bg-gradient-to-r from-blue-50 to-blue-50 border-2 border-blue-300 rounded-lg p-4 shadow"
-    }, /*#__PURE__*/React.createElement("div", {
-      className: "flex items-center gap-3"
+    }, /*#__PURE__*/React.createElement("p", {
+      className: "font-bold text-blue-900 flex items-start gap-2"
     }, /*#__PURE__*/React.createElement(Icon, {
       name: "TrendingUp",
-      className: "w-6 h-6 text-blue-600"
-    }), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("p", {
-      className: "font-bold text-blue-900"
-    }, cadetsReadyForPromotion.length, " cadet", cadetsReadyForPromotion.length !== 1 ? 's are' : ' is', " ready for promotion!"), /*#__PURE__*/React.createElement("p", {
-      className: "text-sm text-blue-800"
-    }, cadetsReadyForPromotion.map(c => c.name).join(', '), " ", cadetsReadyForPromotion.length === 1 ? 'has' : 'have', " met the criteria for the next rank"))));
+      className: "w-5 h-5 mt-0.5 flex-shrink-0 text-blue-600"
+    }), /*#__PURE__*/React.createElement("span", null, cadetsReadyForPromotion.length, " cadet", cadetsReadyForPromotion.length !== 1 ? 's are' : ' is', " ready for promotion!")), /*#__PURE__*/React.createElement("p", {
+      className: "text-sm text-blue-800 mt-1"
+    }, cadetsReadyForPromotion.map(c => c.name).join(', '), " ", cadetsReadyForPromotion.length === 1 ? 'has' : 'have', " met the criteria for the next rank"));
   })(), (() => {
     const juniorsWithAlerts = juniors.filter(junior => {
       const juniorMods = juniorData?.moduleCompletions?.filter(m => m.pNumber === junior.pNumber) || [];
@@ -13178,16 +13176,14 @@ const JuniorsView = ({
     if (juniorsWithAlerts.length === 0) return null;
     return /*#__PURE__*/React.createElement("div", {
       className: "bg-gradient-to-r from-green-50 to-green-50 border-2 border-green-300 rounded-lg p-4 shadow"
-    }, /*#__PURE__*/React.createElement("div", {
-      className: "flex items-center gap-3"
+    }, /*#__PURE__*/React.createElement("p", {
+      className: "font-bold text-green-900 flex items-start gap-2"
     }, /*#__PURE__*/React.createElement(Icon, {
       name: "Bell",
-      className: "w-6 h-6 text-green-600"
-    }), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("p", {
-      className: "font-bold text-green-900"
-    }, juniorsWithAlerts.length, " junior", juniorsWithAlerts.length !== 1 ? 's are' : ' is', " close to earning badges!"), /*#__PURE__*/React.createElement("p", {
-      className: "text-sm text-green-800"
-    }, juniorsWithAlerts.map(j => j.name).join(', '), " ", juniorsWithAlerts.length === 1 ? 'needs' : 'need', " just 1-2 more modules"))));
+      className: "w-5 h-5 mt-0.5 flex-shrink-0 text-green-600"
+    }), /*#__PURE__*/React.createElement("span", null, juniorsWithAlerts.length, " junior", juniorsWithAlerts.length !== 1 ? 's are' : ' is', " close to earning badges!")), /*#__PURE__*/React.createElement("p", {
+      className: "text-sm text-green-800 mt-1"
+    }, juniorsWithAlerts.map(j => j.name).join(', '), " ", juniorsWithAlerts.length === 1 ? 'needs' : 'need', " just 1-2 more modules"));
   })(), (() => {
     // Check ALL juniors for Commodore's Broad Pennant eligibility
     const pennantDue = juniors.filter(junior => {
@@ -13206,16 +13202,14 @@ const JuniorsView = ({
     if (pennantDue.length === 0) return null;
     return /*#__PURE__*/React.createElement("div", {
       className: "bg-gradient-to-r from-amber-50 to-amber-50 border-2 border-amber-300 rounded-lg p-4 shadow"
-    }, /*#__PURE__*/React.createElement("div", {
-      className: "flex items-center gap-3"
+    }, /*#__PURE__*/React.createElement("p", {
+      className: "font-bold text-amber-900 flex items-start gap-2"
     }, /*#__PURE__*/React.createElement(Icon, {
       name: "Award",
-      className: "w-6 h-6 text-amber-600"
-    }), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("p", {
-      className: "font-bold text-amber-900"
-    }, pennantDue.length, " junior", pennantDue.length !== 1 ? 's have' : ' has', " the Commodore's Broad Pennant due!"), /*#__PURE__*/React.createElement("p", {
-      className: "text-sm text-amber-800"
-    }, pennantDue.map(j => j.name).join(', '), " - all four core badges awarded + 8 extra modules from each section completed"))));
+      className: "w-5 h-5 mt-0.5 flex-shrink-0 text-amber-600"
+    }), /*#__PURE__*/React.createElement("span", null, pennantDue.length, " junior", pennantDue.length !== 1 ? 's have' : ' has', " the Commodore's Broad Pennant due!")), /*#__PURE__*/React.createElement("p", {
+      className: "text-sm text-amber-800 mt-1"
+    }, pennantDue.map(j => j.name).join(', '), " - all four core badges awarded + 8 extra modules from each section completed"));
   })(), (() => {
     // Juniors due to turn 12 within the next 3 months
     const today = new Date();
@@ -13238,18 +13232,16 @@ const JuniorsView = ({
     if (turningTwelve.length === 0) return null;
     return /*#__PURE__*/React.createElement("div", {
       className: "bg-gradient-to-r from-rose-50 to-rose-50 border-2 border-rose-300 rounded-lg p-4 shadow"
-    }, /*#__PURE__*/React.createElement("div", {
-      className: "flex items-center gap-3"
+    }, /*#__PURE__*/React.createElement("p", {
+      className: "font-bold text-rose-900 flex items-start gap-2"
     }, /*#__PURE__*/React.createElement(Icon, {
       name: "Calendar",
-      className: "w-6 h-6 text-rose-600"
-    }), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("p", {
-      className: "font-bold text-rose-900"
-    }, turningTwelve.length, " junior", turningTwelve.length !== 1 ? 's' : '', " turning 12 within 3 months"), /*#__PURE__*/React.createElement("div", {
+      className: "w-5 h-5 mt-0.5 flex-shrink-0 text-rose-600"
+    }), /*#__PURE__*/React.createElement("span", null, turningTwelve.length, " junior", turningTwelve.length !== 1 ? 's' : '', " turning 12 within 3 months")), /*#__PURE__*/React.createElement("div", {
       className: "text-sm text-rose-800 mt-1"
     }, turningTwelve.map((j, idx) => /*#__PURE__*/React.createElement("p", {
       key: idx
-    }, idx + 1 + " - " + j.name + " - " + j.monthLabel))))));
+    }, idx + 1 + " - " + j.name + " - " + j.monthLabel))));
   })()) /* end status boxes grid */, (() => {
     const crestNeeded = [];
     const stemNeeded = [];
@@ -13268,10 +13260,10 @@ const JuniorsView = ({
     return /*#__PURE__*/React.createElement("div", {
       className: "bg-gradient-to-r from-purple-50 to-purple-50 border-2 border-purple-300 rounded-lg p-4 shadow"
     }, /*#__PURE__*/React.createElement("div", {
-      className: "flex items-center gap-3"
+      className: "flex items-start gap-2"
     }, /*#__PURE__*/React.createElement(Icon, {
       name: "Award",
-      className: "w-6 h-6 text-purple-600"
+      className: "w-5 h-5 mt-0.5 flex-shrink-0 text-purple-600"
     }), /*#__PURE__*/React.createElement("div", {
       className: "flex flex-col gap-1"
     }, stemNeeded.length > 0 && /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("p", {

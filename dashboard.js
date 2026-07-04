@@ -6665,22 +6665,20 @@ const AwardsView = ({
       const pageW = 210;
       const marginX = 18.5;
       const navy = [27, 63, 107]; // #1b3f6b
-      const rmGreen = [47, 125, 50]; // #2f7d32
-      const scBlue = [0, 114, 206]; // #0072ce
 
-      // Unit crest - centred at top (130px square in mockup)
+      // Unit crest - centred at top, same size as the landscape template
       if (unitCrest) {
         const imgProps = doc.getImageProperties(unitCrest);
-        const width = 34; // Target width in mm
+        const width = 50; // Target width in mm
         const height = imgProps.height * width / imgProps.width; // Maintain aspect ratio
-        doc.addImage(unitCrest, 'JPEG', (pageW - width) / 2, 21, width, height);
+        doc.addImage(unitCrest, 'JPEG', (pageW - width) / 2, 16, width, height);
       }
 
       // Title
       doc.setTextColor(navy[0], navy[1], navy[2]);
       doc.setFont("helvetica", "bold");
       doc.setFontSize(25.5);
-      doc.text("CERTIFICATE OF ACHIEVEMENT", pageW / 2, 71, {
+      doc.text("CERTIFICATE OF ACHIEVEMENT", pageW / 2, 75, {
         align: "center"
       });
 
@@ -6729,65 +6727,28 @@ const AwardsView = ({
       doc.text("Commanding Officer", pageW / 2, 197, {
         align: "center"
       });
-      doc.text(`${unitName} Sea Cadets`, pageW / 2, 203, {
+      doc.text(`${unitName} Sea Cadets`, pageW / 2, 208, {
         align: "center"
       });
 
-      // Footer - RMC block bottom left, SCC block bottom right, unit name
-      // under each. No divider line above the footer.
-      const footerBottom = 281; // 16mm above the bottom edge
-      const unitWords = unitName.toUpperCase().split(' ');
-      const unitLineH = 4;
-      const logoBottom = footerBottom - unitWords.length * unitLineH - 2;
+      // Footer - RMC logo bottom left, SCC logo bottom right, same size as
+      // the landscape template. The logo images already carry the unit name,
+      // so no extra text. No divider line above the footer.
+      const logoBottom = 281; // 16mm above the bottom edge
 
-      // Left: Royal Marines Cadets logo (text fallback if no image stored)
       if (rmcLogo) {
         const imgProps = doc.getImageProperties(rmcLogo);
-        const width = 30;
+        const width = 52.5;
         const height = imgProps.height * width / imgProps.width; // Maintain aspect ratio
         doc.addImage(rmcLogo, 'JPEG', marginX, logoBottom - height, width, height);
-      } else {
-        doc.setTextColor(rmGreen[0], rmGreen[1], rmGreen[2]);
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(15);
-        ["ROYAL", "MARINES", "CADETS"].forEach((word, i) => {
-          doc.text(word, marginX, logoBottom - 4 - (2 - i) * 5.5);
-        });
-        doc.setFontSize(6.75);
-        doc.text("PART OF THE SEA CADETS", marginX, logoBottom);
       }
-      doc.setTextColor(navy[0], navy[1], navy[2]);
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(9);
-      unitWords.forEach((word, i) => {
-        doc.text(word, marginX, footerBottom - (unitWords.length - 1 - i) * unitLineH);
-      });
 
-      // Right: Sea Cadets logo (text fallback if no image stored)
-      const rightX = pageW - marginX;
       if (sccLogo) {
         const imgProps = doc.getImageProperties(sccLogo);
-        const width = 30;
+        const width = 52.5;
         const height = imgProps.height * width / imgProps.width; // Maintain aspect ratio
-        doc.addImage(sccLogo, 'JPEG', rightX - width, logoBottom - height, width, height);
-      } else {
-        doc.setTextColor(scBlue[0], scBlue[1], scBlue[2]);
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(15);
-        ["SEA", "CADETS"].forEach((word, i) => {
-          doc.text(word, rightX, logoBottom - 4 - (1 - i) * 5.5, {
-            align: "right"
-          });
-        });
+        doc.addImage(sccLogo, 'JPEG', pageW - marginX - width, logoBottom - height, width, height);
       }
-      doc.setTextColor(navy[0], navy[1], navy[2]);
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(9);
-      unitWords.forEach((word, i) => {
-        doc.text(word, rightX, footerBottom - (unitWords.length - 1 - i) * unitLineH, {
-          align: "right"
-        });
-      });
     });
     doc.save(`SCC_Certificates_${monthName}.pdf`);
   };

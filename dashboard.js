@@ -6678,7 +6678,7 @@ const AwardsView = ({
       doc.setTextColor(navy[0], navy[1], navy[2]);
       doc.setFont("helvetica", "bold");
       doc.setFontSize(25.5);
-      doc.text("CERTIFICATE OF ACHIEVEMENT", pageW / 2, 75, {
+      doc.text("CERTIFICATE OF ACHIEVEMENT", pageW / 2, 88, {
         align: "center"
       });
 

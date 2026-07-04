@@ -6591,7 +6591,7 @@ const AwardsView = ({
       jsPDF
     } = window.jspdf;
     const doc = new jsPDF({
-      orientation: "landscape",
+      orientation: "portrait",
       unit: "mm",
       format: "a4"
     });
@@ -6657,93 +6657,136 @@ const AwardsView = ({
         middleText = "has been awarded the";
       }
 
-      // --- Certificate Design ---
+      // --- Certificate Design (A4 portrait, 210mm x 297mm) ---
+      // Layout follows certificate_portrait_mockup.html; the mockup's 96dpi
+      // pixel positions are converted to mm (1px = 0.2646mm). Content stays
+      // inside ~18.5mm side margins and ~16mm top/bottom margins so home
+      // printers with unprintable edges don't clip it.
+      const pageW = 210;
+      const marginX = 18.5;
+      const navy = [27, 63, 107]; // #1b3f6b
+      const rmGreen = [47, 125, 50]; // #2f7d32
+      const scBlue = [0, 114, 206]; // #0072ce
 
-      // Add logos if available (maintaining aspect ratios)
-      // Unit Crest - Center top
+      // Unit crest - centred at top (130px square in mockup)
       if (unitCrest) {
         const imgProps = doc.getImageProperties(unitCrest);
-        const width = 50; // Target width in mm
+        const width = 34; // Target width in mm
         const height = imgProps.height * width / imgProps.width; // Maintain aspect ratio
-        doc.addImage(unitCrest, 'JPEG', (297 - width) / 2, 10, width, height);
+        doc.addImage(unitCrest, 'JPEG', (pageW - width) / 2, 21, width, height);
       }
 
-      // RMC Logo - Bottom left corner (50% larger = 52.5mm)
-      if (rmcLogo) {
-        const imgProps = doc.getImageProperties(rmcLogo);
-        const width = 52.5; // 35 * 1.5
-        const height = imgProps.height * width / imgProps.width; // Maintain aspect ratio
-        doc.addImage(rmcLogo, 'JPEG', 10, 210 - height - 10, width, height);
-      }
-
-      // SCC Logo - Bottom right corner (50% larger = 52.5mm)
-      if (sccLogo) {
-        const imgProps = doc.getImageProperties(sccLogo);
-        const width = 52.5; // 35 * 1.5
-        const height = imgProps.height * width / imgProps.width; // Maintain aspect ratio
-        // Nudged 5mm towards the centre line (15mm from the right edge instead
-        // of 10mm) to allow for slight printer paper misfeed.
-        doc.addImage(sccLogo, 'JPEG', 297 - width - 15, 210 - height - 10, width, height);
-      }
-
-      // Header
-      doc.setTextColor(0, 51, 102);
+      // Title
+      doc.setTextColor(navy[0], navy[1], navy[2]);
       doc.setFont("helvetica", "bold");
-      doc.setFontSize(32);
-      doc.text("CERTIFICATE OF ACHIEVEMENT", 148.5, 75, {
+      doc.setFontSize(25.5);
+      doc.text("CERTIFICATE OF ACHIEVEMENT", pageW / 2, 71, {
         align: "center"
       });
 
-      // Subheader
+      // Body block - vertically centred between title and footer
       doc.setFont("helvetica", "normal");
-      doc.setFontSize(16);
-      doc.text("This is to certify that", 148.5, 95, {
+      doc.setFontSize(12.75);
+      doc.text("This is to certify that", pageW / 2, 115, {
         align: "center"
       });
 
       // Name (with rank for awards, without for promotions)
       doc.setFont("helvetica", "bolditalic");
-      doc.setFontSize(28);
-      doc.text(formattedName, 148.5, 110, {
+      doc.setFontSize(24);
+      doc.text(formattedName, pageW / 2, 130, {
         align: "center"
       });
 
       // Middle text (dynamic based on type)
       doc.setFont("helvetica", "normal");
-      doc.setFontSize(16);
-      doc.text(middleText, 148.5, 125, {
+      doc.setFontSize(12.75);
+      doc.text(middleText, pageW / 2, 143, {
         align: "center"
       });
 
       // Award Title
       doc.setFont("helvetica", "bold");
-      doc.setFontSize(24);
+      doc.setFontSize(18);
       // Handle long titles
-      if (awardTitle.length > 30) doc.setFontSize(18);
-      doc.text(awardTitle, 148.5, 140, {
+      if (awardTitle.length > 30) doc.setFontSize(14);
+      doc.text(awardTitle, pageW / 2, 156, {
         align: "center"
       });
 
       // Date
       doc.setFont("helvetica", "normal");
-      doc.setFontSize(14);
-      doc.text(`Awarded on: ${formatDate(item.date)}`, 148.5, 155, {
-        align: "center"
-      });
-
-      // Footer - Signature line centered
       doc.setFontSize(12);
-      doc.text(`Signed: __________________________`, 148.5, 175, {
-        align: "center"
-      });
-      doc.text(`Commanding Officer`, 148.5, 181, {
+      doc.text(`Awarded on: ${formatDate(item.date)}`, pageW / 2, 168, {
         align: "center"
       });
 
-      // Unit name centered at bottom
-      doc.setFontSize(11);
-      doc.text(`${unitName} Sea Cadets`, 148.5, 195, {
+      // Signature block - blank line for physical signing (260px in mockup)
+      doc.setDrawColor(navy[0], navy[1], navy[2]);
+      doc.setLineWidth(0.3);
+      doc.line(pageW / 2 - 34.5, 191, pageW / 2 + 34.5, 191);
+      doc.setFontSize(11.25);
+      doc.text("Commanding Officer", pageW / 2, 197, {
         align: "center"
+      });
+      doc.text(`${unitName} Sea Cadets`, pageW / 2, 203, {
+        align: "center"
+      });
+
+      // Footer - RMC block bottom left, SCC block bottom right, unit name
+      // under each. No divider line above the footer.
+      const footerBottom = 281; // 16mm above the bottom edge
+      const unitWords = unitName.toUpperCase().split(' ');
+      const unitLineH = 4;
+      const logoBottom = footerBottom - unitWords.length * unitLineH - 2;
+
+      // Left: Royal Marines Cadets logo (text fallback if no image stored)
+      if (rmcLogo) {
+        const imgProps = doc.getImageProperties(rmcLogo);
+        const width = 30;
+        const height = imgProps.height * width / imgProps.width; // Maintain aspect ratio
+        doc.addImage(rmcLogo, 'JPEG', marginX, logoBottom - height, width, height);
+      } else {
+        doc.setTextColor(rmGreen[0], rmGreen[1], rmGreen[2]);
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(15);
+        ["ROYAL", "MARINES", "CADETS"].forEach((word, i) => {
+          doc.text(word, marginX, logoBottom - 4 - (2 - i) * 5.5);
+        });
+        doc.setFontSize(6.75);
+        doc.text("PART OF THE SEA CADETS", marginX, logoBottom);
+      }
+      doc.setTextColor(navy[0], navy[1], navy[2]);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(9);
+      unitWords.forEach((word, i) => {
+        doc.text(word, marginX, footerBottom - (unitWords.length - 1 - i) * unitLineH);
+      });
+
+      // Right: Sea Cadets logo (text fallback if no image stored)
+      const rightX = pageW - marginX;
+      if (sccLogo) {
+        const imgProps = doc.getImageProperties(sccLogo);
+        const width = 30;
+        const height = imgProps.height * width / imgProps.width; // Maintain aspect ratio
+        doc.addImage(sccLogo, 'JPEG', rightX - width, logoBottom - height, width, height);
+      } else {
+        doc.setTextColor(scBlue[0], scBlue[1], scBlue[2]);
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(15);
+        ["SEA", "CADETS"].forEach((word, i) => {
+          doc.text(word, rightX, logoBottom - 4 - (1 - i) * 5.5, {
+            align: "right"
+          });
+        });
+      }
+      doc.setTextColor(navy[0], navy[1], navy[2]);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(9);
+      unitWords.forEach((word, i) => {
+        doc.text(word, rightX, footerBottom - (unitWords.length - 1 - i) * unitLineH, {
+          align: "right"
+        });
       });
     });
     doc.save(`SCC_Certificates_${monthName}.pdf`);

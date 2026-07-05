@@ -52,7 +52,7 @@ const checkIsAdmin = async () => {
 // CONSTANTS & DATA
 // ═══════════════════════════════════════════════════════════════════════════
 
-const DATA_VERSION = "2.31-Cloud"; // Junior Focus: abbreviate month in turning-12 box (e.g. Jul 2026)
+const DATA_VERSION = "2.32-Cloud"; // Badge Sheets: SCR 3.2.20 badge entitlement PDF generator
 
 // Badge & Rank Image Maps
 const RANK_IMG_MAP = {
@@ -14744,8 +14744,1273 @@ const AuthWrapper = ({
     value: user
   }, children(user));
 };
+// ═══════════════════════════════════════════════════════════════════════════
+// BADGE ENTITLEMENT SHEETS (SCR 3.2.20)
+// ═══════════════════════════════════════════════════════════════════════════
+// Generates one A4 page per cadet showing the badges they are entitled to
+// wear on uniform, per SCR 3.2.20 (Sea Cadet Corps Uniform Regulations,
+// October 2020). Where the regulation limits how many badges may be worn at
+// once, every badge that could fill a slot is shown with a "choose" note so
+// the person preparing the uniform can decide. This is a kit-planning
+// summary, not a placement guide.
+
+const BS_TYPE_LABELS = {
+  SCC: "Sea Cadet",
+  JSC: "Junior Cadet",
+  RMC: "Royal Marines Cadet"
+};
+// Output order: Sea Cadets, then Juniors, then RMC
+const BS_TYPE_ORDER = ['SCC', 'JSC', 'RMC'];
+const bsCadetType = cadet => {
+  if (!cadet || !cadet.rank) return 'SCC';
+  if (JUNIOR_RANK_ORDER.includes(cadet.rank)) return 'JSC';
+  if (RMC_RANK_ORDER.includes(cadet.rank)) return 'RMC';
+  return 'SCC';
+};
+const bsRankIndex = cadet => {
+  const type = bsCadetType(cadet);
+  const order = type === 'JSC' ? JUNIOR_RANK_ORDER : type === 'RMC' ? RMC_RANK_ORDER : SCC_RANK_ORDER;
+  return order.indexOf(cadet.rank);
+};
+
+// Specialisation ladders. Entries are ordered highest level first; the first
+// entry whose module needles match a held qualification wins the category.
+// Module needles mirror the Cadet Focus hierarchies so both views agree.
+const BS_SPEC_TABLE = {
+  "Seamanship": [{
+    m: ["Seamanship - Advanced"],
+    key: "Seamanship - Advanced",
+    level: 3
+  }, {
+    m: ["Seamanship - Intermediate"],
+    key: "Seamanship - Intermediate",
+    level: 2
+  }, {
+    m: ["Seamanship - Basic"],
+    key: "Seamanship - Basic",
+    level: 1
+  }],
+  "First Aid": [{
+    m: ["FAA Level 3", "Cadet First Aid Advanced", "First Aid - Advanced"],
+    key: "First Aid - Advanced",
+    level: 3
+  }, {
+    m: ["Cadet First Aid Intermediate", "First Aid - Intermediate"],
+    key: "First Aid - Intermediate",
+    level: 2
+  }, {
+    m: ["Cadet First Aid Basic", "First Aid - Basic"],
+    key: "First Aid - Basic",
+    level: 1
+  }],
+  "Marine Engineering": [{
+    m: ["Marine Engineering (Mechanical) - Advanced", "Marine Engineering Mechanical - Advanced"],
+    key: "Marine Engineering Mechanical - Advanced",
+    level: 3
+  }, {
+    m: ["Marine Engineering (Electrical) - Advanced", "Marine Engineering Electrical - Advanced"],
+    key: "Marine Engineering Electrical - Advanced",
+    level: 3
+  }, {
+    m: ["Marine Engineering - Advanced"],
+    key: "Marine Engineering Mechanical - Advanced",
+    level: 3
+  }, {
+    m: ["Marine Engineering - Intermediate"],
+    key: "Marine Engineering - Intermediate",
+    level: 2
+  }, {
+    m: ["Marine Engineering - Basic"],
+    key: "Marine Engineering - Basic",
+    level: 1
+  }],
+  "CIS": [{
+    m: ["CIS Principle Instructor"],
+    key: "CIS Principle Instructor",
+    level: 4
+  }, {
+    m: ["Communication Information Systems - Radio Advanced"],
+    key: "CIS Radio - Advanced",
+    level: 3
+  }, {
+    m: ["CIS Info Sys - Advanced"],
+    key: "CIS Info Sys - Advanced",
+    level: 3
+  }, {
+    m: ["Communication Information Systems - Radio Intermediate"],
+    key: "CIS Radio - Intermediate",
+    level: 2
+  }, {
+    m: ["CIS Info Sys - Intermediate"],
+    key: "CIS Info Sys - Intermediate",
+    level: 2
+  }, {
+    m: ["Communication Information Systems - Radio Basic"],
+    key: "CIS Radio - Basic",
+    level: 1
+  }, {
+    m: ["CIS Info Sys - Basic"],
+    key: "CIS Info Sys - Basic",
+    level: 1
+  }],
+  "Catering": [{
+    m: ["Catering - Advanced"],
+    key: "Catering - Advanced",
+    level: 3
+  }, {
+    m: ["Stewarding - Advanced"],
+    key: "Stewarding - Advanced",
+    level: 3
+  }, {
+    m: ["Intermediate Catering"],
+    key: "Catering - Intermediate",
+    level: 2
+  }, {
+    m: ["Basic Catering"],
+    key: "Catering - Basic",
+    level: 1
+  }, {
+    m: ["Stewarding - Basic"],
+    key: "Stewarding - Basic",
+    level: 1
+  }],
+  "Physical Training": [{
+    m: ["Physical Training - Instructor", "Physical Training (Instructor)"],
+    key: "Physical Training - Instructor",
+    level: 4
+  }, {
+    m: ["Physical Training - Advanced"],
+    key: "Physical Training - Advanced",
+    level: 3
+  }, {
+    m: ["Physical Training - Intermediate"],
+    key: "Physical Training - Intermediate",
+    level: 2
+  }, {
+    m: ["Physical Training - Basic"],
+    key: "Physical Training - Basic",
+    level: 1
+  }],
+  "Drill": [{
+    m: ["Drill - Advanced", "Drill Advanced"],
+    key: "Drill - Advanced",
+    level: 3
+  }, {
+    m: ["Drill - Intermediate", "Drill Intermediate"],
+    key: "Drill - Intermediate",
+    level: 2
+  }]
+};
+
+// Non-waterborne proficiency badges. Hierarchical categories keep only the
+// highest badge held (first match wins); `all: true` categories are parallel
+// badges that are each shown when held. `level` ranks badges across
+// categories when filling the two proficiency slots.
+const BS_PROF_TABLE = {
+  "Campcraft": {
+    entries: [{
+      m: ["Campcraft (Advanced)"],
+      key: "Campcraft (Advanced)",
+      level: 3
+    }, {
+      m: ["Campcraft (Intermediate)"],
+      key: "Campcraft (Intermediate)",
+      level: 2
+    }, {
+      m: ["Adv Trg - Basic Campcraft", "Campcraft (Basic)"],
+      key: "Campcraft (Basic)",
+      level: 1
+    }]
+  },
+  "Climbing": {
+    entries: [{
+      m: ["Climbing (Advanced)"],
+      key: "Climbing (Advanced)",
+      level: 3
+    }, {
+      m: ["Climbing (Intermediate)"],
+      key: "Climbing (Intermediate)",
+      level: 2
+    }, {
+      m: ["Climbing (Basic)"],
+      key: "Climbing (Basic)",
+      level: 1
+    }]
+  },
+  "Mountain Biking": {
+    entries: [{
+      m: ["Mountain Biking (Advanced)", "Mountain Biking Advanced"],
+      key: "Mountain Biking (Advanced)",
+      level: 3
+    }, {
+      m: ["Mountain Biking (Intermediate)", "Mountain Biking Intermediate"],
+      key: "Mountain Biking (Intermediate)",
+      level: 2
+    }, {
+      m: ["Mountain Biking (Basic)", "Mountain Biking Basic"],
+      key: "Mountain Biking (Basic)",
+      level: 1
+    }]
+  },
+  "Shooting": {
+    entries: [{
+      m: ["Full Bore Marksman"],
+      key: "Full Bore Marksman",
+      level: 3
+    }, {
+      m: ["Full Bore Advanced"],
+      key: "Full Bore Advanced",
+      level: 2
+    }, {
+      m: ["Full Bore Basic"],
+      key: "Full Bore Basic",
+      level: 1
+    }, {
+      m: ["Small Bore Marksman"],
+      key: "Small Bore Marksman",
+      level: 3
+    }, {
+      m: ["Small Bore Advanced"],
+      key: "Small Bore Advanced",
+      level: 2
+    }, {
+      m: ["Small Bore Basic"],
+      key: "Small Bore Basic",
+      level: 1
+    }, {
+      m: ["Air Rifle Marksman"],
+      key: "Air Rifle Marksman",
+      level: 3
+    }, {
+      m: ["Air Rifle Advanced"],
+      key: "Air Rifle Advanced",
+      level: 2
+    }, {
+      m: ["Air Rifle Basic"],
+      key: "Air Rifle Basic",
+      level: 1
+    }]
+  },
+  "Piping": {
+    entries: [{
+      m: ["Piping Proficiency"],
+      key: "Piping Proficiency",
+      level: 2
+    }, {
+      m: ["Piping Basic", "Piping - Basic"],
+      key: "Piping Basic",
+      level: 1
+    }]
+  },
+  "Music": {
+    all: true,
+    entries: [{
+      m: ["Band - Bugling Proficiency", "Bugler"],
+      key: "Bugler",
+      level: 1
+    }, {
+      m: ["Band - Band Proficiency", "Musician"],
+      key: "Musician",
+      level: 1
+    }, {
+      m: ["Band - Drumming Proficiency", "Drummer"],
+      key: "Drummer",
+      level: 1
+    }]
+  },
+  "Communications": {
+    all: true,
+    entries: [{
+      m: ["Radio Amateur"],
+      key: "Radio Amateur",
+      level: 1
+    }, {
+      m: ["Morse Code"],
+      key: "Morse Code",
+      level: 1
+    }, {
+      m: ["Semaphore"],
+      key: "Semaphore",
+      level: 1
+    }]
+  },
+  "Meteorology": {
+    entries: [{
+      m: ["Meteorology", "Met - Proficiency"],
+      key: "Meteorology",
+      level: 1
+    }]
+  },
+  "Diving": {
+    entries: [{
+      m: ["Diving (Cadet)"],
+      key: "Diving (Cadet)",
+      level: 1
+    }]
+  }
+};
+
+// Waterborne proficiency badges, one badge per discipline (highest held).
+// SCR 3.2.20 gives waterborne badges no levels, so across disciplines they
+// are unranked. "__PSRC__" is a special needle matched by bsWbMatch.
+const BS_WATERBORNE_TABLE = {
+  "Rowing": [{
+    m: ["SCC Rowing Instructor", "Rowing Instructor"],
+    key: "Rowing Instructor"
+  }, {
+    m: ["Rowing Coxswain", "SCC Row Coxswain Module", "Rowing - SCC Coxswain", "SCC Coxswain"],
+    key: "Rowing Coxswain"
+  }, {
+    m: ["SCC Row 3", "Rowing Supervised Coxswain", "SCC Supervised Cox"],
+    key: "Rowing Supervised Coxswain"
+  }, {
+    m: ["Rowing Competent Crew", "SCC Competent Crew"],
+    key: "Rowing Competent Crew"
+  }],
+  "Paddlesport": [{
+    m: ["Paddlesport Instructor"],
+    key: "Paddlesport Instructor"
+  }, {
+    m: ["Paddle Discipline Specific"],
+    key: "Paddle Discipline Specific"
+  }, {
+    m: ["__PSRC__"],
+    key: "Paddle FSRT/PSRC"
+  }, {
+    m: ["Paddle Explore Award"],
+    key: "Paddle Explore Award"
+  }, {
+    m: ["Paddle Discover Award"],
+    key: "Paddle Discover Award"
+  }],
+  "Sailing": [{
+    m: ["Dinghy Instructor", "RYA Dinghy Instructor", "Dinghy - RYA Instructor"],
+    key: "Dinghy Instructor"
+  }, {
+    m: ["Spinnakers"],
+    key: "Sailing with Spinnakers"
+  }, {
+    m: ["Seamanship Skills"],
+    key: "Seamanship Skills"
+  }, {
+    m: ["Start Racing"],
+    key: "Start Racing"
+  }, {
+    m: ["Performance Sailing"],
+    key: "Performance Sailing"
+  }, {
+    m: ["Day Sailing"],
+    key: "Day Sailing"
+  }, {
+    m: ["Sailing Stage 4", "Sail - RYA YSS Stage 4"],
+    key: "Sailing Stage 4 / Level 3"
+  }, {
+    m: ["Sailing Stage 3", "Sail - RYA YSS Stage 3"],
+    key: "Sailing Stage 3 / Level 2"
+  }, {
+    m: ["Sailing Stage 2", "Sail - RYA YSS Stage 2"],
+    key: "Sailing Stage 2 / Level 1"
+  }],
+  "Windsurfing": [{
+    m: ["Start Windsurfing Instructor"],
+    key: "Windsurfing Instructor"
+  }, {
+    m: ["YouthWS - Stage 4", "Windsurfing Stage 4"],
+    key: "Windsurfing Stage 4"
+  }, {
+    m: ["YouthWS - Stage 3", "Windsurfing Stage 3"],
+    key: "Windsurfing Stage 3"
+  }, {
+    m: ["YouthWS - Stage 2", "Windsurfing Stage 2"],
+    key: "Windsurfing Stage 2"
+  }, {
+    m: ["YouthWS - Stage 1", "Windsurfing Stage 1"],
+    key: "Windsurfing Stage 1"
+  }],
+  "Powerboat": [{
+    m: ["Powerboat Instructor"],
+    key: "Powerboat Instructor"
+  }, {
+    m: ["Powerboat Intermediate"],
+    key: "RYA Powerboat Intermediate"
+  }, {
+    m: ["Safety Boat"],
+    key: "RYA Safety Boat"
+  }, {
+    m: ["Powerboat Level 2"],
+    key: "RYA Powerboat Level 2"
+  }, {
+    m: ["Powerboat Level 1"],
+    key: "RYA Powerboat Level 1"
+  }],
+  "Offshore Power": [{
+    m: ["Power Watch Leader"],
+    key: "Offshore Power Watch Leader"
+  }, {
+    m: ["Power Seaman"],
+    key: "Offshore Power Seaman"
+  }, {
+    m: ["Power Grade 2"],
+    key: "Offshore Power Grade 2"
+  }, {
+    m: ["Power Grade 1"],
+    key: "Offshore Power Grade 1"
+  }],
+  "Offshore Sailing": [{
+    m: ["Sail Watch Leader"],
+    key: "Offshore Sailing Watch Leader"
+  }, {
+    m: ["Sail Seaman"],
+    key: "Offshore Sailing Seaman"
+  }, {
+    m: ["Sail Grade 2"],
+    key: "Offshore Sailing Grade 2"
+  }, {
+    m: ["Sail Grade 1"],
+    key: "Offshore Sailing Grade 1"
+  }]
+};
+
+// Junior Sea Cadet badges (Junior Badges Chart)
+const BS_JSC_BADGES = [{
+  m: ["Red Unit Activities", "JSC Red"],
+  name: "Red (Unit) Activities",
+  key: "SCC - JSC Red Unit Activities Badge"
+}, {
+  m: ["Blue Waterborne", "JSC Blue"],
+  name: "Blue (Waterborne) Activities",
+  key: "SCC - JSC Blue Waterborne Activities Badge"
+}, {
+  m: ["Green Outdoor", "JSC Green"],
+  name: "Green (Outdoor) Activities",
+  key: "SCC - JSC Green Outdoor & Recreation Activities Badge"
+}, {
+  m: ["Yellow Community", "JSC Yellow"],
+  name: "Yellow (Community) Activities",
+  key: "SCC - JSC Yellow Community & Citizenship Activities Badge"
+}, {
+  m: ["JSC STEM", "STEM Unit Activities Badge"],
+  name: "STEM Award",
+  key: "SCC - JSC STEM Unit Activities Badge"
+}];
+const BS_JSC_WATERBORNE = [{
+  m: ["Rowing Coxswain", "Row Coxswain", "SCC Coxswain"],
+  name: "Rowing Coxswain",
+  key: "Rowing Coxswain"
+}, {
+  m: ["Row 3", "Rowing Supervised Coxswain", "Supervised Cox"],
+  name: "Rowing Supervised Coxswain",
+  key: "Rowing Supervised Coxswain"
+}, {
+  m: ["Go Row 2", "Rowing Competent Crew", "Competent Crew"],
+  name: "Rowing Competent Crew",
+  key: "Rowing Competent Crew"
+}, {
+  m: ["Paddle Explore"],
+  name: "Paddle Explore Award",
+  key: "Paddle Explore Award"
+}, {
+  m: ["Paddle Discover"],
+  name: "Paddle Discover Award",
+  key: "Paddle Discover Award"
+}, {
+  m: ["YSS Stage 4", "Sailing Stage 4"],
+  name: "Sailing Stage 4",
+  key: "Sailing Stage 4 / Level 3"
+}, {
+  m: ["YSS Stage 3", "Sailing Stage 3"],
+  name: "Sailing Stage 3",
+  key: "Sailing Stage 3 / Level 2"
+}, {
+  m: ["YSS Stage 2", "Sailing Stage 2"],
+  name: "Sailing Stage 2",
+  key: "Sailing Stage 2 / Level 1"
+}, {
+  m: ["Powerboat Level 2"],
+  name: "RYA Powerboat Level 2",
+  key: "RYA Powerboat Level 2"
+}, {
+  m: ["Powerboat Level 1"],
+  name: "RYA Powerboat Level 1",
+  key: "RYA Powerboat Level 1"
+}];
+
+const bsWbMatch = (q, needle) => {
+  if (needle === "__PSRC__") {
+    const m = q.module.toLowerCase();
+    return m.includes("psrc") || m.includes("fsrt") || m.includes("safety & rescue") || m.includes("safety and rescue");
+  }
+  if (needle.includes("Powerboat Instructor")) {
+    return q.module.includes("Powerboat Instructor") && !q.module.includes("Pre-Entry");
+  }
+  return q.module.includes(needle);
+};
+const bsFirstMatch = (quals, entries) => {
+  for (const entry of entries) {
+    if (quals.some(q => entry.m.some(n => q.module.includes(n)))) return entry;
+  }
+  return null;
+};
+
+// Fill `slots` badge slots from candidates ranked by level. If badges tie at
+// the qualifying level, all tied badges are shown so there is a choice.
+const bsPickTop = (candidates, slots) => {
+  const sorted = [...candidates].sort((a, b) => b.level - a.level || a.name.localeCompare(b.name));
+  if (sorted.length <= slots) return {
+    shown: sorted,
+    chooseCount: 0,
+    tiedCount: 0
+  };
+  const cutoff = sorted[slots - 1].level;
+  const shown = sorted.filter(b => b.level >= cutoff);
+  if (shown.length <= slots) return {
+    shown,
+    chooseCount: 0,
+    tiedCount: 0
+  };
+  const definite = shown.filter(b => b.level > cutoff).length;
+  return {
+    shown,
+    chooseCount: slots - definite,
+    tiedCount: shown.length - definite
+  };
+};
+const bsChooseWord = n => n === 1 ? "one" : n === 2 ? "two" : String(n);
+
+// Compute the full badge entitlement for one cadet from their qualifications.
+const bsComputeEntitlement = (cadet, allQuals) => {
+  const type = bsCadetType(cadet);
+  const quals = allQuals.filter(q => q.pNumber === cadet.pNumber && q.module && (!q.result || !COX_NON_PASS_RESULTS.includes(String(q.result).trim().toLowerCase())));
+  const ageVal = cadet.dob ? calculateAge(cadet.dob) : "Unknown";
+  const age = ageVal === "Unknown" ? null : ageVal;
+  const has = needle => quals.some(q => q.module.includes(needle));
+  const badge = (name, key) => ({
+    name,
+    file: BADGE_MAP[key] || null
+  });
+
+  // ── Specialisations (Sea Cadets & RMC; not Juniors) ──
+  const specCandidates = [];
+  if (type !== 'JSC') {
+    Object.values(BS_SPEC_TABLE).forEach(entries => {
+      const entry = bsFirstMatch(quals, entries);
+      if (entry) specCandidates.push({
+        name: entry.key,
+        file: BADGE_MAP[entry.key] || null,
+        level: entry.level
+      });
+    });
+  }
+  let specs = null;
+  if (specCandidates.length > 0) {
+    if (type === 'RMC') {
+      // RMC wear exactly one specialisation badge — no choice is offered.
+      const sorted = [...specCandidates].sort((a, b) => b.level - a.level || a.name.localeCompare(b.name));
+      const tied = sorted.filter(s => s.level === sorted[0].level);
+      specs = {
+        badges: [sorted[0]],
+        note: null,
+        flag: tied.length > 1 ? `Also holds ${tied.slice(1).map(s => s.name).join(', ')} at the same level. RMC wear only one specialisation badge (SCR 3.2.20 para 4.2.7.b) — the first alphabetically is shown; confirm which badge the cadet should wear.` : null
+      };
+    } else {
+      const maxLevel = Math.max(...specCandidates.map(s => s.level));
+      const shown = specCandidates.filter(s => s.level === maxLevel);
+      specs = {
+        badges: shown,
+        note: shown.length > 1 ? "Choose one — only one specialisation badge is worn at a time." : null,
+        flag: null
+      };
+    }
+  }
+
+  // ── Proficiency badge candidates (non-waterborne) ──
+  const profCandidates = [];
+  if (type !== 'JSC') {
+    Object.values(BS_PROF_TABLE).forEach(cat => {
+      if (cat.all) {
+        cat.entries.forEach(entry => {
+          if (quals.some(q => entry.m.some(n => q.module.includes(n)))) profCandidates.push({
+            name: entry.key,
+            file: BADGE_MAP[entry.key] || null,
+            level: entry.level
+          });
+        });
+      } else {
+        const entry = bsFirstMatch(quals, cat.entries);
+        if (entry) profCandidates.push({
+          name: entry.key,
+          file: BADGE_MAP[entry.key] || null,
+          level: entry.level
+        });
+      }
+    });
+  }
+
+  // ── Waterborne badge candidates (one per discipline) ──
+  const wbCandidates = [];
+  let coxBadge = null;
+  if (type !== 'JSC') {
+    Object.values(BS_WATERBORNE_TABLE).forEach(entries => {
+      for (const entry of entries) {
+        if (quals.some(q => entry.m.some(n => bsWbMatch(q, n)))) {
+          wbCandidates.push({
+            name: entry.key,
+            file: BADGE_MAP[entry.key] || null,
+            level: 1
+          });
+          break;
+        }
+      }
+    });
+    const cox = evaluateCoxswain(quals);
+    if (cox.hasMasterAward) coxBadge = {
+      name: "Master Coxswain",
+      file: BADGE_MAP["Master Coxswain"],
+      level: 3
+    };else if (cox.hasCoxAward) coxBadge = {
+      name: "Coxswain",
+      file: BADGE_MAP["Cadet Coxswain"],
+      level: 2
+    };
+  }
+
+  // Proficiency badges held, for the Commodore's Pennant cut-off
+  const profBadgeCount = profCandidates.length + wbCandidates.length + (coxBadge ? 1 : 0);
+
+  // ── Good Conduct Badge (highest earned only) ──
+  let gcb = null;
+  if (type !== 'JSC') {
+    const gcbLevel = has("3rd Good Conduct Badge") ? 3 : has("2nd Good Conduct Badge") ? 2 : has("1st Good Conduct Badge") ? 1 : 0;
+    if (gcbLevel > 0) {
+      const ordinal = gcbLevel === 1 ? "1st" : gcbLevel === 2 ? "2nd" : "3rd";
+      if (type === 'RMC') {
+        // GCB is removed on promotion to Cadet Lance Corporal — only worn
+        // below Junior NCO level.
+        if (cadet.rank === 'Recruit' || cadet.rank === 'Marine Cadet') gcb = {
+          name: `${ordinal} Good Conduct Badge`,
+          file: `rmc_good_conduct_${gcbLevel}yr.webp`
+        };
+      } else {
+        gcb = {
+          name: `${ordinal} Good Conduct Badge`,
+          file: cadet.rank === 'Petty Officer Cadet' ? `scc_poc_good_conduct_${gcbLevel}yr.webp` : `scc_cadet_good_conduct_${gcbLevel}yr.webp`
+        };
+      }
+    }
+  }
+
+  // ── Commodore's Pennant ──
+  // SCR 3.2.20: worn until 24 months after turning 12 or until two
+  // proficiency badges are held, whichever comes first — and two or more
+  // proficiency badges end the entitlement even if the pennant was
+  // previously awarded. That override means the badge count alone decides:
+  // with fewer than two proficiency badges the pennant is still worn.
+  let pennant = null;
+  if (has("Pennant") && profBadgeCount < 2) {
+    pennant = {
+      name: "Commodore's Pennant",
+      file: BADGE_MAP["Commodore's Broad Pennant"]
+    };
+  }
+
+  // ── Duke of Edinburgh's Award (highest level only; not Juniors) ──
+  let dofe = null;
+  if (type !== 'JSC') {
+    const hasDofE = word => quals.some(q => {
+      const m = q.module.toLowerCase();
+      return m.includes("dofe") && m.includes(word);
+    });
+    const lvl = hasDofE("gold") ? "Gold" : hasDofE("silver") ? "Silver" : hasDofE("bronze") ? "Bronze" : null;
+    if (lvl) dofe = {
+      name: `DofE ${lvl}`,
+      file: BADGE_MAP[`DofE ${lvl}`],
+      note: type === 'RMC' ? "DofE is worn on the right arm and does not take a left-arm badge slot." : null
+    };
+  }
+
+  // ── Slot allocation ──
+  let profs = null,
+    waterborne = null,
+    rmcPool = null;
+  if (type === 'SCC') {
+    if (profCandidates.length > 0) {
+      const picked = bsPickTop(profCandidates, 2);
+      profs = {
+        badges: picked.shown,
+        note: picked.chooseCount > 0 ? `${picked.tiedCount} badges tie at the qualifying level — choose ${bsChooseWord(picked.chooseCount)} of them.` : null
+      };
+    }
+    if (coxBadge || wbCandidates.length > 0) {
+      let badges, note = null;
+      if (coxBadge) {
+        // Master Coxswain / Coxswain always takes one of the two slots
+        badges = [coxBadge, ...wbCandidates];
+        if (wbCandidates.length > 1) note = `The ${coxBadge.name} badge always takes one of the two waterborne slots — choose one of the other ${wbCandidates.length} badges to wear alongside it.`;
+      } else {
+        badges = wbCandidates;
+        if (wbCandidates.length > 2) note = "Waterborne badges are unranked, so all held are shown — choose two.";
+      }
+      waterborne = {
+        badges,
+        note
+      };
+    }
+  } else if (type === 'RMC') {
+    // SCR 3.2.20 para 4.2.7.b: RMC proficiency and waterborne badges sit in
+    // one pool (gold on black, lower left arm) — one badge if a
+    // specialisation badge is worn, two if not.
+    const pool = [...profCandidates, ...wbCandidates];
+    if (coxBadge) pool.push(coxBadge);
+    if (pool.length > 0) {
+      const slots = specs ? 1 : 2;
+      const picked = bsPickTop(pool, slots);
+      let note = specs ? "One badge slot: a specialisation badge is worn, so only one proficiency/waterborne badge may be worn with it." : "Two badge slots: no specialisation badge held.";
+      if (picked.chooseCount > 0) note += ` ${picked.tiedCount} badges tie at the qualifying level — choose ${bsChooseWord(picked.chooseCount)} of them.`;
+      rmcPool = {
+        badges: picked.shown,
+        note
+      };
+    }
+  }
+
+  // ── Junior badges (Junior Badges Chart) ──
+  let juniorBadges = null;
+  if (type === 'JSC') {
+    const badges = [];
+    BS_JSC_BADGES.concat(BS_JSC_WATERBORNE).forEach(b => {
+      if (quals.some(q => b.m.some(n => q.module.includes(n)))) badges.push({
+        name: b.name,
+        file: BADGE_MAP[b.key] || null
+      });
+    });
+    if (badges.length > 0) juniorBadges = {
+      badges
+    };
+  }
+
+  // ── Appointments & aviation wings ──
+  const appointments = [];
+  let appointmentNote = null;
+  if (has("First Sea Lord")) appointments.push(badge("First Sea Lord's Cadet", "First Sea Lord's Cadet"));
+  const hasLL = has("Lord Lieutenant");
+  const hasMayor = quals.some(q => q.module.includes("Mayor") && !q.module.includes("Lieutenant"));
+  if (hasLL) {
+    appointments.push(badge("Lord Lieutenant's Cadet", "Lord Lieutenant's Cadet"));
+    if (hasMayor) appointmentNote = "The Mayor's Cadet badge is not worn while the Lord Lieutenant's appointment is current.";
+  } else if (hasMayor) {
+    appointments.push(badge("Lord Mayor's / Mayor's Cadet", "Lord Mayor's Cadet"));
+  }
+  const wingsLvl = has("Gold Wings") ? "Gold" : has("Silver Wings") ? "Silver" : has("Bronze Wings") ? "Bronze" : has("Aviation Wings") || has("Wings (Standard)") ? "Standard" : null;
+  if (wingsLvl) appointments.push(wingsLvl === "Standard" ? badge("Aviation Wings", "Aviation Wings (Standard)") : badge(`Aviation ${wingsLvl} Wings`, `Aviation ${wingsLvl} Wings`));
+  const rankImgEntry = RANK_IMG_MAP[cadet.rank];
+  return {
+    type,
+    typeLabel: BS_TYPE_LABELS[type],
+    age,
+    rankImg: rankImgEntry ? rankImgEntry.sleeve || rankImgEntry.slide || null : null,
+    rankImgCount: rankImgEntry && rankImgEntry.count ? rankImgEntry.count : 1,
+    gcb,
+    pennant,
+    dofe,
+    specs,
+    profs,
+    waterborne,
+    rmcPool,
+    juniorBadges,
+    appointments: appointments.length > 0 ? {
+      badges: appointments,
+      note: appointmentNote
+    } : null
+  };
+};
+
+// ── PDF rendering ──────────────────────────────────────────────────────────
+// jsPDF cannot embed webp, so each badge image is drawn onto a white-filled
+// canvas (downscaled to keep the PDF small) and converted to a JPEG data URL
+// once, then cached for the session.
+const bsImageCache = {};
+const bsLoadImage = filename => new Promise(resolve => {
+  if (!filename) return resolve(null);
+  if (bsImageCache[filename] !== undefined) return resolve(bsImageCache[filename]);
+  const img = new Image();
+  img.onload = () => {
+    try {
+      const scale = Math.min(1, 400 / Math.max(img.naturalWidth, img.naturalHeight));
+      const w = Math.max(1, Math.round(img.naturalWidth * scale));
+      const h = Math.max(1, Math.round(img.naturalHeight * scale));
+      const canvas = document.createElement('canvas');
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, w, h);
+      ctx.drawImage(img, 0, 0, w, h);
+      bsImageCache[filename] = {
+        dataUrl: canvas.toDataURL('image/jpeg', 0.9),
+        w,
+        h
+      };
+    } catch (e) {
+      bsImageCache[filename] = null;
+    }
+    resolve(bsImageCache[filename]);
+  };
+  img.onerror = () => {
+    bsImageCache[filename] = null;
+    resolve(null);
+  };
+  img.src = `media/${filename}`;
+});
+const bsEntitlementFiles = ent => {
+  const files = [];
+  if (ent.rankImg) files.push(ent.rankImg);
+  [ent.gcb, ent.pennant, ent.dofe].forEach(b => {
+    if (b && b.file) files.push(b.file);
+  });
+  [ent.specs, ent.profs, ent.waterborne, ent.rmcPool, ent.juniorBadges, ent.appointments].forEach(section => {
+    if (section) section.badges.forEach(b => {
+      if (b.file) files.push(b.file);
+    });
+  });
+  return files;
+};
+const bsSanitize = s => String(s || '').replace(/[^A-Za-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+// jsPDF's built-in fonts are WinAnsi-only; em/en dashes come out garbled
+const bsPdfText = s => String(s).replace(/[–—]/g, '-');
+const bsSheetFilename = item => `${bsSanitize(item.ent.typeLabel)}_${bsSanitize(item.cadet.rank)}_${bsSanitize(item.cadet.name)}.pdf`;
+
+// Draw one cadet's A4 badge entitlement sheet onto the current page.
+const bsDrawSheet = (doc, cadet, ent, unitName) => {
+  const pageW = 210,
+    pageH = 297,
+    margin = 12;
+  const contentW = pageW - margin * 2;
+  const slate = [71, 85, 105],
+    navy = [30, 58, 138],
+    amber = [180, 83, 9];
+  let y = margin + 3;
+  const drawFooter = () => {
+    doc.setDrawColor(203, 213, 225);
+    doc.line(margin, pageH - 12, pageW - margin, pageH - 12);
+    doc.setFont('helvetica', 'italic');
+    doc.setFontSize(7);
+    doc.setTextColor(100, 116, 139);
+    doc.text("Badge entitlement summary. Refer to SCR 3.2.20 for exact positioning and wear.", margin, pageH - 8);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Generated ${new Date().toLocaleDateString('en-GB')}`, pageW - margin, pageH - 8, {
+      align: 'right'
+    });
+    doc.setTextColor(0, 0, 0);
+  };
+  drawFooter();
+  const checkPage = needed => {
+    if (y + needed > pageH - 16) {
+      doc.addPage();
+      drawFooter();
+      doc.setFont('helvetica', 'italic');
+      doc.setFontSize(8);
+      doc.setTextColor(100, 116, 139);
+      doc.text(`${cadet.name} — continued`, margin, margin + 2);
+      doc.setTextColor(0, 0, 0);
+      y = margin + 8;
+    }
+  };
+
+  // Header: unit line, then name + rank with the rank badge alongside
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8);
+  doc.setTextColor(slate[0], slate[1], slate[2]);
+  doc.text(unitName || '', margin, y);
+  doc.text("Badge Entitlement Sheet", pageW - margin, y, {
+    align: 'right'
+  });
+  y += 3;
+  doc.setDrawColor(30, 58, 138);
+  doc.setLineWidth(0.6);
+  doc.line(margin, y, pageW - margin, y);
+  doc.setLineWidth(0.2);
+  y += 8;
+  const rankImgData = ent.rankImg ? bsImageCache[ent.rankImg] : null;
+  const headerImgW = 24;
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(16);
+  doc.setTextColor(navy[0], navy[1], navy[2]);
+  doc.text(cadet.name, margin, y);
+  y += 6;
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(10);
+  doc.setTextColor(slate[0], slate[1], slate[2]);
+  doc.text(`${cadet.rank} - ${ent.typeLabel}`, margin, y);
+  y += 4;
+  doc.setFontSize(8);
+  const detail = [cadet.pNumber ? `P/No ${cadet.pNumberDisplay || cadet.pNumber}` : null, ent.age !== null ? `Age ${ent.age}` : null].filter(Boolean).join('   |   ');
+  if (detail) {
+    doc.text(detail, margin, y);
+    y += 4;
+  }
+  if (rankImgData) {
+    const scale = Math.min(headerImgW / rankImgData.w, 18 / rankImgData.h);
+    const w = rankImgData.w * scale,
+      h = rankImgData.h * scale;
+    doc.addImage(rankImgData.dataUrl, 'JPEG', pageW - margin - headerImgW + (headerImgW - w) / 2, margin + 8, w, h);
+    if (ent.rankImgCount > 1) {
+      doc.setFontSize(7);
+      doc.text(`x${ent.rankImgCount}`, pageW - margin, margin + 10 + h, {
+        align: 'right'
+      });
+    }
+  }
+  y += 2;
+  doc.setTextColor(0, 0, 0);
+
+  // Badge tile grid helper
+  const tileW = 27,
+    tileImgH = 20,
+    tileH = 31,
+    gap = 4;
+  const perRow = Math.floor((contentW + gap) / (tileW + gap));
+  const drawBadges = badges => {
+    const rows = Math.ceil(badges.length / perRow);
+    checkPage(rows * tileH + 4);
+    badges.forEach((b, i) => {
+      const x = margin + i % perRow * (tileW + gap);
+      const ty = y + Math.floor(i / perRow) * tileH;
+      const imgData = b.file ? bsImageCache[b.file] : null;
+      if (imgData) {
+        const scale = Math.min(tileW / imgData.w, tileImgH / imgData.h);
+        const w = imgData.w * scale,
+          h = imgData.h * scale;
+        doc.addImage(imgData.dataUrl, 'JPEG', x + (tileW - w) / 2, ty + (tileImgH - h) / 2, w, h);
+      } else {
+        doc.setDrawColor(203, 213, 225);
+        doc.rect(x + 4, ty + 2, tileW - 8, tileImgH - 4);
+        doc.setFont('helvetica', 'italic');
+        doc.setFontSize(6);
+        doc.setTextColor(148, 163, 184);
+        doc.text("no image", x + tileW / 2, ty + tileImgH / 2, {
+          align: 'center'
+        });
+        doc.setTextColor(0, 0, 0);
+      }
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(6.5);
+      doc.setTextColor(30, 41, 59);
+      const lines = doc.splitTextToSize(b.name, tileW).slice(0, 3);
+      lines.forEach((line, li) => doc.text(line, x + tileW / 2, ty + tileImgH + 2.5 + li * 2.6, {
+        align: 'center'
+      }));
+      doc.setTextColor(0, 0, 0);
+    });
+    y += rows * tileH + 1;
+  };
+  const drawNote = (text, colour) => {
+    if (!text) return;
+    checkPage(8);
+    doc.setFont('helvetica', 'italic');
+    doc.setFontSize(7);
+    const c = colour || slate;
+    doc.setTextColor(c[0], c[1], c[2]);
+    const lines = doc.splitTextToSize(bsPdfText(text), contentW);
+    lines.forEach(line => {
+      doc.text(line, margin, y);
+      y += 3;
+    });
+    doc.setTextColor(0, 0, 0);
+    y += 1;
+  };
+  const drawSection = (title, section) => {
+    if (!section || !section.badges || section.badges.length === 0) return;
+    checkPage(tileH + 12);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8);
+    doc.setTextColor(255, 255, 255);
+    doc.setFillColor(30, 58, 138);
+    doc.rect(margin, y, contentW, 5.5, 'F');
+    doc.text(title.toUpperCase(), margin + 2, y + 3.8);
+    doc.setTextColor(0, 0, 0);
+    y += 8.5;
+    drawBadges(section.badges);
+    drawNote(section.note);
+    drawNote(section.flag, amber);
+    y += 2;
+  };
+
+  // Row of GCB / Commodore's Pennant / DofE
+  const awardsRow = [ent.gcb, ent.pennant, ent.dofe].filter(Boolean);
+  drawSection("Good Conduct, Pennant & DofE", awardsRow.length > 0 ? {
+    badges: awardsRow,
+    note: ent.dofe && ent.dofe.note ? ent.dofe.note : null
+  } : null);
+  if (ent.type === 'JSC') {
+    drawSection("Junior Activity & Proficiency Badges", ent.juniorBadges);
+  } else if (ent.type === 'RMC') {
+    drawSection("Specialisation Badge", ent.specs);
+    drawSection("Proficiency & Waterborne Badges (combined)", ent.rmcPool);
+  } else {
+    drawSection("Specialisation Badges", ent.specs);
+    drawSection("Proficiency Badges (top two)", ent.profs);
+    drawSection("Waterborne Proficiency Badges (top two)", ent.waterborne);
+  }
+  drawSection("Appointments & Aviation Wings", ent.appointments);
+  const hasAnyBadges = awardsRow.length > 0 || ent.specs || ent.profs || ent.waterborne || ent.rmcPool || ent.juniorBadges || ent.appointments;
+  if (!hasAnyBadges) {
+    doc.setFont('helvetica', 'italic');
+    doc.setFontSize(10);
+    doc.setTextColor(100, 116, 139);
+    doc.text("No badge entitlements recorded beyond rank.", margin, y + 6);
+    doc.setTextColor(0, 0, 0);
+  }
+};
+const bsSortItems = items => [...items].sort((a, b) => {
+  const t = BS_TYPE_ORDER.indexOf(a.ent.type) - BS_TYPE_ORDER.indexOf(b.ent.type);
+  if (t !== 0) return t;
+  const r = bsRankIndex(b.cadet) - bsRankIndex(a.cadet);
+  if (r !== 0) return r;
+  return a.cadet.name.localeCompare(b.cadet.name);
+});
+const bsGeneratePdfs = async (items, mode, unitName) => {
+  const files = new Set();
+  items.forEach(item => bsEntitlementFiles(item.ent).forEach(f => files.add(f)));
+  await Promise.all([...files].map(bsLoadImage));
+  const {
+    jsPDF
+  } = window.jspdf;
+  if (mode === 'combined') {
+    const doc = new jsPDF({
+      orientation: 'portrait',
+      unit: 'mm',
+      format: 'a4'
+    });
+    items.forEach((item, i) => {
+      if (i > 0) doc.addPage();
+      bsDrawSheet(doc, item.cadet, item.ent, unitName);
+    });
+    doc.save(`Badge_Entitlement_Sheets_${new Date().toISOString().slice(0, 10)}.pdf`);
+  } else {
+    for (const item of items) {
+      const doc = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4'
+      });
+      bsDrawSheet(doc, item.cadet, item.ent, unitName);
+      doc.save(bsSheetFilename(item));
+      // Stagger saves so the browser doesn't swallow rapid downloads
+      await new Promise(r => setTimeout(r, 400));
+    }
+  }
+};
+
+// ── Badge Sheets view ──────────────────────────────────────────────────────
+const BadgeSheetsView = ({
+  personnel,
+  qualsData
+}) => {
+  const cadets = useMemo(() => personnel.filter(isCadet), [personnel]);
+  const items = useMemo(() => bsSortItems(cadets.map(c => ({
+    cadet: c,
+    ent: bsComputeEntitlement(c, qualsData)
+  }))), [cadets, qualsData]);
+  const [selected, setSelected] = useState(null); // null = all selected
+  const [mode, setMode] = useState('combined');
+  const [busy, setBusy] = useState(false);
+  const [previewP, setPreviewP] = useState(null);
+  const selectedSet = selected === null ? new Set(items.map(i => i.cadet.pNumber)) : selected;
+  const unitName = personnel.length > 0 ? cleanUnitName(personnel[0].unit) : '';
+  const toggle = pNumber => {
+    const next = new Set(selectedSet);
+    if (next.has(pNumber)) next.delete(pNumber);else next.add(pNumber);
+    setSelected(next);
+  };
+  const toggleGroup = groupItems => {
+    const next = new Set(selectedSet);
+    const allOn = groupItems.every(i => next.has(i.cadet.pNumber));
+    groupItems.forEach(i => allOn ? next.delete(i.cadet.pNumber) : next.add(i.cadet.pNumber));
+    setSelected(next);
+  };
+  const selectedItems = items.filter(i => selectedSet.has(i.cadet.pNumber));
+  const generate = async itemsToPrint => {
+    if (itemsToPrint.length === 0 || busy) return;
+    setBusy(true);
+    try {
+      await bsGeneratePdfs(itemsToPrint, itemsToPrint.length === 1 ? 'single' : mode, unitName);
+    } catch (err) {
+      console.error('Badge sheet generation failed:', err);
+      alert('Badge sheet generation failed. Check the console for details.');
+    }
+    setBusy(false);
+  };
+  const previewItem = previewP ? items.find(i => i.cadet.pNumber === previewP) : null;
+  const groups = BS_TYPE_ORDER.map(type => ({
+    type,
+    label: type === 'SCC' ? 'Sea Cadets' : type === 'JSC' ? 'Junior Cadets' : 'Royal Marines Cadets',
+    items: items.filter(i => i.ent.type === type)
+  })).filter(g => g.items.length > 0);
+  const PreviewSection = ({
+    title,
+    section
+  }) => {
+    if (!section || !section.badges || section.badges.length === 0) return null;
+    return /*#__PURE__*/React.createElement("div", {
+      className: "mb-3"
+    }, /*#__PURE__*/React.createElement("p", {
+      className: "text-[10px] font-bold tracking-wider text-blue-900 uppercase mb-1"
+    }, title), /*#__PURE__*/React.createElement("div", {
+      className: "flex flex-wrap gap-2"
+    }, section.badges.map((b, i) => /*#__PURE__*/React.createElement("div", {
+      key: i,
+      className: "flex flex-col items-center bg-slate-50 border border-slate-200 rounded p-1.5 w-20 text-center"
+    }, b.file ? /*#__PURE__*/React.createElement("img", {
+      src: `media/${b.file}`,
+      alt: b.name,
+      title: b.name,
+      className: "h-12 w-auto object-contain mb-1",
+      onError: e => {
+        e.target.style.display = 'none';
+      }
+    }) : null, /*#__PURE__*/React.createElement("span", {
+      className: "text-[9px] font-semibold text-slate-700 leading-tight"
+    }, b.name)))), section.note && /*#__PURE__*/React.createElement("p", {
+      className: "text-[10px] italic text-slate-500 mt-1"
+    }, section.note), section.flag && /*#__PURE__*/React.createElement("p", {
+      className: "text-[10px] italic text-amber-700 font-semibold mt-1"
+    }, "\u26A0 ", section.flag));
+  };
+  const previewBody = () => {
+    const ent = previewItem.ent;
+    const awardsRow = [ent.gcb, ent.pennant, ent.dofe].filter(Boolean);
+    const nothing = awardsRow.length === 0 && !ent.specs && !ent.profs && !ent.waterborne && !ent.rmcPool && !ent.juniorBadges && !ent.appointments;
+    return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+      className: "flex items-center justify-between mb-3 pb-3 border-b border-slate-100"
+    }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("p", {
+      className: "font-bold text-slate-800"
+    }, previewItem.cadet.name), /*#__PURE__*/React.createElement("p", {
+      className: "text-xs text-slate-500"
+    }, previewItem.cadet.rank, " \u2014 ", ent.typeLabel)), ent.rankImg && /*#__PURE__*/React.createElement("img", {
+      src: `media/${ent.rankImg}`,
+      alt: previewItem.cadet.rank,
+      className: "h-12 w-auto object-contain",
+      onError: e => {
+        e.target.style.display = 'none';
+      }
+    })), /*#__PURE__*/React.createElement(PreviewSection, {
+      title: "Good Conduct, Pennant & DofE",
+      section: awardsRow.length > 0 ? {
+        badges: awardsRow,
+        note: ent.dofe && ent.dofe.note ? ent.dofe.note : null
+      } : null
+    }), ent.type === 'JSC' && /*#__PURE__*/React.createElement(PreviewSection, {
+      title: "Junior Activity & Proficiency Badges",
+      section: ent.juniorBadges
+    }), ent.type === 'RMC' && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(PreviewSection, {
+      title: "Specialisation Badge",
+      section: ent.specs
+    }), /*#__PURE__*/React.createElement(PreviewSection, {
+      title: "Proficiency & Waterborne (combined)",
+      section: ent.rmcPool
+    })), ent.type === 'SCC' && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(PreviewSection, {
+      title: "Specialisation Badges",
+      section: ent.specs
+    }), /*#__PURE__*/React.createElement(PreviewSection, {
+      title: "Proficiency Badges (top two)",
+      section: ent.profs
+    }), /*#__PURE__*/React.createElement(PreviewSection, {
+      title: "Waterborne Proficiency Badges (top two)",
+      section: ent.waterborne
+    })), /*#__PURE__*/React.createElement(PreviewSection, {
+      title: "Appointments & Aviation Wings",
+      section: ent.appointments
+    }), nothing && /*#__PURE__*/React.createElement("p", {
+      className: "text-sm text-slate-400 italic"
+    }, "No badge entitlements recorded beyond rank."));
+  };
+  return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "mb-6"
+  }, /*#__PURE__*/React.createElement("h2", {
+    className: "text-2xl font-bold text-blue-900 flex items-center gap-2"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "Shirt",
+    className: "w-6 h-6"
+  }), " Badge Entitlement Sheets"), /*#__PURE__*/React.createElement("p", {
+    className: "text-sm text-slate-500 mt-1"
+  }, "One A4 page per cadet showing the badges they are entitled to wear on uniform, per SCR 3.2.20. Use it to plan uniform orders and prepare kit \u2014 it is not a substitute for the regulation itself.")), /*#__PURE__*/React.createElement("div", {
+    className: "bg-white rounded-lg shadow p-4 mb-6 flex flex-wrap items-center gap-4"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-4"
+  }, /*#__PURE__*/React.createElement("label", {
+    className: "flex items-center gap-2 text-sm cursor-pointer"
+  }, /*#__PURE__*/React.createElement("input", {
+    type: "radio",
+    name: "bs_mode",
+    checked: mode === 'combined',
+    onChange: () => setMode('combined')
+  }), "Single combined PDF"), /*#__PURE__*/React.createElement("label", {
+    className: "flex items-center gap-2 text-sm cursor-pointer"
+  }, /*#__PURE__*/React.createElement("input", {
+    type: "radio",
+    name: "bs_mode",
+    checked: mode === 'per_cadet',
+    onChange: () => setMode('per_cadet')
+  }), "One PDF per cadet")), /*#__PURE__*/React.createElement("button", {
+    onClick: () => generate(selectedItems),
+    disabled: busy || selectedItems.length === 0,
+    className: "bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 text-white px-4 py-2 rounded font-semibold text-sm flex items-center gap-2"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: busy ? 'RefreshCw' : 'Download',
+    className: `w-4 h-4 ${busy ? 'animate-spin' : ''}`
+  }), busy ? 'Generating...' : `Generate ${selectedItems.length} sheet${selectedItems.length === 1 ? '' : 's'}`), mode === 'per_cadet' && selectedItems.length > 1 && /*#__PURE__*/React.createElement("p", {
+    className: "text-xs text-slate-400"
+  }, "Files download one by one \u2014 allow multiple downloads if the browser asks.")), /*#__PURE__*/React.createElement("div", {
+    className: "grid grid-cols-1 lg:grid-cols-3 gap-6"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "lg:col-span-2 space-y-6"
+  }, groups.map(group => /*#__PURE__*/React.createElement("div", {
+    key: group.type,
+    className: "bg-white rounded-lg shadow"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "px-4 py-3 border-b border-slate-100 flex items-center justify-between"
+  }, /*#__PURE__*/React.createElement("h3", {
+    className: "font-bold text-blue-900"
+  }, group.label, " ", /*#__PURE__*/React.createElement("span", {
+    className: "text-slate-400 font-normal text-sm"
+  }, "(", group.items.length, ")")), /*#__PURE__*/React.createElement("button", {
+    onClick: () => toggleGroup(group.items),
+    className: "text-xs text-blue-600 hover:text-blue-800 font-semibold"
+  }, group.items.every(i => selectedSet.has(i.cadet.pNumber)) ? 'Deselect all' : 'Select all')), /*#__PURE__*/React.createElement("div", {
+    className: "divide-y divide-slate-50"
+  }, group.items.map(item => /*#__PURE__*/React.createElement("div", {
+    key: item.cadet.pNumber,
+    className: `px-4 py-2 flex items-center gap-3 text-sm ${previewP === item.cadet.pNumber ? 'bg-blue-50' : 'hover:bg-slate-50'}`
+  }, /*#__PURE__*/React.createElement("input", {
+    type: "checkbox",
+    checked: selectedSet.has(item.cadet.pNumber),
+    onChange: () => toggle(item.cadet.pNumber)
+  }), /*#__PURE__*/React.createElement("button", {
+    onClick: () => setPreviewP(previewP === item.cadet.pNumber ? null : item.cadet.pNumber),
+    className: "flex-1 text-left hover:text-blue-700"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "font-semibold"
+  }, item.cadet.name), /*#__PURE__*/React.createElement("span", {
+    className: "text-slate-400 ml-2"
+  }, RANK_ABBREVIATIONS[item.cadet.rank] || item.cadet.rank)), /*#__PURE__*/React.createElement("button", {
+    onClick: () => generate([item]),
+    disabled: busy,
+    title: "Download this cadet's sheet",
+    className: "text-slate-400 hover:text-blue-600 disabled:opacity-40"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "Download",
+    className: "w-4 h-4"
+  })))))))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "bg-white rounded-lg shadow p-4 lg:sticky lg:top-4"
+  }, /*#__PURE__*/React.createElement("h3", {
+    className: "font-bold text-blue-900 mb-3"
+  }, "Sheet Preview"), !previewItem && /*#__PURE__*/React.createElement("p", {
+    className: "text-sm text-slate-400 italic"
+  }, "Click a cadet's name to preview the badges that will appear on their sheet."), previewItem && previewBody()))));
+};
+
 // ── Hash routing ──────────────────────────────────────────────────────────
-const VALID_VIEWS = ['home', 'juniors', 'junior_progress', 'cadet_focus', 'planner', 'rmc_planner', 'waterborne', 'awards', 'suggestions', 'attendance', 'retention', 'data_utilities'];
+const VALID_VIEWS = ['home', 'juniors', 'junior_progress', 'cadet_focus', 'planner', 'rmc_planner', 'waterborne', 'awards', 'badge_sheets', 'suggestions', 'attendance', 'retention', 'data_utilities'];
 const parseHash = () => {
   const h = window.location.hash.replace(/^#\/?/, '');
   return VALID_VIEWS.includes(h) ? h : null;
@@ -15283,6 +16548,10 @@ const App = ({
     icon: "Award",
     label: "Awards"
   }), /*#__PURE__*/React.createElement(NavItem, {
+    id: "badge_sheets",
+    icon: "Shirt",
+    label: "Badge Sheets"
+  }), /*#__PURE__*/React.createElement(NavItem, {
     id: "suggestions",
     icon: "ClipboardList",
     label: "Training Plan"
@@ -15366,6 +16635,9 @@ const App = ({
   }), view === 'awards' && /*#__PURE__*/React.createElement(AwardsView, {
     personnel: displayPersonnel,
     quals: qualsData
+  }), view === 'badge_sheets' && /*#__PURE__*/React.createElement(BadgeSheetsView, {
+    personnel: displayPersonnel,
+    qualsData: qualsData
   }), view === 'waterborne' && /*#__PURE__*/React.createElement(WaterborneView, {
     personnel: displayPersonnel,
     qualsData: qualsData

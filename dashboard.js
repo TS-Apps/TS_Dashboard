@@ -52,7 +52,7 @@ const checkIsAdmin = async () => {
 // CONSTANTS & DATA
 // ═══════════════════════════════════════════════════════════════════════════
 
-const DATA_VERSION = "2.34-Cloud"; // Badge/requisition workflow merged into Cadet Focus & Junior Focus; requisition sheet layout fix
+const DATA_VERSION = "2.35-Cloud"; // Add Clear list button to wipe all marked requisition badges
 
 // Badge & Rank Image Maps
 const RANK_IMG_MAP = {
@@ -8842,7 +8842,8 @@ const CadetFocus = ({
     requisitionGroups: badgeReq.requisitionGroups,
     requisitionTotal: badgeReq.requisitionTotal,
     reqBusy: badgeReq.reqBusy,
-    generateRequisition: badgeReq.generateRequisition
+    generateRequisition: badgeReq.generateRequisition,
+    clearRequisition: badgeReq.clearRequisition
   }), /*#__PURE__*/React.createElement("div", {
     className: "mt-4"
   }, /*#__PURE__*/React.createElement(BsCadetEntitlementPanel, {
@@ -14461,7 +14462,8 @@ const JuniorDetail = ({
     requisitionGroups: badgeReq.requisitionGroups,
     requisitionTotal: badgeReq.requisitionTotal,
     reqBusy: badgeReq.reqBusy,
-    generateRequisition: badgeReq.generateRequisition
+    generateRequisition: badgeReq.generateRequisition,
+    clearRequisition: badgeReq.clearRequisition
   }), /*#__PURE__*/React.createElement("div", {
     className: "mt-4"
   }, /*#__PURE__*/React.createElement(BsCadetEntitlementPanel, {
@@ -16225,6 +16227,12 @@ const useBadgeRequisition = (personnel, qualsData) => {
     }
     setReqBusy(false);
   };
+  // Wipes every "missing" mark for every cadet — the whole requisition list,
+  // not just what's visible on the current tab.
+  const clearRequisition = () => {
+    setMissing({});
+    bsSaveMissing({});
+  };
   return {
     items,
     unitName,
@@ -16235,7 +16243,8 @@ const useBadgeRequisition = (personnel, qualsData) => {
     requisitionGroups,
     requisitionTotal,
     reqBusy,
-    generateRequisition
+    generateRequisition,
+    clearRequisition
   };
 };
 
@@ -16337,7 +16346,8 @@ const BsRequisitionControls = ({
   requisitionGroups,
   requisitionTotal,
   reqBusy,
-  generateRequisition
+  generateRequisition,
+  clearRequisition
 }) => /*#__PURE__*/React.createElement("div", {
   className: "flex flex-wrap items-center gap-4"
 }, /*#__PURE__*/React.createElement("label", {
@@ -16354,7 +16364,18 @@ const BsRequisitionControls = ({
 }, /*#__PURE__*/React.createElement(Icon, {
   name: reqBusy ? 'RefreshCw' : 'ClipboardList',
   className: `w-4 h-4 ${reqBusy ? 'animate-spin' : ''}`
-}), reqBusy ? 'Generating...' : `Generate Requisition Sheet${requisitionTotal > 0 ? ` (${requisitionTotal})` : ''}`));
+}), reqBusy ? 'Generating...' : `Generate Requisition Sheet${requisitionTotal > 0 ? ` (${requisitionTotal})` : ''}`), requisitionTotal > 0 && /*#__PURE__*/React.createElement("button", {
+  onClick: () => {
+    if (window.confirm(`Clear all ${requisitionTotal} marked badge${requisitionTotal === 1 ? '' : 's'} from the requisition list? This clears marks for every cadet, not just this one.`)) {
+      clearRequisition();
+    }
+  },
+  title: "Clear every marked badge from the requisition list, for every cadet",
+  className: "text-sm text-slate-500 hover:text-red-600 font-semibold flex items-center gap-1"
+}, /*#__PURE__*/React.createElement(Icon, {
+  name: "Trash2",
+  className: "w-4 h-4"
+}), "Clear list"));
 
 // Bulk entitlement-PDF export across many/all cadets at once (SCC, JSC and
 // RMC) \u2014 the multi-cadet workflow the old Badge Sheets page covered.

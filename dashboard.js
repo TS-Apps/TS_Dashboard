@@ -52,7 +52,7 @@ const checkIsAdmin = async () => {
 // CONSTANTS & DATA
 // ═══════════════════════════════════════════════════════════════════════════
 
-const DATA_VERSION = "2.39-Cloud"; // Activate gold/red badge colour rule for POC and RMC cadets
+const DATA_VERSION = "2.40-Cloud"; // Fix Cadet Focus crash: stop mounting/unmounting the flag icon
 
 // Badge & Rank Image Maps
 const RANK_IMG_MAP = {
@@ -16414,10 +16414,15 @@ const BsBadgeBox = ({
   onClick: requestMode ? () => onToggleBadge(b.name) : undefined,
   title: requestMode ? `${b.name} \u2014 click to mark ${isMissing ? 'not missing' : 'missing'}` : b.name,
   className: `relative flex flex-col items-center bg-slate-50 border rounded p-1.5 w-20 text-center ${requestMode ? 'cursor-pointer hover:bg-slate-100' : ''} ${isMissing ? 'border-red-500 border-2 bg-red-50' : 'border-slate-200'}`
-}, isMissing && /*#__PURE__*/React.createElement(Icon, {
+}, /*#__PURE__*/React.createElement("span", {
+  className: "absolute top-1 right-1",
+  style: {
+    visibility: isMissing ? 'visible' : 'hidden'
+  }
+}, /*#__PURE__*/React.createElement(Icon, {
   name: "Flag",
-  className: "w-3 h-3 text-red-600 absolute top-1 right-1"
-}), b.file ? /*#__PURE__*/React.createElement("img", {
+  className: "w-3 h-3 text-red-600"
+})), b.file ? /*#__PURE__*/React.createElement("img", {
   src: `media/${b.file}`,
   alt: b.name,
   className: "h-12 w-auto object-contain mb-1",

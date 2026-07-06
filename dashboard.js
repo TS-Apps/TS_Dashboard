@@ -52,7 +52,7 @@ const checkIsAdmin = async () => {
 // CONSTANTS & DATA
 // ═══════════════════════════════════════════════════════════════════════════
 
-const DATA_VERSION = "2.40-Cloud"; // Fix Cadet Focus crash: stop mounting/unmounting the flag icon
+const DATA_VERSION = "2.41-Cloud"; // Fix Junior Focus: restore content dropped by a stray comma-operator bug
 
 // Badge & Rank Image Maps
 const RANK_IMG_MAP = {
@@ -13673,7 +13673,7 @@ const JuniorDetail = ({
       alert("Error deleting module: " + error.message);
     }
   };
-  return /*#__PURE__*/React.createElement("div", {
+  return /*#__PURE__*/React.createElement(React.Fragment, null, React.createElement("div", {
     className: "space-y-4"
   }, /*#__PURE__*/React.createElement("div", {
     className: "bg-white rounded-lg shadow p-6"
@@ -14439,7 +14439,7 @@ const JuniorDetail = ({
     }, award.name), /*#__PURE__*/React.createElement("p", {
       className: "text-[10px] text-slate-500 mt-1"
     }, formatDate(award.date)))));
-  })())), /*#__PURE__*/React.createElement("div", {
+  })())), React.createElement("div", {
     className: "bg-white p-6 rounded-lg shadow border border-slate-200"
   }, /*#__PURE__*/React.createElement("div", {
     className: "flex items-center justify-between mb-1 flex-wrap gap-3"
@@ -14473,7 +14473,7 @@ const JuniorDetail = ({
     requestMode: badgeReq.requestMode,
     missing: badgeReq.missing,
     toggleMissing: badgeReq.toggleMissing
-  })));
+  }))));
 };
 
 

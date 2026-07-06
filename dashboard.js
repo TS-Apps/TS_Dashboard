@@ -52,7 +52,7 @@ const checkIsAdmin = async () => {
 // CONSTANTS & DATA
 // ═══════════════════════════════════════════════════════════════════════════
 
-const DATA_VERSION = "2.37-Cloud"; // Split Awards-tab requisition into add/mark/generate stages
+const DATA_VERSION = "2.38-Cloud"; // Cadet Focus: remove duplicate badge display, keep Next Steps
 
 // Badge & Rank Image Maps
 const RANK_IMG_MAP = {
@@ -8936,112 +8936,34 @@ const CadetFocus = ({
     unitName: badgeReq.unitName
   }), /*#__PURE__*/React.createElement("div", {
     className: "h-4"
-  }), /*#__PURE__*/React.createElement("div", {
-    className: "flex flex-wrap gap-4 mb-4"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "flex-auto max-w-full"
+  }), (specNextSteps.length > 0 || waterborneNextSteps.length > 0) && /*#__PURE__*/React.createElement("div", {
+    className: "bg-white p-6 rounded-lg shadow border border-slate-200 mb-4"
   }, /*#__PURE__*/React.createElement("h3", {
-    className: "text-lg font-bold mb-4 flex items-center gap-2"
+    className: "text-lg font-bold mb-1 flex items-center gap-2"
   }, /*#__PURE__*/React.createElement(Icon, {
-    name: "Shield",
-    className: "w-5 h-5 text-blue-500"
-  }), " Specialisations"), /*#__PURE__*/React.createElement("div", {
-    className: "flex gap-4 overflow-x-auto pb-4"
-  }, cadetSpecs.map((spec, idx) => /*#__PURE__*/React.createElement("div", {
-    key: idx,
-    className: "flex-shrink-0 flex flex-col items-center justify-center bg-slate-50 border border-slate-200 rounded-lg p-3 min-w-[120px] text-center"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "h-24 flex items-center justify-center mb-2"
-  }, /*#__PURE__*/React.createElement(BadgeImage, {
-    name: spec.key,
-    className: "h-24 w-auto object-contain",
-    fallbackIcon: "Award"
-  })), /*#__PURE__*/React.createElement("p", {
-    className: "text-xs font-bold text-slate-700 leading-tight"
-  }, spec.name), /*#__PURE__*/React.createElement("p", {
-    className: "text-[10px] text-slate-500 mt-1"
-  }, formatDate(spec.date)))), cadetSpecs.length === 0 && /*#__PURE__*/React.createElement("div", {
-    className: "w-full text-center py-4 text-slate-400 italic bg-slate-50 rounded border border-dashed"
-  }, "No specialisations found for this cadet.")),
-    specNextSteps.length > 0 && /*#__PURE__*/React.createElement("div", { className: "mt-3 pt-3 border-t border-slate-100" },
-      /*#__PURE__*/React.createElement("p", { className: "text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2" }, "Next steps"),
-      /*#__PURE__*/React.createElement("div", { className: "flex flex-wrap gap-2" },
-        specNextSteps.map(({ discipline, next, current }) =>
-          /*#__PURE__*/React.createElement("div", { key: discipline, className: "flex items-start gap-2 bg-purple-50 border border-purple-200 rounded-lg px-3 py-2 text-xs max-w-[220px]" },
-            /*#__PURE__*/React.createElement(Icon, { name: "ChevronRight", className: "w-3.5 h-3.5 text-purple-500 flex-shrink-0 mt-0.5" }),
-            /*#__PURE__*/React.createElement("div", null,
-              /*#__PURE__*/React.createElement("p", { className: "font-semibold text-slate-700" }, next.name),
-              /*#__PURE__*/React.createElement("p", { className: "text-slate-400 mt-0.5" }, next.req)
-            )
-          )
-        )
-      )
-    )
-  ), /*#__PURE__*/React.createElement("div", {
-    className: "flex-auto max-w-full"
-  }, /*#__PURE__*/React.createElement("h3", {
-    className: "text-lg font-bold mb-4 flex items-center gap-2"
+    name: "ChevronRight",
+    className: "w-5 h-5 text-purple-500"
+  }), " Next Steps"), /*#__PURE__*/React.createElement("p", {
+    className: "text-xs text-slate-500 mb-3"
+  }, "Suggested next specialisation, proficiency or waterborne progression, based on what this cadet currently holds. See Badge Entitlement & Requisition above for what's currently worn."), /*#__PURE__*/React.createElement("div", {
+    className: "flex flex-wrap gap-2"
+  }, [...specNextSteps, ...waterborneNextSteps].map(({
+    discipline,
+    next,
+    current
+  }) => /*#__PURE__*/React.createElement("div", {
+    key: discipline,
+    className: "flex items-start gap-2 bg-purple-50 border border-purple-200 rounded-lg px-3 py-2 text-xs max-w-[220px]"
   }, /*#__PURE__*/React.createElement(Icon, {
-    name: "Target",
-    className: "w-5 h-5 text-green-600"
-  }), " Proficiencies"), /*#__PURE__*/React.createElement("div", {
-    className: "flex gap-4 overflow-x-auto pb-4"
-  }, cadetProfs.map((prof, idx) => /*#__PURE__*/React.createElement("div", {
-    key: idx,
-    className: "flex-shrink-0 flex flex-col items-center justify-center bg-slate-50 border border-slate-200 rounded-lg p-3 min-w-[120px] text-center"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "h-24 flex items-center justify-center mb-2"
-  }, /*#__PURE__*/React.createElement(BadgeImage, {
-    name: prof.key,
-    className: "h-24 w-auto object-contain",
-    fallbackIcon: "Award"
-  })), /*#__PURE__*/React.createElement("p", {
-    className: "text-xs font-bold text-slate-700 leading-tight"
-  }, prof.name), /*#__PURE__*/React.createElement("p", {
-    className: "text-[10px] text-slate-500 mt-1"
-  }, formatDate(prof.date)))), cadetProfs.length === 0 && /*#__PURE__*/React.createElement("div", {
-    className: "w-full text-center py-4 text-slate-400 italic bg-slate-50 rounded border border-dashed"
-  }, "No proficiencies found for this cadet.")))), /*#__PURE__*/React.createElement("div", {
-    className: "mb-4"
-  }, /*#__PURE__*/React.createElement("h3", {
-    className: "text-lg font-bold mb-4 flex items-center gap-2"
-  }, /*#__PURE__*/React.createElement(Icon, {
-    name: "Anchor",
-    className: "w-5 h-5 text-blue-600"
-  }), " Waterborne Proficiencies"), /*#__PURE__*/React.createElement("div", {
-    className: "flex gap-4 overflow-x-auto pb-4"
-  }, cadetWaterborne.map((wb, idx) => /*#__PURE__*/React.createElement("div", {
-    key: idx,
-    className: "flex-shrink-0 flex flex-col items-center justify-center bg-slate-50 border border-slate-200 rounded-lg p-3 min-w-[120px] text-center"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "h-24 flex items-center justify-center mb-2"
-  }, /*#__PURE__*/React.createElement(BadgeImage, {
-    name: wb.key,
-    className: "h-24 w-auto object-contain",
-    fallbackIcon: "Award"
-  })), /*#__PURE__*/React.createElement("p", {
-    className: "text-xs font-bold text-slate-700 leading-tight"
-  }, wb.name), /*#__PURE__*/React.createElement("p", {
-    className: "text-[10px] text-slate-500 mt-1"
-  }, formatDate(wb.date)))), cadetWaterborne.length === 0 && /*#__PURE__*/React.createElement("div", {
-    className: "w-full text-center py-4 text-slate-400 italic bg-slate-50 rounded border border-dashed"
-  }, "No waterborne proficiencies found for this cadet.")),
-    waterborneNextSteps.length > 0 && /*#__PURE__*/React.createElement("div", { className: "mt-4 pt-4 border-t border-slate-200" },
-      /*#__PURE__*/React.createElement("p", { className: "text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2" }, "Next steps"),
-      /*#__PURE__*/React.createElement("div", { className: "flex flex-wrap gap-2" },
-        waterborneNextSteps.map(({ discipline, next, current }) =>
-          /*#__PURE__*/React.createElement("div", { key: discipline, className: "flex items-start gap-2 bg-green-50 border border-green-200 rounded-lg px-3 py-2 text-xs max-w-[220px]" },
-            /*#__PURE__*/React.createElement(Icon, { name: "ChevronRight", className: "w-3.5 h-3.5 text-green-500 flex-shrink-0 mt-0.5" }),
-            /*#__PURE__*/React.createElement("div", null,
-              /*#__PURE__*/React.createElement("p", { className: "font-semibold text-slate-700" }, next.name),
-              /*#__PURE__*/React.createElement("p", { className: "text-slate-400 mt-0.5" }, next.req),
-              current && /*#__PURE__*/React.createElement("p", { className: "text-green-600 mt-0.5" }, "Currently: ", current)
-            )
-          )
-        )
-      )
-    )
-  ), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h3", {
+    name: "ChevronRight",
+    className: "w-3.5 h-3.5 text-purple-500 flex-shrink-0 mt-0.5"
+  }), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("p", {
+    className: "font-semibold text-slate-700"
+  }, next.name), /*#__PURE__*/React.createElement("p", {
+    className: "text-slate-400 mt-0.5"
+  }, next.req), current && /*#__PURE__*/React.createElement("p", {
+    className: "text-green-600 mt-0.5"
+  }, "Currently: ", current)))))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h3", {
     className: "text-lg font-bold mb-4 flex items-center gap-2"
   }, /*#__PURE__*/React.createElement(Icon, {
     name: "BookOpen",

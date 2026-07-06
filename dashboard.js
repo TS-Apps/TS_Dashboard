@@ -52,7 +52,7 @@ const checkIsAdmin = async () => {
 // CONSTANTS & DATA
 // ═══════════════════════════════════════════════════════════════════════════
 
-const DATA_VERSION = "2.38-Cloud"; // Cadet Focus: remove duplicate badge display, keep Next Steps
+const DATA_VERSION = "2.39-Cloud"; // Activate gold/red badge colour rule for POC and RMC cadets
 
 // Badge & Rank Image Maps
 const RANK_IMG_MAP = {
@@ -15394,30 +15394,41 @@ const bsPickTop = (candidates, slots) => {
 };
 const bsChooseWord = n => n === 1 ? "one" : n === 2 ? "two" : String(n);
 
-// ── Gold badge variant hook (prep only — SCR 3.2.20 paras 3.14, 3.16) ──────
-// Petty Officer Cadets and RMC cadets wear gold badges instead of red; the
-// gold image files already exist in media/ as "<red filename>_gold.<ext>".
-// The rank-based swap itself is NOT built yet — that's a separate pass once
-// the full gold set is confirmed. Every badge lookup below flows through
-// bsBadgeFile(), so wiring up the swap later just means changing what
-// bsBadgeColour() returns for a given cadet — no other code needs to change.
-const bsBadgeColour = () => 'red'; // TODO: gold hook — return 'gold' for POC/RMC cadets here
-const bsBadgeFile = (filename, colour = bsBadgeColour()) => {
+// ── Gold badge variant selection (SCR 3.2.20 paras 3.14, 3.16, 3.17, 4.2.7) ─
+// Petty Officer Cadets and RMC cadets (any rank) wear gold badges instead of
+// red; Junior Cadets aren't part of this rule (blue on black, untouched).
+// Gold image files live in media/ as "<red filename>_gold.<ext>".
+const bsBadgeColour = (type, rank) => {
+  if (type === 'JSC') return 'red'; // Juniors: rule doesn't apply
+  if (type === 'RMC') return 'gold'; // RMC: all ranks wear gold
+  if (rank === 'Petty Officer Cadet') return 'gold'; // SCC: POC wears gold
+  return 'red'; // SCC: Leading Cadet and below wear red
+};
+const bsBadgeFile = (filename, colour = 'red') => {
   if (!filename || colour === 'red') return filename;
   const dot = filename.lastIndexOf('.');
   return dot === -1 ? `${filename}_${colour}` : `${filename.slice(0, dot)}_${colour}${filename.slice(dot)}`;
+};
+// Inverse of the gold suffix — the red equivalent of a possibly-gold
+// filename. Used when a gold asset fails to load: fall back to red rather
+// than showing a broken image or crashing sheet generation.
+const bsRedEquivalent = filename => {
+  if (!filename) return filename;
+  return filename.replace(/_gold(\.[a-z0-9]+)$/i, '$1');
 };
 
 // Compute the full badge entitlement for one cadet from their qualifications.
 const bsComputeEntitlement = (cadet, allQuals) => {
   const type = bsCadetType(cadet);
+  const badgeColour = bsBadgeColour(type, cadet.rank);
   const quals = allQuals.filter(q => q.pNumber === cadet.pNumber && q.module && (!q.result || !COX_NON_PASS_RESULTS.includes(String(q.result).trim().toLowerCase())));
   const ageVal = cadet.dob ? calculateAge(cadet.dob) : "Unknown";
   const age = ageVal === "Unknown" ? null : ageVal;
   const has = needle => quals.some(q => q.module.includes(needle));
   const badge = (name, key) => ({
     name,
-    file: bsBadgeFile(BADGE_MAP[key]) || null
+    file: bsBadgeFile(BADGE_MAP[key], badgeColour) || null,
+    colour: badgeColour
   });
 
   // ── Specialisations (Sea Cadets & RMC; not Juniors) ──
@@ -15427,7 +15438,8 @@ const bsComputeEntitlement = (cadet, allQuals) => {
       const entry = bsFirstMatch(quals, entries);
       if (entry) specCandidates.push({
         name: entry.key,
-        file: bsBadgeFile(BADGE_MAP[entry.key]) || null,
+        file: bsBadgeFile(BADGE_MAP[entry.key], badgeColour) || null,
+        colour: badgeColour,
         level: entry.level
       });
     });
@@ -15462,7 +15474,8 @@ const bsComputeEntitlement = (cadet, allQuals) => {
         cat.entries.forEach(entry => {
           if (quals.some(q => entry.m.some(n => q.module.includes(n)))) profCandidates.push({
             name: entry.key,
-            file: bsBadgeFile(BADGE_MAP[entry.key]) || null,
+            file: bsBadgeFile(BADGE_MAP[entry.key], badgeColour) || null,
+            colour: badgeColour,
             level: entry.level
           });
         });
@@ -15470,7 +15483,8 @@ const bsComputeEntitlement = (cadet, allQuals) => {
         const entry = bsFirstMatch(quals, cat.entries);
         if (entry) profCandidates.push({
           name: entry.key,
-          file: bsBadgeFile(BADGE_MAP[entry.key]) || null,
+          file: bsBadgeFile(BADGE_MAP[entry.key], badgeColour) || null,
+          colour: badgeColour,
           level: entry.level
         });
       }
@@ -15486,7 +15500,8 @@ const bsComputeEntitlement = (cadet, allQuals) => {
         if (quals.some(q => entry.m.some(n => bsWbMatch(q, n)))) {
           wbCandidates.push({
             name: entry.key,
-            file: bsBadgeFile(BADGE_MAP[entry.key]) || null,
+            file: bsBadgeFile(BADGE_MAP[entry.key], badgeColour) || null,
+            colour: badgeColour,
             level: 1
           });
           break;
@@ -15496,11 +15511,13 @@ const bsComputeEntitlement = (cadet, allQuals) => {
     const cox = evaluateCoxswain(quals);
     if (cox.hasMasterAward) coxBadge = {
       name: "Master Coxswain",
-      file: bsBadgeFile(BADGE_MAP["Master Coxswain"]),
+      file: bsBadgeFile(BADGE_MAP["Master Coxswain"], badgeColour),
+      colour: badgeColour,
       level: 3
     };else if (cox.hasCoxAward) coxBadge = {
       name: "Coxswain",
-      file: bsBadgeFile(BADGE_MAP["Cadet Coxswain"]),
+      file: bsBadgeFile(BADGE_MAP["Cadet Coxswain"], badgeColour),
+      colour: badgeColour,
       level: 2
     };
   }
@@ -15519,12 +15536,23 @@ const bsComputeEntitlement = (cadet, allQuals) => {
         // below Junior NCO level.
         if (cadet.rank === 'Recruit' || cadet.rank === 'Marine Cadet') gcb = {
           name: `${ordinal} Good Conduct Badge`,
-          file: bsBadgeFile(`rmc_good_conduct_${gcbLevel}yr.webp`)
+          file: bsBadgeFile(`rmc_good_conduct_${gcbLevel}yr.webp`, badgeColour),
+          colour: badgeColour
+        };
+      } else if (cadet.rank === 'Petty Officer Cadet') {
+        // scc_poc_good_conduct_*.webp is its own pre-existing POC-specific
+        // asset (not a generic red filename), so it doesn't go through the
+        // "_gold" suffix scheme — it's already the right badge for POC.
+        gcb = {
+          name: `${ordinal} Good Conduct Badge`,
+          file: `scc_poc_good_conduct_${gcbLevel}yr.webp`,
+          colour: badgeColour
         };
       } else {
         gcb = {
           name: `${ordinal} Good Conduct Badge`,
-          file: bsBadgeFile(cadet.rank === 'Petty Officer Cadet' ? `scc_poc_good_conduct_${gcbLevel}yr.webp` : `scc_cadet_good_conduct_${gcbLevel}yr.webp`)
+          file: bsBadgeFile(`scc_cadet_good_conduct_${gcbLevel}yr.webp`, badgeColour),
+          colour: badgeColour
         };
       }
     }
@@ -15540,7 +15568,8 @@ const bsComputeEntitlement = (cadet, allQuals) => {
   if (has("Pennant") && profBadgeCount < 2) {
     pennant = {
       name: "Commodore's Pennant",
-      file: bsBadgeFile(BADGE_MAP["Commodore's Broad Pennant"])
+      file: bsBadgeFile(BADGE_MAP["Commodore's Broad Pennant"], badgeColour),
+      colour: badgeColour
     };
   }
 
@@ -15554,7 +15583,8 @@ const bsComputeEntitlement = (cadet, allQuals) => {
     const lvl = hasDofE("gold") ? "Gold" : hasDofE("silver") ? "Silver" : hasDofE("bronze") ? "Bronze" : null;
     if (lvl) dofe = {
       name: `DofE ${lvl}`,
-      file: bsBadgeFile(BADGE_MAP[`DofE ${lvl}`]),
+      file: bsBadgeFile(BADGE_MAP[`DofE ${lvl}`], badgeColour),
+      colour: badgeColour,
       note: type === 'RMC' ? "DofE is worn on the right arm and does not take a left-arm badge slot." : null
     };
   }
@@ -15611,7 +15641,8 @@ const bsComputeEntitlement = (cadet, allQuals) => {
     BS_JSC_BADGES.concat(BS_JSC_WATERBORNE).forEach(b => {
       if (quals.some(q => b.m.some(n => q.module.includes(n)))) badges.push({
         name: b.name,
-        file: bsBadgeFile(BADGE_MAP[b.key]) || null
+        file: bsBadgeFile(BADGE_MAP[b.key], badgeColour) || null,
+        colour: badgeColour
       });
     });
     if (badges.length > 0) juniorBadges = {
@@ -15764,6 +15795,17 @@ const bsLoadImage = filename => new Promise(resolve => {
     resolve(bsImageCache[filename]);
   };
   img.onerror = () => {
+    // Gold asset not uploaded yet — fall back to the red version rather than
+    // showing a broken image or failing sheet generation.
+    const redFallback = bsRedEquivalent(filename);
+    if (redFallback !== filename) {
+      console.warn(`Gold badge image missing, falling back to red: ${filename}`);
+      bsLoadImage(redFallback).then(data => {
+        bsImageCache[filename] = data;
+        resolve(data);
+      });
+      return;
+    }
     bsImageCache[filename] = null;
     resolve(null);
   };
@@ -16129,10 +16171,15 @@ const bsBuildRequisition = (items, missing) => {
     }) => {
       section.badges.forEach(b => {
         if (!set.has(b.name)) return;
-        const key = `${category}|${b.name}`;
+        // Red and gold are physically different items to order — a badge
+        // needed by both a red-eligible and a gold-eligible cadet becomes
+        // two separate requisition lines, not one merged line.
+        const colour = b.colour || 'red';
+        const key = `${category}|${b.name}|${colour}`;
         if (!byBadge.has(key)) byBadge.set(key, {
           name: b.name,
           file: b.file,
+          colour,
           category,
           cadets: []
         });
@@ -16144,7 +16191,9 @@ const bsBuildRequisition = (items, missing) => {
   groups.forEach(g => g.cadets.sort((a, b) => bsCadetReqLabel(a).localeCompare(bsCadetReqLabel(b))));
   groups.sort((a, b) => {
     const c = BS_REQ_CATEGORY_ORDER.indexOf(a.category) - BS_REQ_CATEGORY_ORDER.indexOf(b.category);
-    return c !== 0 ? c : a.name.localeCompare(b.name);
+    if (c !== 0) return c;
+    const n = a.name.localeCompare(b.name);
+    return n !== 0 ? n : a.colour.localeCompare(b.colour);
   });
   return groups;
 };
@@ -16220,7 +16269,8 @@ const bsGenerateRequisitionPdf = async (groups, unitName) => {
     }
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(11);
-    const headingLines = doc.splitTextToSize(`${g.name} (x${g.cadets.length})`, textW);
+    const colourLabel = g.colour === 'gold' ? ' — Gold' : ' — Red';
+    const headingLines = doc.splitTextToSize(`${g.name}${colourLabel} (x${g.cadets.length})`, textW);
     const headingH = headingLines.length * 4.5;
     const rowH = Math.max(imgBoxH, headingH + 2 + g.cadets.length * 4.2) + 5;
     checkPage(Math.min(rowH, pageH - margin * 2 - 14));
@@ -16372,6 +16422,14 @@ const BsBadgeBox = ({
   alt: b.name,
   className: "h-12 w-auto object-contain mb-1",
   onError: e => {
+    // Gold asset not uploaded yet — fall back to red once, then give up.
+    const redFallback = bsRedEquivalent(b.file);
+    if (redFallback !== b.file && !e.target.dataset.goldFallback) {
+      console.warn(`Gold badge image missing, falling back to red: ${b.file}`);
+      e.target.dataset.goldFallback = '1';
+      e.target.src = `media/${redFallback}`;
+      return;
+    }
     e.target.style.display = 'none';
   }
 }) : null, /*#__PURE__*/React.createElement("span", {

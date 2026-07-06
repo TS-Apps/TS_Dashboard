@@ -52,7 +52,7 @@ const checkIsAdmin = async () => {
 // CONSTANTS & DATA
 // ═══════════════════════════════════════════════════════════════════════════
 
-const DATA_VERSION = "2.35-Cloud"; // Add Clear list button to wipe all marked requisition badges
+const DATA_VERSION = "2.36-Cloud"; // Auto-generate badge requisition from Awards tab achievements
 
 // Badge & Rank Image Maps
 const RANK_IMG_MAP = {
@@ -6565,6 +6565,65 @@ const AwardsView = ({
     };
   }, [personnel, quals, monthOffset, targetDate]);
 
+  // Badge requisition — shared list with Cadet Focus / Junior Focus. Lets
+  // staff auto-populate the requisition from badges achieved in the period
+  // currently shown above, as an alternative to marking them one by one.
+  const badgeReq = useBadgeRequisition(personnel, quals);
+  const [awardsReqBusy, setAwardsReqBusy] = useState(false);
+  const generateBadgeRequisitionFromAwards = async () => {
+    if (awardsReqBusy || badgeReq.reqBusy) return;
+    setAwardsReqBusy(true);
+    try {
+      const entCache = new Map();
+      const pairs = [];
+      let matched = 0;
+      pastAwards.forEach(award => {
+        const cadet = personnel.find(p => p.pNumber === award.pNumber);
+        if (!cadet) return;
+        const resolved = bsMatchAchievedBadge(award, cadet);
+        if (!resolved) return;
+        if (!entCache.has(cadet.pNumber)) {
+          entCache.set(cadet.pNumber, bsEntitlementSections(bsComputeEntitlement(cadet, quals)));
+        }
+        const sections = entCache.get(cadet.pNumber);
+        const stillCurrent = sections.some(s => s.section.badges.some(b => b.name === resolved.name));
+        if (!stillCurrent) return;
+        matched++;
+        pairs.push({
+          pNumber: cadet.pNumber,
+          badgeName: resolved.name
+        });
+      });
+      if (matched === 0) {
+        alert("No badges matched the awards achieved in this period — nothing to add to the requisition list.");
+      } else {
+        // markMissing's state update lands on the next render, so build the
+        // PDF from a merged snapshot here rather than the hook's (still
+        // stale) requisitionGroups — otherwise this batch wouldn't show up
+        // in the sheet generated immediately after.
+        const added = badgeReq.markMissing(pairs);
+        const mergedMissing = {
+          ...badgeReq.missing
+        };
+        pairs.forEach(({
+          pNumber,
+          badgeName
+        }) => {
+          const set = new Set(mergedMissing[pNumber] || []);
+          set.add(badgeName);
+          mergedMissing[pNumber] = set;
+        });
+        const mergedGroups = bsBuildRequisition(badgeReq.items, mergedMissing);
+        alert(`${matched} badge${matched === 1 ? '' : 's'} from awards achieved in this period ${matched === 1 ? 'was' : 'were'} added to the requisition list (${added} new — the rest were already marked). Generating the requisition sheet now.`);
+        await bsGenerateRequisitionPdf(mergedGroups, badgeReq.unitName);
+      }
+    } catch (err) {
+      console.error('Badge requisition generation from Awards failed:', err);
+      alert('Badge requisition generation failed. Check the console for details.');
+    }
+    setAwardsReqBusy(false);
+  };
+
   // PDF Generation Functions
   const toggleAwardSelection = id => {
     const newSet = new Set(selectedAwardKeys);
@@ -7115,14 +7174,24 @@ const AwardsView = ({
     className: "text-2xl font-bold text-slate-900"
   }, "Awards"), /*#__PURE__*/React.createElement("p", {
     className: "text-slate-600"
-  }, "Track achievements, promotions, and upcoming awards"))), /*#__PURE__*/React.createElement("button", {
+  }, "Track achievements, promotions, and upcoming awards"))), /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-3"
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: generateBadgeRequisitionFromAwards,
+    disabled: awardsReqBusy,
+    className: "px-4 py-2 bg-amber-600 hover:bg-amber-700 disabled:bg-slate-300 text-white rounded-lg flex items-center gap-2 font-semibold text-sm shadow-lg transition-all",
+    title: "Auto-mark badges for awards achieved in the period shown below, then generate the requisition sheet"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: awardsReqBusy ? 'RefreshCw' : 'ClipboardList',
+    className: `w-4 h-4 ${awardsReqBusy ? 'animate-spin' : ''}`
+  }), awardsReqBusy ? 'Generating...' : "Generate Badge Requisition"), /*#__PURE__*/React.createElement("button", {
     onClick: generateCertificateReport,
     className: "px-4 py-2 bg-blue-800 hover:bg-blue-900 text-white rounded-lg flex items-center gap-2 font-semibold text-sm shadow-lg transition-all",
     title: "Generate certificate report for last 60 days"
   }, /*#__PURE__*/React.createElement(Icon, {
     name: "FileText",
     className: "w-4 h-4"
-  }), "60-Day Certificate Report"))), /*#__PURE__*/React.createElement("div", {
+  }), "60-Day Certificate Report")))), /*#__PURE__*/React.createElement("div", {
     className: "bg-white p-4 rounded-lg shadow border border-slate-200"
   }, /*#__PURE__*/React.createElement("div", {
     className: "flex justify-between items-center mb-4"
@@ -15654,6 +15723,83 @@ const bsComputeEntitlement = (cadet, allQuals) => {
   };
 };
 
+// Resolve a single achieved qualification record (as shown in the Awards
+// tab's "Achieved" list) to the uniform badge name it unlocks, if any.
+// Mirrors the matching rules in bsComputeEntitlement but applied to one
+// qualification row rather than a cadet's whole history — used to
+// auto-populate the requisition list from recently achieved awards.
+// Master/Cadet Coxswain badges are criteria-based across several
+// qualifications (see evaluateCoxswain) rather than a single record, so
+// they're deliberately not auto-matched here; mark those manually instead.
+const bsMatchAchievedBadge = (award, cadet) => {
+  const m = award.module || '';
+  if (!m || award.type === 'Promotion') return null;
+  const gcbMatch = m.match(/(1st|2nd|3rd) Good Conduct Badge/i);
+  if (gcbMatch) return {
+    name: `${gcbMatch[1].toLowerCase()} Good Conduct Badge`
+  };
+  const mLower = m.toLowerCase();
+  if (mLower.includes('dofe')) {
+    const level = mLower.includes('gold') ? 'Gold' : mLower.includes('silver') ? 'Silver' : mLower.includes('bronze') ? 'Bronze' : null;
+    if (level) return {
+      name: `DofE ${level}`
+    };
+  }
+  if (m.includes('First Sea Lord')) return {
+    name: "First Sea Lord's Cadet"
+  };
+  if (m.includes('Lord Lieutenant')) return {
+    name: "Lord Lieutenant's Cadet"
+  };
+  if (m.includes('Mayor') && !m.includes('Lieutenant')) return {
+    name: "Lord Mayor's / Mayor's Cadet"
+  };
+  if (m.includes('Gold Wings')) return {
+    name: "Aviation Gold Wings"
+  };
+  if (m.includes('Silver Wings')) return {
+    name: "Aviation Silver Wings"
+  };
+  if (m.includes('Bronze Wings')) return {
+    name: "Aviation Bronze Wings"
+  };
+  if (m.includes('Aviation Wings') || m.includes('Wings (Standard)')) return {
+    name: "Aviation Wings"
+  };
+  if (bsCadetType(cadet) === 'JSC') {
+    for (const entry of BS_JSC_BADGES.concat(BS_JSC_WATERBORNE)) {
+      if (entry.m.some(n => m.includes(n))) return {
+        name: entry.name
+      };
+    }
+    return null;
+  }
+  for (const entries of Object.values(BS_SPEC_TABLE)) {
+    for (const entry of entries) {
+      if (entry.m.some(n => m.includes(n))) return {
+        name: entry.key
+      };
+    }
+  }
+  for (const cat of Object.values(BS_PROF_TABLE)) {
+    for (const entry of cat.entries) {
+      if (entry.m.some(n => m.includes(n))) return {
+        name: entry.key
+      };
+    }
+  }
+  for (const entries of Object.values(BS_WATERBORNE_TABLE)) {
+    for (const entry of entries) {
+      if (entry.m.some(n => bsWbMatch({
+        module: m
+      }, n))) return {
+        name: entry.key
+      };
+    }
+  }
+  return null;
+};
+
 // ── PDF rendering ──────────────────────────────────────────────────────────
 // jsPDF cannot embed webp, so each badge image is drawn onto a white-filled
 // canvas (downscaled to keep the PDF small) and converted to a JPEG data URL
@@ -16214,6 +16360,32 @@ const useBadgeRequisition = (personnel, qualsData) => {
       return next;
     });
   };
+  // Adds without toggling off — for bulk/automatic marking (e.g. from the
+  // Awards tab) where re-running shouldn't un-mark badges from a previous run.
+  // The "newly added" count is read from the current snapshot before the
+  // state update is dispatched, since setState's updater isn't guaranteed to
+  // run synchronously.
+  const markMissing = pairs => {
+    if (pairs.length === 0) return 0;
+    const added = pairs.filter(({
+      pNumber,
+      badgeName
+    }) => !(missing[pNumber] && missing[pNumber].has(badgeName))).length;
+    setMissing(prev => {
+      const next = { ...prev };
+      pairs.forEach(({
+        pNumber,
+        badgeName
+      }) => {
+        const set = new Set(next[pNumber] || []);
+        set.add(badgeName);
+        next[pNumber] = set;
+      });
+      bsSaveMissing(next);
+      return next;
+    });
+    return added;
+  };
   const requisitionGroups = useMemo(() => bsBuildRequisition(items, missing), [items, missing]);
   const requisitionTotal = requisitionGroups.reduce((n, g) => n + g.cadets.length, 0);
   const generateRequisition = async () => {
@@ -16240,6 +16412,7 @@ const useBadgeRequisition = (personnel, qualsData) => {
     setRequestMode,
     missing,
     toggleMissing,
+    markMissing,
     requisitionGroups,
     requisitionTotal,
     reqBusy,

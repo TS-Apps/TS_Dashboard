@@ -52,7 +52,7 @@ const checkIsAdmin = async () => {
 // CONSTANTS & DATA
 // ═══════════════════════════════════════════════════════════════════════════
 
-const DATA_VERSION = "2.36-Cloud"; // Auto-generate badge requisition from Awards tab achievements
+const DATA_VERSION = "2.37-Cloud"; // Split Awards-tab requisition into add/mark/generate stages
 
 // Badge & Rank Image Maps
 const RANK_IMG_MAP = {
@@ -6565,13 +6565,16 @@ const AwardsView = ({
     };
   }, [personnel, quals, monthOffset, targetDate]);
 
-  // Badge requisition — shared list with Cadet Focus / Junior Focus. Lets
-  // staff auto-populate the requisition from badges achieved in the period
-  // currently shown above, as an alternative to marking them one by one.
+  // Badge requisition — shared list with Cadet Focus / Junior Focus. This is
+  // a 3-stage process: (1) add badges for awards achieved in the period
+  // shown below, (2) optionally add other missing badges manually from
+  // Cadet Focus / Junior Focus Request Mode, (3) generate/print the PDF —
+  // deliberately separate steps so adding awards doesn't jump straight to a
+  // download before manual badges have had a chance to be added too.
   const badgeReq = useBadgeRequisition(personnel, quals);
   const [awardsReqBusy, setAwardsReqBusy] = useState(false);
-  const generateBadgeRequisitionFromAwards = async () => {
-    if (awardsReqBusy || badgeReq.reqBusy) return;
+  const addAwardsToRequisition = () => {
+    if (awardsReqBusy) return;
     setAwardsReqBusy(true);
     try {
       const entCache = new Map();
@@ -6597,29 +6600,12 @@ const AwardsView = ({
       if (matched === 0) {
         alert("No badges matched the awards achieved in this period — nothing to add to the requisition list.");
       } else {
-        // markMissing's state update lands on the next render, so build the
-        // PDF from a merged snapshot here rather than the hook's (still
-        // stale) requisitionGroups — otherwise this batch wouldn't show up
-        // in the sheet generated immediately after.
         const added = badgeReq.markMissing(pairs);
-        const mergedMissing = {
-          ...badgeReq.missing
-        };
-        pairs.forEach(({
-          pNumber,
-          badgeName
-        }) => {
-          const set = new Set(mergedMissing[pNumber] || []);
-          set.add(badgeName);
-          mergedMissing[pNumber] = set;
-        });
-        const mergedGroups = bsBuildRequisition(badgeReq.items, mergedMissing);
-        alert(`${matched} badge${matched === 1 ? '' : 's'} from awards achieved in this period ${matched === 1 ? 'was' : 'were'} added to the requisition list (${added} new — the rest were already marked). Generating the requisition sheet now.`);
-        await bsGenerateRequisitionPdf(mergedGroups, badgeReq.unitName);
+        alert(`${matched} badge${matched === 1 ? '' : 's'} from awards achieved in this period ${matched === 1 ? 'was' : 'were'} added to the requisition list (${added} new — the rest were already marked). Add any other missing badges manually from Cadet Focus / Junior Focus, then use Generate Requisition Sheet below when ready.`);
       }
     } catch (err) {
-      console.error('Badge requisition generation from Awards failed:', err);
-      alert('Badge requisition generation failed. Check the console for details.');
+      console.error('Adding awards to requisition failed:', err);
+      alert('Adding awards to the requisition list failed. Check the console for details.');
     }
     setAwardsReqBusy(false);
   };
@@ -7177,21 +7163,45 @@ const AwardsView = ({
   }, "Track achievements, promotions, and upcoming awards"))), /*#__PURE__*/React.createElement("div", {
     className: "flex items-center gap-3"
   }, /*#__PURE__*/React.createElement("button", {
-    onClick: generateBadgeRequisitionFromAwards,
+    onClick: addAwardsToRequisition,
     disabled: awardsReqBusy,
     className: "px-4 py-2 bg-amber-600 hover:bg-amber-700 disabled:bg-slate-300 text-white rounded-lg flex items-center gap-2 font-semibold text-sm shadow-lg transition-all",
-    title: "Auto-mark badges for awards achieved in the period shown below, then generate the requisition sheet"
+    title: "Step 1: add badges for awards achieved in the period shown below to the requisition list"
   }, /*#__PURE__*/React.createElement(Icon, {
     name: awardsReqBusy ? 'RefreshCw' : 'ClipboardList',
     className: `w-4 h-4 ${awardsReqBusy ? 'animate-spin' : ''}`
-  }), awardsReqBusy ? 'Generating...' : "Generate Badge Requisition"), /*#__PURE__*/React.createElement("button", {
+  }), awardsReqBusy ? 'Adding...' : "Add Awards to Requisition"), /*#__PURE__*/React.createElement("button", {
     onClick: generateCertificateReport,
     className: "px-4 py-2 bg-blue-800 hover:bg-blue-900 text-white rounded-lg flex items-center gap-2 font-semibold text-sm shadow-lg transition-all",
     title: "Generate certificate report for last 60 days"
   }, /*#__PURE__*/React.createElement(Icon, {
     name: "FileText",
     className: "w-4 h-4"
-  }), "60-Day Certificate Report")))), /*#__PURE__*/React.createElement("div", {
+  }), "60-Day Certificate Report"))), badgeReq.requisitionTotal > 0 && /*#__PURE__*/React.createElement("div", {
+    className: "mt-4 pt-4 border-t border-amber-100 flex flex-wrap items-center gap-4"
+  }, /*#__PURE__*/React.createElement("p", {
+    className: "text-sm text-slate-600"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "font-bold text-slate-800"
+  }, badgeReq.requisitionTotal), " badge", badgeReq.requisitionTotal === 1 ? '' : 's', " marked across ", badgeReq.requisitionGroups.length, " type", badgeReq.requisitionGroups.length === 1 ? '' : 's', " — from here or from Cadet Focus / Junior Focus."), /*#__PURE__*/React.createElement("button", {
+    onClick: badgeReq.generateRequisition,
+    disabled: badgeReq.reqBusy,
+    className: "bg-amber-600 hover:bg-amber-700 disabled:bg-slate-300 text-white px-4 py-2 rounded font-semibold text-sm flex items-center gap-2"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: badgeReq.reqBusy ? 'RefreshCw' : 'Download',
+    className: `w-4 h-4 ${badgeReq.reqBusy ? 'animate-spin' : ''}`
+  }), badgeReq.reqBusy ? 'Generating...' : "Step 3: Generate Requisition Sheet"), /*#__PURE__*/React.createElement("button", {
+    onClick: () => {
+      if (window.confirm(`Clear all ${badgeReq.requisitionTotal} marked badge${badgeReq.requisitionTotal === 1 ? '' : 's'} from the requisition list? This clears marks for every cadet, not just this one.`)) {
+        badgeReq.clearRequisition();
+      }
+    },
+    title: "Clear every marked badge from the requisition list, for every cadet",
+    className: "text-sm text-slate-500 hover:text-red-600 font-semibold flex items-center gap-1"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "Trash2",
+    className: "w-4 h-4"
+  }), "Clear list"))), /*#__PURE__*/React.createElement("div", {
     className: "bg-white p-4 rounded-lg shadow border border-slate-200"
   }, /*#__PURE__*/React.createElement("div", {
     className: "flex justify-between items-center mb-4"

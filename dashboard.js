@@ -7323,7 +7323,10 @@ const AwardsView = ({
     className: `px-2 py-1 rounded-full text-[10px] font-semibold whitespace-nowrap ${award.type === 'Award Due' ? 'bg-red-100 text-red-800' : 'bg-amber-100 text-amber-800'}`
   }, award.type)), /*#__PURE__*/React.createElement("p", {
     className: "text-[10px] text-slate-400 mt-1 text-right"
-  }, award.type === 'Award Due' ? 'Action Required' : `Due: ${formatDate(award.date)}`)))))))));
+  }, award.type === 'Award Due' ? 'Action Required' : `Due: ${formatDate(award.date)}`))))))), /*#__PURE__*/React.createElement(BsBulkExportPanel, {
+    items: badgeReq.items,
+    unitName: badgeReq.unitName
+  })));
 };
 
 // Waterborne View Component
@@ -7665,6 +7668,38 @@ const WaterborneView = ({
       className: "text-xs text-white font-bold block leading-tight"
     }, record.date ? formatDate(record.date) : 'Done'));
   }))))))))));
+};
+
+// Collapsible rank section for CTP/CTS module lists — heading always visible,
+// module list only rendered while expanded. Each instance owns its own
+// open/closed state, so sections toggle independently and default collapsed.
+const CtpRankSection = ({
+  rank,
+  items,
+  colorScheme
+}) => {
+  const [open, setOpen] = useState(false);
+  const isGreen = colorScheme === 'green';
+  return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: () => setOpen(o => !o),
+    className: `w-full flex items-center justify-between px-4 py-1.5 text-left ${isGreen ? 'bg-green-50/30 text-green-900 border-b border-green-50/50 hover:bg-green-50/60' : 'bg-blue-50/30 text-blue-900 border-b border-blue-50/50 hover:bg-blue-50/60'} text-xs font-bold uppercase tracking-wide`
+  }, rank, /*#__PURE__*/React.createElement(Icon, {
+    name: open ? 'ChevronUp' : 'ChevronDown',
+    className: `w-3.5 h-3.5 flex-shrink-0 ${isGreen ? 'text-green-500' : 'text-blue-500'}`
+  })), open && /*#__PURE__*/React.createElement("div", {
+    className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 p-3 bg-white border-b border-slate-100 last:border-0"
+  }, items.map((q, i) => /*#__PURE__*/React.createElement("div", {
+    key: i,
+    className: "flex items-center gap-2 text-xs p-1 hover:bg-slate-50 rounded"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: `w-1.5 h-1.5 rounded-full flex-shrink-0 ${isGreen ? 'bg-green-400' : 'bg-blue-400'}`
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "truncate flex-1 font-medium text-slate-700",
+    title: q.module
+  }, q.module), /*#__PURE__*/React.createElement("span", {
+    className: "text-slate-400 text-[10px]"
+  }, formatDate(q.date))))));
 };
 
 // Cadet Focus Component
@@ -8803,11 +8838,9 @@ const CadetFocus = ({
       className: `text-center rounded p-2 ${preTOS ? 'bg-slate-50' : 'bg-slate-50'}`
     }, /*#__PURE__*/React.createElement("div", {
       className: "text-[10px] font-semibold text-slate-500 mb-1"
-    }, fmtMon(m)), /*#__PURE__*/React.createElement("div", {
+    }, fmtMon(m), !preTOS && nights > 0 ? ` (${attended}/${nights})` : ''), /*#__PURE__*/React.createElement("div", {
       className: `text-base font-extrabold ${pCol(pct)}`
-    }, preTOS ? '—' : pct !== null ? pct + '%' : nights > 0 ? '0%' : '—'), /*#__PURE__*/React.createElement("div", {
-      className: "text-[9px] text-slate-400"
-    }, !preTOS && nights > 0 ? attended + '/' + nights : '')))));
+    }, preTOS ? '—' : pct !== null ? pct + '%' : nights > 0 ? '0%' : '—')))));
   })(), /*#__PURE__*/React.createElement("div", {
     className: "bg-white p-6 rounded-lg shadow border border-slate-200"
   }, /*#__PURE__*/React.createElement("div", {
@@ -8931,10 +8964,7 @@ const CadetFocus = ({
     requestMode: badgeReq.requestMode,
     missing: badgeReq.missing,
     toggleMissing: badgeReq.toggleMissing
-  }))), /*#__PURE__*/React.createElement(BsBulkExportPanel, {
-    items: badgeReq.items,
-    unitName: badgeReq.unitName
-  }), /*#__PURE__*/React.createElement("div", {
+  }))), /*#__PURE__*/React.createElement("div", {
     className: "h-4"
   }), (specNextSteps.length > 0 || waterborneNextSteps.length > 0) && /*#__PURE__*/React.createElement("div", {
     className: "bg-white p-6 rounded-lg shadow border border-slate-200 mb-4"
@@ -8976,45 +9006,23 @@ const CadetFocus = ({
     className: "bg-blue-50 px-4 py-2 border-b border-blue-100"
   }, /*#__PURE__*/React.createElement("h4", {
     className: "font-bold text-blue-800 text-sm"
-  }, "SCC CTP Modules")), cadetRecordGroups.ctpKeys.map(rank => /*#__PURE__*/React.createElement("div", {
-    key: rank
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "px-4 py-1.5 bg-blue-50/30 text-xs font-bold text-blue-900 border-b border-blue-50/50 uppercase tracking-wide"
-  }, rank), /*#__PURE__*/React.createElement("div", {
-    className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 p-3 bg-white border-b border-slate-100 last:border-0"
-  }, cadetRecordGroups.ctp[rank].map((q, i) => /*#__PURE__*/React.createElement("div", {
-    key: i,
-    className: "flex items-center gap-2 text-xs p-1 hover:bg-slate-50 rounded"
-  }, /*#__PURE__*/React.createElement("span", {
-    className: "w-1.5 h-1.5 rounded-full bg-blue-400 flex-shrink-0"
-  }), /*#__PURE__*/React.createElement("span", {
-    className: "truncate flex-1 font-medium text-slate-700",
-    title: q.module
-  }, q.module), /*#__PURE__*/React.createElement("span", {
-    className: "text-slate-400 text-[10px]"
-  }, formatDate(q.date)))))))), cadetRecordGroups.ctsKeys.length > 0 && /*#__PURE__*/React.createElement("div", {
+  }, "SCC CTP Modules")), cadetRecordGroups.ctpKeys.map(rank => /*#__PURE__*/React.createElement(CtpRankSection, {
+    key: rank,
+    rank: rank,
+    items: cadetRecordGroups.ctp[rank],
+    colorScheme: "blue"
+  }))), cadetRecordGroups.ctsKeys.length > 0 && /*#__PURE__*/React.createElement("div", {
     className: "border rounded-lg overflow-hidden shadow-sm"
   }, /*#__PURE__*/React.createElement("div", {
     className: "bg-green-50 px-4 py-2 border-b border-green-100"
   }, /*#__PURE__*/React.createElement("h4", {
     className: "font-bold text-green-800 text-sm"
-  }, "RMC CTS Modules")), cadetRecordGroups.ctsKeys.map(rank => /*#__PURE__*/React.createElement("div", {
-    key: rank
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "px-4 py-1.5 bg-green-50/30 text-xs font-bold text-green-900 border-b border-green-50/50 uppercase tracking-wide"
-  }, rank), /*#__PURE__*/React.createElement("div", {
-    className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 p-3 bg-white border-b border-slate-100 last:border-0"
-  }, cadetRecordGroups.cts[rank].map((q, i) => /*#__PURE__*/React.createElement("div", {
-    key: i,
-    className: "flex items-center gap-2 text-xs p-1 hover:bg-slate-50 rounded"
-  }, /*#__PURE__*/React.createElement("span", {
-    className: "w-1.5 h-1.5 rounded-full bg-green-400 flex-shrink-0"
-  }), /*#__PURE__*/React.createElement("span", {
-    className: "truncate flex-1 font-medium text-slate-700",
-    title: q.module
-  }, q.module), /*#__PURE__*/React.createElement("span", {
-    className: "text-slate-400 text-[10px]"
-  }, formatDate(q.date)))))))), cadetRecordGroups.wbKeys.length > 0 && /*#__PURE__*/React.createElement("div", {
+  }, "RMC CTS Modules")), cadetRecordGroups.ctsKeys.map(rank => /*#__PURE__*/React.createElement(CtpRankSection, {
+    key: rank,
+    rank: rank,
+    items: cadetRecordGroups.cts[rank],
+    colorScheme: "green"
+  }))), cadetRecordGroups.wbKeys.length > 0 && /*#__PURE__*/React.createElement("div", {
     className: "border rounded-lg overflow-hidden shadow-sm"
   }, /*#__PURE__*/React.createElement("div", {
     className: "bg-blue-50 px-4 py-2 border-b border-blue-100"
@@ -13787,11 +13795,9 @@ const JuniorDetail = ({
       className: "text-center bg-slate-50 rounded p-2"
     }, /*#__PURE__*/React.createElement("div", {
       className: "text-[10px] font-semibold text-slate-500 mb-1"
-    }, fmtMon(m)), /*#__PURE__*/React.createElement("div", {
+    }, fmtMon(m), !preTOS && nights > 0 ? ` (${attended}/${nights})` : ''), /*#__PURE__*/React.createElement("div", {
       className: `text-base font-extrabold ${pCol(pct)}`
-    }, preTOS ? '—' : pct !== null ? pct + '%' : nights > 0 ? '0%' : '—'), /*#__PURE__*/React.createElement("div", {
-      className: "text-[9px] text-slate-400"
-    }, !preTOS && nights > 0 ? attended + '/' + nights : '')))));
+    }, preTOS ? '—' : pct !== null ? pct + '%' : nights > 0 ? '0%' : '—')))));
   })(), /*#__PURE__*/React.createElement("div", {
     className: "bg-white rounded-lg shadow p-6"
   }, /*#__PURE__*/React.createElement("h3", {

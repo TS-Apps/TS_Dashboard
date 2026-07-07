@@ -9028,23 +9028,12 @@ const CadetFocus = ({
     className: "bg-blue-50 px-4 py-2 border-b border-blue-100"
   }, /*#__PURE__*/React.createElement("h4", {
     className: "font-bold text-blue-800 text-sm"
-  }, "Waterborne Qualifications")), cadetRecordGroups.wbKeys.map(disc => /*#__PURE__*/React.createElement("div", {
-    key: disc
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "px-4 py-1.5 bg-blue-50/30 text-xs font-bold text-blue-900 border-b border-blue-50/50 uppercase tracking-wide"
-  }, disc), /*#__PURE__*/React.createElement("div", {
-    className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 p-3 bg-white border-b border-slate-100 last:border-0"
-  }, cadetRecordGroups.waterborne[disc].map((q, i) => /*#__PURE__*/React.createElement("div", {
-    key: i,
-    className: "flex items-center gap-2 text-xs p-1 hover:bg-slate-50 rounded"
-  }, /*#__PURE__*/React.createElement("span", {
-    className: "w-1.5 h-1.5 rounded-full bg-blue-400 flex-shrink-0"
-  }), /*#__PURE__*/React.createElement("span", {
-    className: "truncate flex-1 font-medium text-slate-700",
-    title: q.module
-  }, q.module), /*#__PURE__*/React.createElement("span", {
-    className: "text-slate-400 text-[10px]"
-  }, formatDate(q.date)))))))), cadetRecordGroups.other.length > 0 && /*#__PURE__*/React.createElement("div", {
+  }, "Waterborne Qualifications")), cadetRecordGroups.wbKeys.map(disc => /*#__PURE__*/React.createElement(CtpRankSection, {
+    key: disc,
+    rank: disc,
+    items: cadetRecordGroups.waterborne[disc],
+    colorScheme: "blue"
+  }))), cadetRecordGroups.other.length > 0 && /*#__PURE__*/React.createElement("div", {
     className: "border rounded-lg overflow-hidden shadow-sm"
   }, /*#__PURE__*/React.createElement("div", {
     className: "bg-slate-50 px-4 py-2 border-b border-slate-100 flex justify-between items-center"

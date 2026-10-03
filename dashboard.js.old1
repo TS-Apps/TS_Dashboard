@@ -3098,17 +3098,8 @@ const isCadet = person => {
   return true;
 };
 
-// Check if cadet is a junior.
-// Rank from Westminster is the source of truth: a junior rank means junior,
-// any senior cadet rank means not junior. Age and junior module history are
-// only used when no rank is held. Junior module history is permanent, so it
-// must never override a senior rank once a cadet has moved up.
+// Check if cadet is a junior (under 12 OR age 12 with junior modules/rank)
 const isJunior = (dob, pNumber = null, rank = null) => {
-  if (rank) {
-    const r = rank.toLowerCase();
-    if (r.includes('junior') || r.includes('jnr')) return true;
-    if (r.includes('cadet') || r.includes('marine') || r.includes('recruit')) return false;
-  }
   const age = calculateAge(dob);
   if (age === "Unknown") return false;
 

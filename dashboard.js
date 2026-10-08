@@ -3173,7 +3173,27 @@ let cachedJuniorData = {
   rankHistory: [],
   sectionBadges: []
 };
-const getJuniorData = async () => {
+
+// Several views call getJuniorData() on mount. Without a cache each one re-reads
+// the whole table (~80% of API traffic on the project). Reuse the last load for
+// a short time and share any in-flight request between callers.
+const JUNIOR_CACHE_TTL_MS = 5 * 60 * 1000;
+let juniorLoadedAt = 0;
+let juniorLoadPromise = null;
+const invalidateJuniorCache = () => {
+  juniorLoadedAt = 0;
+};
+const getJuniorData = async (force = false) => {
+  if (!force && juniorLoadedAt && Date.now() - juniorLoadedAt < JUNIOR_CACHE_TTL_MS) {
+    return cachedJuniorData;
+  }
+  if (juniorLoadPromise) return juniorLoadPromise;
+  juniorLoadPromise = fetchJuniorData().finally(() => {
+    juniorLoadPromise = null;
+  });
+  return juniorLoadPromise;
+};
+const fetchJuniorData = async () => {
   try {
     console.log('📥 Loading junior module completions from Supabase...');
 
@@ -3185,11 +3205,8 @@ const getJuniorData = async () => {
     while (hasMore) {
       const {
         data,
-        error,
-        count
-      } = await supabase.from('junior_module_completions').select('*', {
-        count: 'exact'
-      }).range(from, from + pageSize - 1);
+        error
+      } = await supabase.from('junior_module_completions').select('*').range(from, from + pageSize - 1);
       if (error) throw error;
       if (data && data.length > 0) {
         allData = allData.concat(data);
@@ -3219,6 +3236,7 @@ const getJuniorData = async () => {
       // Not implemented yet
       sectionBadges: [] // Not implemented yet
     };
+    juniorLoadedAt = Date.now();
     return cachedJuniorData;
   } catch (error) {
     console.error("Error loading junior data:", error);
@@ -3247,6 +3265,7 @@ const saveJuniorData = async (userId, data) => {
       throw deleteError;
     }
     console.log(`✓ Deleted ${count || 0} existing records`);
+    invalidateJuniorCache();
 
     // Transform and insert new data
     if (data.moduleCompletions && data.moduleCompletions.length > 0) {
@@ -3314,6 +3333,7 @@ const deleteJuniorModule = async (pNumber, section, moduleCode, dateCompleted) =
       throw error;
     }
     console.log('✅ Module deleted successfully');
+    invalidateJuniorCache();
 
     // Update cache - remove the deleted module
     if (cachedJuniorData && cachedJuniorData.moduleCompletions) {
@@ -3364,6 +3384,7 @@ const addJuniorModules = async newModules => {
       throw error;
     }
     console.log(`✅ Successfully added ${data.length} module(s)`);
+    invalidateJuniorCache();
 
     // Update cache
     if (cachedJuniorData && cachedJuniorData.moduleCompletions) {
@@ -17047,6 +17068,7 @@ const App = ({
         error: jError
       } = await supabase.from('junior_module_completions').delete().not('p_number', 'is', null);
       if (jError) throw jError;
+      invalidateJuniorCache();
       console.log('✓ Wiped all data from Supabase');
     } catch (error) {
       console.error('Error wiping data:', error);

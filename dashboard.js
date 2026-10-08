@@ -12473,16 +12473,27 @@ const DataUtilitiesView = ({
             return;
           }
           if (confirm(`Import ${imported} module completions for ${juniors.length} juniors? This will ADD to existing data.`)) {
-            // Add only; skip modules already recorded so the insert does not hit the unique constraint
-            const existing = getJuniorDataSync()?.moduleCompletions || [];
-            const fresh = newCompletions.filter(n => !existing.some(e => e.pNumber === n.pNumber && e.section === n.section && e.moduleCode === n.moduleCode));
-            if (fresh.length === 0) {
-              alert('All of these modules are already recorded. Nothing to import.');
+            // Add only modules not already recorded. addJuniorModules inserts
+            // incrementally; saveJuniorData deletes the whole table first, so it
+            // must not be used for an "add to existing data" import.
+            const currentData = await getJuniorData(true);
+            const keyOf = c => `${c.pNumber}|${c.section}|${c.moduleCode}`;
+            const existingKeys = new Set((currentData?.moduleCompletions || []).map(keyOf));
+            const toAdd = [];
+            newCompletions.forEach(c => {
+              const k = keyOf(c);
+              if (!existingKeys.has(k)) {
+                existingKeys.add(k);
+                toAdd.push(c);
+              }
+            });
+            if (toAdd.length === 0) {
+              alert('Every ticked module is already recorded. Nothing to import.');
               return;
             }
-            const success = await addJuniorModules(fresh);
-            if (success) {
-              setUploadStatus(`Successfully imported ${fresh.length} completions!`);
+            const ok = await addJuniorModules(toAdd);
+            if (ok) {
+              setUploadStatus(`Successfully imported ${toAdd.length} completions!`);
               setTimeout(() => window.location.reload(), 1500);
             } else {
               alert('Error importing completions. Please check the console for details.');

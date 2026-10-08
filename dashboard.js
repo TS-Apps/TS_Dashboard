@@ -5988,7 +5988,7 @@ const HomeView = ({
     target: "_blank",
     rel: "noopener noreferrer",
     className: "text-blue-600 hover:text-blue-800 font-semibold underline"
-  }, "Westminster"), " CSV reports you upload \u2014 figures reflect your most recent upload.")), /*#__PURE__*/React.createElement(UpcomingAwardsPanel, { personnel: personnel, qualsData: qualsData || [] }), attendanceData && attendanceData.length > 0 && (() => {
+  }, "Westminster"), " CSV reports you upload \u2014 figures reflect your most recent upload.")), attendanceData && attendanceData.length > 0 && (() => {
     const cadets = personnel.filter(p => isCadet(p));
     const cadetPNums = new Set(cadets.map(p => p.pNumber));
     const months = [...new Set(attendanceData.filter(r => cadetPNums.has(r.p_number)).map(r => r.attendance_date.slice(0, 7)))].sort();
@@ -7150,6 +7150,116 @@ const WaterborneView = ({
     return "";
   };
 
+  return /*#__PURE__*/React.createElement("div", {
+    className: "space-y-4"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "bg-white rounded-lg shadow-md p-6 border-l-4 border-blue-500"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-4"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "p-3 bg-blue-100 rounded-full"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "Anchor",
+    className: "w-7 h-7 text-blue-700"
+  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h2", {
+    className: "text-2xl font-bold text-slate-900"
+  }, "Waterborne Qualifications"), /*#__PURE__*/React.createElement("p", {
+    className: "text-slate-600"
+  }, "Track all waterborne proficiencies and awards"))), /*#__PURE__*/React.createElement("div", {
+    className: "w-full md:w-48"
+  }, /*#__PURE__*/React.createElement("label", {
+    className: "block text-xs font-semibold text-slate-700 uppercase mb-1"
+  }, "Filter Activity"), /*#__PURE__*/React.createElement("select", {
+    value: filterActivity,
+    onChange: e => setFilterActivity(e.target.value),
+    className: "w-full p-2 border border-slate-300 rounded-lg shadow-sm text-sm font-semibold"
+  }, activityOptions.map(opt => /*#__PURE__*/React.createElement("option", {
+    key: opt,
+    value: opt
+  }, opt))))), /*#__PURE__*/React.createElement("div", {
+    className: "mt-4 flex flex-wrap gap-3 text-xs"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-1"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "w-3 h-3 rounded-full bg-[#add8e6] border border-black"
+  }), " Coxswain (Pending)"), /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-1"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "w-3 h-3 rounded-full bg-[#003366]"
+  }), " Coxswain (Awarded)"), /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-1"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "w-3 h-3 rounded-full bg-[#ffffe0] border border-black"
+  }), " Master (Pending)"), /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-1"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "w-3 h-3 rounded-full bg-[#ffd700] border border-black"
+  }), " Master (Awarded)"))), /*#__PURE__*/React.createElement("div", {
+    className: "bg-white rounded-lg shadow overflow-hidden border border-slate-200"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "planner-container"
+  }, /*#__PURE__*/React.createElement("table", {
+    className: "planner-table w-full text-xs text-left border-collapse"
+  }, /*#__PURE__*/React.createElement("thead", null, /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("th", {
+    className: "px-2 py-2 bg-slate-100 border-b border-r border-slate-200 sticky left-0 z-10 w-48 min-w-[150px] font-bold text-slate-700"
+  }, "Cadet Name"), Object.entries(WATER_SYLLABUS).filter(([c]) => c === filterActivity).map(([c, m]) => /*#__PURE__*/React.createElement(React.Fragment, {
+    key: c
+  }, m.map((mod, i) => /*#__PURE__*/React.createElement("th", {
+    key: mod.code,
+    className: "px-2 py-2 bg-slate-50 border-b border-slate-200 text-center font-semibold text-slate-600 min-w-[80px]",
+    title: mod.title
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex flex-col items-center"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-[10px] text-slate-500 uppercase mb-1"
+  }, c), /*#__PURE__*/React.createElement("span", {
+    className: "truncate max-w-[90px]"
+  }, mod.code)))))))), /*#__PURE__*/React.createElement("tbody", null, sortedCadets.map(cadet => /*#__PURE__*/React.createElement("tr", {
+    key: cadet.pNumber,
+    className: "hover:bg-slate-50 border-b border-slate-100 last:border-0 h-8"
+  }, /*#__PURE__*/React.createElement("td", {
+    className: `px-2 py-1 border-r border-slate-200 font-medium text-slate-700 sticky left-0 z-10 ${getCadetStatusColor(cadet)}`
+  }, cadet.name, " ", /*#__PURE__*/React.createElement("span", {
+    className: "text-[9px] opacity-75 ml-1"
+  }, "(", cadet.rank, ")")), Object.entries(WATER_SYLLABUS).filter(([c]) => c === filterActivity).map(([c, m]) => /*#__PURE__*/React.createElement(React.Fragment, {
+    key: c
+  }, m.map(mod => {
+    const record = getWaterborneRecord(cadet, mod);
+    const passed = !!record;
+    return /*#__PURE__*/React.createElement("td", {
+      key: mod.code,
+      className: `px-1 py-1 text-center border-r border-slate-50 last:border-0 ${passed ? 'bg-passed' : ''}`
+    }, passed && /*#__PURE__*/React.createElement("span", {
+      className: "text-xs text-white font-bold block leading-tight"
+    }, record.date ? formatDate(record.date) : 'Done'));
+  }))))))))));
+};
+
+// ── Coxswain Award Progress (own tab, below Waterborne) ──────────────────
+const CoxswainProgressView = ({
+  personnel,
+  qualsData
+}) => {
+  // Filter to cadets only (exclude adult volunteers with CV or letter-number-letter P-Numbers)
+  const cadetsOnly = personnel.filter(p => {
+    const cleanPNum = (p.pNumber || "").replace(/[\s-]/g, '');
+    const isAdultCVFormat = /^CV\d+$/i.test(cleanPNum);
+    const isAdultLetterFormat = /^[A-Z]\d{6,7}[A-Z]$/i.test(cleanPNum);
+    return !isAdultCVFormat && !isAdultLetterFormat;
+  });
+  const sortedCadets = useMemo(() => [...cadetsOnly].sort((a, b) => a.name.localeCompare(b.name)), [cadetsOnly]);
+  const getCadetStatusColor = cadet => {
+    const ev = evaluateCoxswain(qualsData.filter(q => q.pNumber === cadet.pNumber));
+    if (ev.hasMasterAward) return "status-master-awarded";
+    if (ev.hasCoxAward) return "status-cox-awarded";
+    if (ev.meetsMaster) return "status-master-pending";
+    if (ev.meetsCoxCriteria) return "status-cox-pending";
+    return "";
+  };
+
+
   // ── Coxswain gap analysis ─────────────────────────────────────────────
   // Returns an object describing what a cadet still needs for each award.
   // gap.coxswain: null (awarded/not applicable) | { proficienciesMet, needed, missing[] }
@@ -7372,86 +7482,19 @@ const WaterborneView = ({
   }, /*#__PURE__*/React.createElement("div", {
     className: "bg-white rounded-lg shadow-md p-6 border-l-4 border-blue-500"
   }, /*#__PURE__*/React.createElement("div", {
-    className: "flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4"
-  }, /*#__PURE__*/React.createElement("div", {
     className: "flex items-center gap-4"
   }, /*#__PURE__*/React.createElement("div", {
     className: "p-3 bg-blue-100 rounded-full"
   }, /*#__PURE__*/React.createElement(Icon, {
-    name: "Anchor",
+    name: "Award",
     className: "w-7 h-7 text-blue-700"
   })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h2", {
     className: "text-2xl font-bold text-slate-900"
-  }, "Waterborne Qualifications"), /*#__PURE__*/React.createElement("p", {
+  }, "Coxswain Award Progress"), /*#__PURE__*/React.createElement("p", {
     className: "text-slate-600"
-  }, "Track all waterborne proficiencies and awards"))), /*#__PURE__*/React.createElement("div", {
-    className: "w-full md:w-48"
-  }, /*#__PURE__*/React.createElement("label", {
-    className: "block text-xs font-semibold text-slate-700 uppercase mb-1"
-  }, "Filter Activity"), /*#__PURE__*/React.createElement("select", {
-    value: filterActivity,
-    onChange: e => setFilterActivity(e.target.value),
-    className: "w-full p-2 border border-slate-300 rounded-lg shadow-sm text-sm font-semibold"
-  }, activityOptions.map(opt => /*#__PURE__*/React.createElement("option", {
-    key: opt,
-    value: opt
-  }, opt))))), /*#__PURE__*/React.createElement("div", {
-    className: "mt-4 flex flex-wrap gap-3 text-xs"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "flex items-center gap-1"
-  }, /*#__PURE__*/React.createElement("span", {
-    className: "w-3 h-3 rounded-full bg-[#add8e6] border border-black"
-  }), " Coxswain (Pending)"), /*#__PURE__*/React.createElement("div", {
-    className: "flex items-center gap-1"
-  }, /*#__PURE__*/React.createElement("span", {
-    className: "w-3 h-3 rounded-full bg-[#003366]"
-  }), " Coxswain (Awarded)"), /*#__PURE__*/React.createElement("div", {
-    className: "flex items-center gap-1"
-  }, /*#__PURE__*/React.createElement("span", {
-    className: "w-3 h-3 rounded-full bg-[#ffffe0] border border-black"
-  }), " Master (Pending)"), /*#__PURE__*/React.createElement("div", {
-    className: "flex items-center gap-1"
-  }, /*#__PURE__*/React.createElement("span", {
-    className: "w-3 h-3 rounded-full bg-[#ffd700] border border-black"
-  }), " Master (Awarded)"))), /*#__PURE__*/React.createElement(CoxswainGapPanel, null), /*#__PURE__*/React.createElement("div", {
-    className: "bg-white rounded-lg shadow overflow-hidden border border-slate-200"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "planner-container"
-  }, /*#__PURE__*/React.createElement("table", {
-    className: "planner-table w-full text-xs text-left border-collapse"
-  }, /*#__PURE__*/React.createElement("thead", null, /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("th", {
-    className: "px-2 py-2 bg-slate-100 border-b border-r border-slate-200 sticky left-0 z-10 w-48 min-w-[150px] font-bold text-slate-700"
-  }, "Cadet Name"), Object.entries(WATER_SYLLABUS).filter(([c]) => c === filterActivity).map(([c, m]) => /*#__PURE__*/React.createElement(React.Fragment, {
-    key: c
-  }, m.map((mod, i) => /*#__PURE__*/React.createElement("th", {
-    key: mod.code,
-    className: "px-2 py-2 bg-slate-50 border-b border-slate-200 text-center font-semibold text-slate-600 min-w-[80px]",
-    title: mod.title
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "flex flex-col items-center"
-  }, /*#__PURE__*/React.createElement("span", {
-    className: "text-[10px] text-slate-500 uppercase mb-1"
-  }, c), /*#__PURE__*/React.createElement("span", {
-    className: "truncate max-w-[90px]"
-  }, mod.code)))))))), /*#__PURE__*/React.createElement("tbody", null, sortedCadets.map(cadet => /*#__PURE__*/React.createElement("tr", {
-    key: cadet.pNumber,
-    className: "hover:bg-slate-50 border-b border-slate-100 last:border-0 h-8"
-  }, /*#__PURE__*/React.createElement("td", {
-    className: `px-2 py-1 border-r border-slate-200 font-medium text-slate-700 sticky left-0 z-10 ${getCadetStatusColor(cadet)}`
-  }, cadet.name, " ", /*#__PURE__*/React.createElement("span", {
-    className: "text-[9px] opacity-75 ml-1"
-  }, "(", cadet.rank, ")")), Object.entries(WATER_SYLLABUS).filter(([c]) => c === filterActivity).map(([c, m]) => /*#__PURE__*/React.createElement(React.Fragment, {
-    key: c
-  }, m.map(mod => {
-    const record = getWaterborneRecord(cadet, mod);
-    const passed = !!record;
-    return /*#__PURE__*/React.createElement("td", {
-      key: mod.code,
-      className: `px-1 py-1 text-center border-r border-slate-50 last:border-0 ${passed ? 'bg-passed' : ''}`
-    }, passed && /*#__PURE__*/React.createElement("span", {
-      className: "text-xs text-white font-bold block leading-tight"
-    }, record.date ? formatDate(record.date) : 'Done'));
-  }))))))))));
+  }, "Cadets ready for, or approaching, the Coxswain and Master Coxswain awards")))), approachingCadets.length === 0 ? /*#__PURE__*/React.createElement("div", {
+    className: "bg-white rounded-lg shadow p-6 text-center text-slate-600"
+  }, "No cadets are currently approaching a Coxswain or Master Coxswain award.") : /*#__PURE__*/React.createElement(CoxswainGapPanel, null));
 };
 
 // Collapsible rank section for CTP/CTS module lists — heading always visible,
@@ -12227,16 +12270,27 @@ const DataUtilitiesView = ({
             return;
           }
           if (confirm(`Import ${imported} module completions for ${juniors.length} juniors? This will ADD to existing data.`)) {
-            // Add only; skip modules already recorded so the insert does not hit the unique constraint
-            const existing = getJuniorDataSync()?.moduleCompletions || [];
-            const fresh = newCompletions.filter(n => !existing.some(e => e.pNumber === n.pNumber && e.section === n.section && e.moduleCode === n.moduleCode));
-            if (fresh.length === 0) {
-              alert('All of these modules are already recorded. Nothing to import.');
+            // Add only modules not already recorded. addJuniorModules inserts
+            // incrementally; saveJuniorData deletes the whole table first, so it
+            // must not be used for an "add to existing data" import.
+            const currentData = await getJuniorData(true);
+            const keyOf = c => `${c.pNumber}|${c.section}|${c.moduleCode}`;
+            const existingKeys = new Set((currentData?.moduleCompletions || []).map(keyOf));
+            const toAdd = [];
+            newCompletions.forEach(c => {
+              const k = keyOf(c);
+              if (!existingKeys.has(k)) {
+                existingKeys.add(k);
+                toAdd.push(c);
+              }
+            });
+            if (toAdd.length === 0) {
+              alert('Every ticked module is already recorded. Nothing to import.');
               return;
             }
-            const success = await addJuniorModules(fresh);
-            if (success) {
-              setUploadStatus(`Successfully imported ${fresh.length} completions!`);
+            const ok = await addJuniorModules(toAdd);
+            if (ok) {
+              setUploadStatus(`Successfully imported ${toAdd.length} completions!`);
               setTimeout(() => window.location.reload(), 1500);
             } else {
               alert('Error importing completions. Please check the console for details.');
@@ -16446,7 +16500,7 @@ const BsBulkExportPanel = ({
 };
 
 // ── Hash routing ──────────────────────────────────────────────────────────
-const VALID_VIEWS = ['home', 'juniors', 'junior_progress', 'cadet_focus', 'planner', 'rmc_planner', 'waterborne', 'awards', 'suggestions', 'attendance', 'retention', 'data_utilities'];
+const VALID_VIEWS = ['home', 'juniors', 'junior_progress', 'cadet_focus', 'planner', 'rmc_planner', 'waterborne', 'coxswain', 'awards', 'suggestions', 'attendance', 'retention', 'data_utilities'];
 const parseHash = () => {
   const h = window.location.hash.replace(/^#\/?/, '');
   return VALID_VIEWS.includes(h) ? h : null;
@@ -16981,6 +17035,10 @@ const App = ({
     icon: "Anchor",
     label: "Waterborne"
   }), /*#__PURE__*/React.createElement(NavItem, {
+    id: "coxswain",
+    icon: "Award",
+    label: "Coxswain Award Progress"
+  }), /*#__PURE__*/React.createElement(NavItem, {
     id: "awards",
     icon: "Award",
     label: "Awards"
@@ -17069,6 +17127,9 @@ const App = ({
     personnel: displayPersonnel,
     quals: qualsData
   }), view === 'waterborne' && /*#__PURE__*/React.createElement(WaterborneView, {
+    personnel: displayPersonnel,
+    qualsData: qualsData
+  }), view === 'coxswain' && /*#__PURE__*/React.createElement(CoxswainProgressView, {
     personnel: displayPersonnel,
     qualsData: qualsData
   }), view === 'planner' && /*#__PURE__*/React.createElement(TrainingPlanner, {
